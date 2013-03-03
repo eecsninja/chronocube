@@ -1,0 +1,60 @@
+Note: this contains the intended register design.  It may contain fields that
+are not yet implemented.  However, it must not contain any designs that
+contradict the source files.  All changes to source code must be reflected in
+this design doc too.
+
+MAIN_CTRL
+Main control register
+========================
+  0 Enable output
+  1 Enable MPU VRAM access
+  2 Video mode [2]
+  4 Take screenshot
+
+INTREG
+Interrupt register
+========================
+  0 VBLANK
+  1 HBLANK
+  2 Screenshot
+
+INTMASK
+Interrupt mask
+========================
+  0 VBLANK
+  1 HBLANK
+  2 Screenshot
+
+BANK[3]
+sets memory bank of upper 16 KB of AVR interface.
+
+XPOS[10], YPOS[10]
+Position of display refresh
+
+XSHIFT[10], YSHIFT[10]
+Main display frame offset
+
+====== Per-layer ======
+
+XSHIFTn[10], VSHIFTn[10]
+Position registers for tile map n, relative to (XSHIFT, YSHIFT)
+
+ALPHAn
+========================
+  0 16-bit mode (turn off to use palette)
+  1 Alpha (6-bit value), defaults to 111111
+
+TODO: rotation and scaling
+
+====== Sprites ======
+
+Sprite control n (0-256)
+========================
+  0 Enable sprite
+  1 Z-depth [2], relative to layer n
+  3 16-bit mode
+  4 Palette [2]
+  6 Alpha [6]
+
+TODO: rotation and scaling
+TODO: collision detection
