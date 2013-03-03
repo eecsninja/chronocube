@@ -3,7 +3,7 @@ are not yet implemented.  However, it must not contain any designs that
 contradict the source files.  All changes to source code must be reflected in
 this design doc too.
 
-MAIN_CTRL
+MAIN_CTRL: 0x00
 Main control register
 ========================
   0 Enable output
@@ -11,44 +11,56 @@ Main control register
   2 Video mode [2]
   4 Take screenshot
 
-INTREG
+INT_REG: 0x04
 Interrupt register
 ========================
   0 VBLANK
   1 HBLANK
-  2 Screenshot
+  2 Screenshot done
 
-INTMASK
+INT_MASK: 0x06
 Interrupt mask
 ========================
   0 VBLANK
   1 HBLANK
-  2 Screenshot
+  2 Screenshot done
 
-BANK[3]
-sets memory bank of upper 16 KB of AVR interface.
-
-XPOS[10], YPOS[10]
+X_POS[10], Y_POS[10]: 0x08, 0x09
 Position of display refresh
 
-XSHIFT[10], YSHIFT[10]
+X_OFFSET[10], Y_OFFSET[10]: 0x0c, 0x0d
 Main display frame offset
 
-====== Per-layer ======
+TILE_CON: 0x10
+===============
+  0 Enable layer 0
+  1 Enable layer 1
+  2 Enable layer 2
+  3 Enable layer 3
 
-XSHIFTn[10], VSHIFTn[10]
-Position registers for tile map n, relative to (XSHIFT, YSHIFT)
+====== Per-tile layer ======
 
-ALPHAn
+Base offset = 0x20 + 8 * n, where n < 4
+
+X_SHIFTn[10], Y_SHIFTn[10]: base + 0, base + 1
+Position registers for tile map n, relative to (X_SHIFT, Y_SHIFT)
+
+ALPHAROTn: base + 2
 ========================
   0 16-bit mode (turn off to use palette)
   1 Alpha (6-bit value), defaults to 111111
+  8 rotation [8]
 
-TODO: rotation and scaling
+SCALEn: base + 3
+========================
+  0 x-scaling[8]
+  8 y-scaling[8]
 
 ====== Sprites ======
 
-Sprite control n (0-256)
+Base offset = 0x400 + 32 * n, n < 256
+
+Sprite control n (0-255)
 ========================
   0 Enable sprite
   1 Z-depth [2], relative to layer n
