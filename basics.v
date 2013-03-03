@@ -18,7 +18,7 @@
 // A library of various basic logic elements.
 
 // D flip-flop.
-module DFlipFlop(clk, en, d, q);
+module CC_DFlipFlop(clk, en, d, q);
   parameter WIDTH=1;
   input clk;
   input en;
@@ -34,7 +34,7 @@ module DFlipFlop(clk, en, d, q);
 endmodule
 
 // D-type Latch.
-module DLatch(en, d, q);
+module CC_DLatch(en, d, q);
   parameter WIDTH=1;
   input en;
   input [WIDTH-1:0] d;
@@ -42,13 +42,13 @@ module DLatch(en, d, q);
 
   wire [WIDTH-1:0] reg_out;
 
-  DFlipFlop #(WIDTH) r(~en, 1'b1, d, reg_out);
+  CC_DFlipFlop #(WIDTH) r(~en, 1'b1, d, reg_out);
 
   assign q = en ? d : reg_out;
 endmodule
 
-// Bidirectional I/O pin.
-module Bidir(sel_in, io, in, out);
+// CC_Bidirectional I/O pin.
+module CC_Bidir(sel_in, io, in, out);
   parameter WIDTH=1;
   input sel_in;
   inout [WIDTH-1:0] io;
@@ -60,7 +60,7 @@ module Bidir(sel_in, io, in, out);
 endmodule
 
 // Double D flip-flop with a 2:1 multiplexed output.
-module MuxReg(sel, clk, en, in_a, in_b, out);
+module CC_MuxReg(sel, clk, en, in_a, in_b, out);
   parameter WIDTH=8;
   input sel;
   input clk;
@@ -73,14 +73,14 @@ module MuxReg(sel, clk, en, in_a, in_b, out);
   wire [WIDTH-1:0] out_a;
   wire [WIDTH-1:0] out_b;
 
-  DFlipFlop #(WIDTH) reg_a(clk, en, in_a, out_a);
-  DFlipFlop #(WIDTH) reg_b(clk, en, in_b, out_b);
+  CC_DFlipFlop #(WIDTH) reg_a(clk, en, in_a, out_a);
+  CC_DFlipFlop #(WIDTH) reg_b(clk, en, in_b, out_b);
 
   assign out = sel ? out_a : out_b;
 endmodule
 
 // N-to-2^N decoder/selector/demultiplexer.
-module Decoder(in, out);
+module CC_Decoder(in, out);
   parameter IN_WIDTH=8;
   parameter OUT_WIDTH=(1 << IN_WIDTH);
 
@@ -90,6 +90,8 @@ module Decoder(in, out);
   genvar i;
   generate
     for (i = 0; i < OUT_WIDTH; i = i + 1)
+    begin: SELECT
       assign out[i] = (i[IN_WIDTH-1:0] == in) ? 1'b1 : 1'b0;
+    end
   endgenerate
 endmodule

@@ -53,7 +53,7 @@ module GPU(clk, _reset, x, y, vblank, hblank,
   assign vram_addr = { y[9:2], x[9:2] };
 
   // TODO: Build GPU here.
-  DFlipFlop #(VRAM_DATA_BUS_WIDTH)
+  CC_DFlipFlop #(VRAM_DATA_BUS_WIDTH)
       rgb_reg(.clk(clk),
               .en(_vram_en),
               .d(vram_data),

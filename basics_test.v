@@ -29,8 +29,8 @@ module RegLatchTest;
   wire [3:0] lout;
 
   // Instantiate the Unit Under Test (UUT)
-  DFlipFlop #(4) register(clk, en, data, rout);
-  DLatch #(4) latch(en, data, lout);
+  CC_DFlipFlop #(4) register(clk, en, data, rout);
+  CC_DLatch #(4) latch(en, data, lout);
 
   initial begin
     en = 0;
@@ -50,11 +50,11 @@ module RegLatchTest;
 endmodule
 
 
-module BidirTest;
+module CC_BidirTest;
   reg sel_in;
   wire [3:0] port, in, out;
 
-  Bidir #(4) bidir(sel_in, port, in, out);
+  CC_Bidir #(4) bidir(sel_in, port, in, out);
   reg [3:0] count_in;
   reg [3:0] count_out;
 
@@ -79,14 +79,14 @@ module BidirTest;
 endmodule
 
 
-module MuxRegTest;
+module CC_MuxRegTest;
   reg clk;
   reg sel;
   reg en;
   reg [3:0] in_a, in_b;
   wire [3:0] out;
 
-  MuxReg #(4) muxreg(sel, clk, en, in_a, in_b, out);
+  CC_MuxReg #(4) muxreg(sel, clk, en, in_a, in_b, out);
 
   initial begin
     sel = 0;
@@ -114,7 +114,7 @@ module MuxRegTest;
 endmodule
 
 
-module DecoderTest;
+module CC_DecoderTest;
   parameter WIDTH=4;
 
   // Inputs
@@ -123,7 +123,7 @@ module DecoderTest;
   // Outputs
   wire [(1 << WIDTH)-1:0] out;
 
-  Decoder #(WIDTH) decoder(.in(in), .out(out));
+  CC_Decoder #(WIDTH) decoder(.in(in), .out(out));
 
   initial
     in = 0;
