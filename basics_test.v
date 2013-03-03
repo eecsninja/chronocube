@@ -113,3 +113,22 @@ module MuxRegTest;
 
 endmodule
 
+
+module DecoderTest;
+  parameter WIDTH=4;
+
+  // Inputs
+  reg [WIDTH-1:0] in;
+
+  // Outputs
+  wire [(1 << WIDTH)-1:0] out;
+
+  Decoder #(WIDTH) decoder(.in(in), .out(out));
+
+  initial
+    in = 0;
+
+  always
+    #1 in = in + 1;
+
+endmodule

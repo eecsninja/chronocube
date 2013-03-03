@@ -78,3 +78,18 @@ module MuxReg(sel, clk, en, in_a, in_b, out);
 
   assign out = sel ? out_a : out_b;
 endmodule
+
+// N-to-2^N decoder/selector/demultiplexer.
+module Decoder(in, out);
+  parameter IN_WIDTH=8;
+  parameter OUT_WIDTH=(1 << IN_WIDTH);
+
+  input [IN_WIDTH-1:0] in;
+  output [OUT_WIDTH-1:0] out;
+
+  genvar i;
+  generate
+    for (i = 0; i < OUT_WIDTH; i = i + 1)
+      assign out[i] = (i[IN_WIDTH-1:0] == in) ? 1'b1 : 1'b0;
+  endgenerate
+endmodule
