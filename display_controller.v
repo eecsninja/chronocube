@@ -17,12 +17,15 @@
 
 
 // Chronocube video display signal generator
+// The current values are for 640x480 @ 60 MHz.
+// See: http://tinyvga.com/vga-timing/640x480@60Hz
+// TODO: support other display modes.
 
 module DisplayController(
     clk, _reset, h_pos, v_pos, hsync, vsync, hblank, vblank);
 
-  parameter HCOUNT_WIDTH;
-  parameter VCOUNT_WIDTH;
+  parameter HCOUNT_WIDTH=10;
+  parameter VCOUNT_WIDTH=10;
 
   input clk;          // System clock
   input _reset;       // System reset
@@ -34,22 +37,51 @@ module DisplayController(
   output hblank;      // Horizontal blanking indicator
   output vblank;      // Vertical blanking indicator
 
-  // TODO: use functions for these.
-  assign hsync = ~(h_pos < 120);
-  assign vsync = ~(v_pos < 6);
-  assign vblank = (h_pos < 184 || v_pos >= 984);
-  assign hblank = (v_pos < 29 || v_pos >= 629);
+  assign hsync = get_hsync(h_pos);
+  assign vsync = get_vsync(v_pos);
+  assign hblank = get_hblank(h_pos);
+  assign vblank = get_vblank(v_pos);
+
+  wire reset = ~_reset;
 
   always @ (posedge clk)
   begin
-    if (_reset == 0) begin
-      h_pos <= 10'b0;
-      v_pos <= 10'b0;
+    if (reset == 1) begin
+      h_pos <= 0;
+      v_pos <= 0;
     end else begin
-      if (h_pos == 10'h3ff)
-        v_pos <= v_pos + 10'b1;
-      h_pos <= h_pos + 10'b1;
+      if (h_pos + 1 == 800)
+      begin
+        if (v_pos + 1 == 525)
+          v_pos <= 0;
+        else
+          v_pos <= v_pos + 1;
+        h_pos <= 0;
+      end else
+      begin
+        h_pos <= h_pos + 1;
+      end
     end
   end
+
+  function get_hsync;
+  input [HCOUNT_WIDTH-1:0] h_pos;
+    get_hsync = (h_pos < 96) ? 0 : 1;
+  endfunction
+
+  function get_vsync;
+  input [VCOUNT_WIDTH-1:0] v_pos;
+    get_vsync = (v_pos < 2) ? 0 : 1;
+  endfunction
+
+  function get_hblank;
+  input [HCOUNT_WIDTH-1:0] h_pos;
+    get_hblank = (h_pos < 144 || h_pos >= 784);
+  endfunction
+
+  function get_vblank;
+  input [VCOUNT_WIDTH-1:0] v_pos;
+    get_vblank = (v_pos < 35 || v_pos >= 515);
+  endfunction
 
 endmodule
