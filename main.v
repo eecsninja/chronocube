@@ -18,6 +18,8 @@
 
 // Top-level ChronoCube module.
 
+`include "registers.vh"
+
 `define MPU_ADDR_WIDTH 17
 `define MPU_DATA_WIDTH 16
 
@@ -101,6 +103,23 @@ module ChronoCube(clk, _reset, _int,
           .vblank(vblank),
           .hblank(hblank),
           .rgb_out(vga_rgb));
+
+  // TODO: the width here is hard-coded for convenience's sake.  Need to figure
+  // out a way of determining the required width.
+  wire [1023:0] reg_values;
+  Registers #(.DATA_WIDTH(`REG_DATA_WIDTH))
+      registers(.reset(~_reset),
+                .en(~_mpu_en),
+                .rd(~_mpu_rd),
+                .wr(~_mpu_wr),
+                .be(~_mpu_be),
+                .addr(mpu_addr),
+                .data(mpu_data),
+                .values(reg_values));
+  assign reg_values[`REG_DATA_WIDTH * `X_POS_ADDR + `X_POS_SIZE - 1:
+                    `REG_DATA_WIDTH * `X_POS_ADDR] = h_pos;
+  assign reg_values[`REG_DATA_WIDTH * `Y_POS_ADDR + `Y_POS_SIZE - 1:
+                    `REG_DATA_WIDTH * `Y_POS_ADDR] = v_pos;
 
   // VRAM interface logic
   // TODO: the multiplexed VRAM access by both GPU and MPU here may be too
