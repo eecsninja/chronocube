@@ -16,24 +16,12 @@
 // along with ChronoCube.  If not, see <http://www.gnu.org/licenses/>.
 
 
-// Register sizes and addresses.
-`define MAIN_CTRL_SIZE 5
-`define MAIN_CTRL_ADDR 'h00
-
-`define X_POS_SIZE 10
-`define Y_POS_SIZE 10
-`define X_POS_ADDR 'h08
-`define Y_POS_ADDR 'h09
-
-`define X_OFFSET_SIZE 10
-`define Y_OFFSET_SIZE 10
-`define X_OFFSET_ADDR 'h0c
-`define Y_OFFSET_ADDR 'h0d
-
 // Primary control registers.
 
 // Access to registers is asynchronous.  It is only controlled by the memory bus
 // signals, and not by the system clock.
+
+`include "registers.vh"
 
 module Registers(reset, en, rd, wr, be, addr, data, values);
   parameter ADDR_WIDTH=8;
