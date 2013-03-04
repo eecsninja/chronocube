@@ -28,7 +28,7 @@ module CC_DFlipFlop(clk, en, reset, d, q);
 
   reg [WIDTH-1:0] q;
 
-  always @ (posedge clk or reset)
+  always @ (posedge clk or posedge reset)
   if (reset)
     q <= 0;
   else if (en)
@@ -49,7 +49,7 @@ module CC_DLatch(en, d, q);
   assign q = en ? d : reg_out;
 endmodule
 
-// CC_Bidirectional I/O pin.
+// Bidirectional I/O pin.
 module CC_Bidir(sel_in, io, in, out);
   parameter WIDTH=1;
   input sel_in;
@@ -93,7 +93,7 @@ module CC_Decoder(in, out);
   generate
     for (i = 0; i < OUT_WIDTH; i = i + 1)
     begin: SELECT
-      assign out[i] = (i[IN_WIDTH-1:0] == in) ? 1'b1 : 1'b0;
+      assign out[i] = (i == in) ? 1'b1 : 1'b0;
     end
   endgenerate
 endmodule
