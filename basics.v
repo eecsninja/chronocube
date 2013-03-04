@@ -18,19 +18,21 @@
 // A library of various basic logic elements.
 
 // D flip-flop.
-module CC_DFlipFlop(clk, en, d, q);
+module CC_DFlipFlop(clk, en, reset, d, q);
   parameter WIDTH=1;
   input clk;
   input en;
+  input reset;
   input [WIDTH-1:0] d;
   output [WIDTH-1:0] q;
 
   reg [WIDTH-1:0] q;
 
-  always @ (posedge clk)
-  if (en) begin
+  always @ (posedge clk or reset)
+  if (reset)
+    q <= 0;
+  else if (en)
     q <= d;
-  end
 endmodule
 
 // D-type Latch.
