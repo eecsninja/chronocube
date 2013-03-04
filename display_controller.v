@@ -66,12 +66,12 @@ module DisplayController(
 
   function get_hsync;
   input [HCOUNT_WIDTH-1:0] h_pos;
-    get_hsync = (h_pos < 96) ? 0 : 1;
+    get_hsync = (h_pos < 96) ? 1'b0 : 1'b1;
   endfunction
 
   function get_vsync;
   input [VCOUNT_WIDTH-1:0] v_pos;
-    get_vsync = (v_pos < 2) ? 0 : 1;
+    get_vsync = (v_pos < 2) ? 1'b0 : 1'b1;
   endfunction
 
   function get_hblank;

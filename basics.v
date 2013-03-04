@@ -57,8 +57,9 @@ module CC_Bidir(sel_in, io, in, out);
   output [WIDTH-1:0] in;
   input [WIDTH-1:0] out;
 
-  assign in = sel_in ? io : 'bz;
-  assign io = sel_in ? 'bz : out;
+  assign in = sel_in ? io : {WIDTH{1'bz}};
+  assign io = sel_in ? {WIDTH{1'bz}} : out;
+
 endmodule
 
 // Double D flip-flop with a 2:1 multiplexed output.
