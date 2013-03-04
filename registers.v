@@ -16,6 +16,20 @@
 // along with ChronoCube.  If not, see <http://www.gnu.org/licenses/>.
 
 
+// Register sizes and addresses.
+`define MAIN_CTRL_SIZE 5
+`define MAIN_CTRL_ADDR 'h00
+
+`define X_POS_SIZE 10
+`define Y_POS_SIZE 10
+`define X_POS_ADDR 'h08
+`define Y_POS_ADDR 'h09
+
+`define X_OFFSET_SIZE 10
+`define Y_OFFSET_SIZE 10
+`define X_OFFSET_ADDR 'h0c
+`define Y_OFFSET_ADDR 'h0d
+
 // Primary control registers.
 
 // Access to registers is asynchronous.  It is only controlled by the memory bus
@@ -33,7 +47,7 @@ module Registers(reset, en, rd, wr, be, addr, data, values);
   input [ADDR_WIDTH-1:0] addr;    // Address bus
   inout [DATA_WIDTH-1:0] data;    // Data bus
 
-  inout [1023:0] values;
+  inout [1023:0] values;  // Register values to/from the rest of the system
 
   wire byte_lo_en = be[0];
   wire byte_hi_en = be[1];
@@ -49,61 +63,55 @@ module Registers(reset, en, rd, wr, be, addr, data, values);
   //  1 Enable MPU VRAM access
   //  2 Video mode [2]
   //  4 Take screenshot
-  parameter MAIN_CTRL_SIZE=5;
-  parameter MAIN_CTRL_ADDR='h00;
-  wire [MAIN_CTRL_SIZE-1:0] main_ctrl_value;
-  CC_DFlipFlop #(MAIN_CTRL_SIZE)
+  wire [`MAIN_CTRL_SIZE-1:0] main_ctrl_value;
+  CC_DFlipFlop #(`MAIN_CTRL_SIZE)
       main_ctrl_lo(.clk(~wr),
-                   .en(en & ~rd & byte_lo_en & reg_select[MAIN_CTRL_ADDR]),
+                   .en(en & ~rd & byte_lo_en & reg_select[`MAIN_CTRL_ADDR]),
                    .reset(reset),
                    .d(data_lo),
                    .q(main_ctrl_value));
 
   // X_POS, Y_POS: display refresh coordinates
   // Read-only, not stored in register file.
-  parameter X_POS_SIZE=10;
-  parameter Y_POS_SIZE=10;
-  parameter X_POS_ADDR='h08;
-  parameter Y_POS_ADDR='h09;
-  wire [X_POS_SIZE-1:0] x_pos_value;
-  wire [Y_POS_SIZE-1:0] y_pos_value;
-  assign x_pos_value = values[DATA_WIDTH * X_POS_ADDR + X_POS_SIZE - 1:
-                              DATA_WIDTH * X_POS_ADDR];
-  assign y_pos_value = values[DATA_WIDTH * Y_POS_ADDR + Y_POS_SIZE - 1:
-                              DATA_WIDTH * Y_POS_ADDR];
+  wire [`X_POS_SIZE-1:0] x_pos_value;
+  wire [`Y_POS_SIZE-1:0] y_pos_value;
+  assign x_pos_value = values[DATA_WIDTH * `X_POS_ADDR + `X_POS_SIZE - 1:
+                              DATA_WIDTH * `X_POS_ADDR];
+  assign y_pos_value = values[DATA_WIDTH * `Y_POS_ADDR + `Y_POS_SIZE - 1:
+                              DATA_WIDTH * `Y_POS_ADDR];
 
   // X_OFFSET, Y_OFFSET: display offset
-  parameter X_OFFSET_SIZE=10;
-  parameter Y_OFFSET_SIZE=10;
-  parameter X_OFFSET_ADDR='h0c;
-  parameter Y_OFFSET_ADDR='h0d;
-  wire [X_OFFSET_SIZE-1:0] x_offset_value;
-  wire [Y_OFFSET_SIZE-1:0] y_offset_value;
+  wire [`X_OFFSET_SIZE-1:0] x_offset_value;
+  wire [`Y_OFFSET_SIZE-1:0] y_offset_value;
   CC_DFlipFlop #(8)
       x_offset_lo(.clk(~wr),
-                  .en(en & ~rd & byte_lo_en & reg_select[X_OFFSET_ADDR]),
+                  .en(en & ~rd & byte_lo_en & reg_select[`X_OFFSET_ADDR]),
                   .reset(reset),
                   .d(data_lo),
                   .q(x_offset_value[7:0]));
-  CC_DFlipFlop #(X_OFFSET_SIZE-8)
+  CC_DFlipFlop #(`X_OFFSET_SIZE-8)
       x_offset_hi(.clk(~wr),
-                  .en(en & ~rd & byte_hi_en & reg_select[X_OFFSET_ADDR]),
+                  .en(en & ~rd & byte_hi_en & reg_select[`X_OFFSET_ADDR]),
                   .reset(reset),
                   .d(data_hi),
-                  .q(x_offset_value[X_OFFSET_SIZE-1:8]));
+                  .q(x_offset_value[`X_OFFSET_SIZE-1:8]));
+  assign values[DATA_WIDTH * `X_OFFSET_ADDR + `X_OFFSET_SIZE - 1:
+                DATA_WIDTH * `X_OFFSET_ADDR] = x_offset_value;
 
   CC_DFlipFlop #(8)
       y_offset_lo(.clk(~wr),
-                  .en(en & ~rd & byte_lo_en & reg_select[Y_OFFSET_ADDR]),
+                  .en(en & ~rd & byte_lo_en & reg_select[`Y_OFFSET_ADDR]),
                   .reset(reset),
                   .d(data_lo),
                   .q(y_offset_value[7:0]));
-  CC_DFlipFlop #(Y_OFFSET_SIZE-8)
+  CC_DFlipFlop #(`Y_OFFSET_SIZE-8)
       y_offset_hi(.clk(~wr),
-                  .en(en & ~rd & byte_hi_en & reg_select[Y_OFFSET_ADDR]),
+                  .en(en & ~rd & byte_hi_en & reg_select[`Y_OFFSET_ADDR]),
                   .reset(reset),
                   .d(data_hi),
-                  .q(y_offset_value[Y_OFFSET_SIZE-1:8]));
+                  .q(y_offset_value[`Y_OFFSET_SIZE-1:8]));
+  assign values[DATA_WIDTH * `Y_OFFSET_ADDR + `Y_OFFSET_SIZE - 1:
+                DATA_WIDTH * `Y_OFFSET_ADDR] = y_offset_value;
 
   // Logic for reading the registers.
   reg [DATA_WIDTH-1:0] data_out;
@@ -115,11 +123,11 @@ module Registers(reset, en, rd, wr, be, addr, data, values);
             x_offset_value or y_offset_value)
   begin
     case(addr)
-    MAIN_CTRL_ADDR: data_out <= main_ctrl_value;
-    X_POS_ADDR:     data_out <= x_pos_value;
-    Y_POS_ADDR:     data_out <= y_pos_value;
-    X_OFFSET_ADDR:  data_out <= x_offset_value;
-    Y_OFFSET_ADDR:  data_out <= y_offset_value;
+    `MAIN_CTRL_ADDR: data_out <= main_ctrl_value;
+    `X_POS_ADDR:     data_out <= x_pos_value;
+    `Y_POS_ADDR:     data_out <= y_pos_value;
+    `X_OFFSET_ADDR:  data_out <= x_offset_value;
+    `Y_OFFSET_ADDR:  data_out <= y_offset_value;
     default:        data_out <= {{DATA_WIDTH} {1'b0}};
     endcase
   end
