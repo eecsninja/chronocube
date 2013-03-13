@@ -35,6 +35,39 @@ module CC_DFlipFlop(clk, en, reset, d, q);
     q <= d;
 endmodule
 
+// Chain of D flip-flops.
+module CC_Delay(clk, reset, d, q);
+  parameter WIDTH=1;
+  parameter DELAY=1;
+
+  input clk;
+  input reset;
+  input [WIDTH-1:0] d;
+  output [WIDTH-1:0] q;
+
+  wire [(WIDTH*DELAY)-1:0] reg_inputs;
+  wire [(WIDTH*DELAY)-1:0] reg_outputs;
+
+  genvar i;
+  generate
+    for (i = 0; i < DELAY; i = i + 1)
+    begin: DFF_CHAIN
+      CC_DFlipFlop #(WIDTH) chain_reg(.clk(clk),
+                                      .en(1),
+                                      .reset(reset),
+                                      .d(reg_inputs[(i+1)*WIDTH-1:i*WIDTH]),
+                                      .q(reg_outputs[(i+1)*WIDTH-1:i*WIDTH]));
+      if (i < DELAY - 1) begin
+        assign reg_inputs[(i+2)*WIDTH-1:(i+1)*WIDTH] =
+            reg_outputs[(i+1)*WIDTH-1:i*WIDTH];
+      end
+    end
+  endgenerate
+  assign q = reg_outputs[(DELAY*WIDTH)-1:(DELAY-1)*WIDTH];
+  assign reg_inputs[WIDTH-1:0] = d;
+
+endmodule
+
 // D-type Latch.
 module CC_DLatch(en, d, q);
   parameter WIDTH=1;

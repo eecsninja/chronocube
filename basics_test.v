@@ -49,6 +49,38 @@ module RegLatchTest;
 
 endmodule
 
+module RegDelayTest;
+  // Inputs
+  reg clk;
+  reg reset;
+  reg [3:0] data;
+
+  // Outputs
+  wire [3:0] out1;
+  wire [3:0] out2;
+  wire [3:0] out3;
+
+  // Test different delays.
+  CC_Delay #(.WIDTH(4), .DELAY(1)) delay1(clk, reset, data, out1);
+  CC_Delay #(.WIDTH(4), .DELAY(2)) delay2(clk, reset, data, out2);
+  CC_Delay #(.WIDTH(4), .DELAY(3)) delay3(clk, reset, data, out3);
+
+  initial begin
+    clk = 0;
+    reset = 1;
+    data = 0;
+
+    #3 reset = 0;
+  end
+
+  always
+    #1 clk = ~clk;
+
+  always
+    #2 data = data + 1;
+
+endmodule
+
 
 module CC_BidirTest;
   reg sel_in;
