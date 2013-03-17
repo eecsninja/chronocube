@@ -47,6 +47,13 @@ static struct {
   uint16_t num_sprites;
 } cc;
 
+// Used for rendering with SDL.
+static struct {
+  SDL_Surface* screen;        // The video screen.
+  SDL_Surface* vram;          // VRAM with image data.
+  SDL_Surface** tile_layers;  // Surfaces for drawing tile layers.
+} renderer;
+
 void CC_Init() {
   int i;
 
@@ -69,10 +76,14 @@ void CC_Init() {
   cc.blanked = 0;
   cc.scroll.x = 0;
   cc.scroll.y = 0;
+
+  CC_RendererInit();
 }
 
 void CC_Cleanup() {
   int i;
+
+  CC_RendererCleanup();
 
   free(cc.vram);
 
@@ -127,4 +138,93 @@ CCTileLayer* CC_GetTileLayer(uint8_t index) {
 CCSprite* CC_GetSprite(uint16_t index) {
   assert(index < cc.num_sprites);
   return &cc.sprites[index];
+}
+
+void CC_RendererInit() {
+  int i;
+  uint32_t rmask, gmask, bmask, amask;
+
+  assert(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == 0);
+
+  renderer.screen =
+      SDL_SetVideoMode (SCREEN_WIDTH, SCREEN_HEIGHT, 32, SDL_HWSURFACE);
+  assert(renderer.screen);
+  rmask = renderer.screen->format->Rmask;
+  gmask = renderer.screen->format->Gmask;
+  bmask = renderer.screen->format->Bmask;
+  amask = renderer.screen->format->Amask;
+
+  renderer.vram = SDL_CreateRGBSurfaceFrom(
+      cc.vram,
+      VRAM_WIDTH,
+      VRAM_HEIGHT,
+      8,              // TODO: make this a #define
+      VRAM_WIDTH,
+      rmask, gmask, bmask, amask);
+  assert(renderer.vram);
+
+  renderer.tile_layers = calloc(sizeof(SDL_Surface*), cc.num_tile_layers);
+  for (i = 0; i < cc.num_tile_layers; ++i) {
+    renderer.tile_layers[i] = SDL_CreateRGBSurface(
+        SDL_HWSURFACE | SDL_SRCALPHA | SDL_SRCCOLORKEY,
+        TILE_LAYER_WIDTH,
+        TILE_LAYER_HEIGHT,
+        renderer.screen->format->BitsPerPixel,
+        rmask, gmask, bmask, amask);
+    assert(renderer.tile_layers[i]);
+  }
+}
+
+void CC_RendererCleanup() {
+  int i;
+  for (i = 0; i < cc.num_tile_layers; ++i)
+    SDL_FreeSurface(renderer.tile_layers[i]);
+  SDL_FreeSurface(renderer.vram);
+  SDL_Quit();
+}
+
+void CC_RendererDraw() {
+  int i;
+  SDL_Rect src;
+  src.w = TILE_WIDTH;
+  src.h = TILE_HEIGHT;
+  SDL_Rect dst;
+
+  // Clear the screen.
+  SDL_FillRect(renderer.screen, NULL, 0);
+
+  // TODO: implement scrolling and alpha.
+  for (i = 0; i < NUM_TILE_LAYERS; ++i) {
+    int tile_index = 0;
+    if (!cc.tile_layers[i].enabled)
+      continue;
+
+    // Set the rendering palette for this layer.
+    const CCPalette palette = cc.palettes[cc.tile_layers[i].palette];
+    SDL_SetColors(renderer.vram,
+                  (SDL_Color*)palette.data,
+                  0,
+                  NUM_COLORS_PER_PALETTE);
+
+    // Render tiles onto the tile layer surface.
+    SDL_Surface* layer = renderer.tile_layers[i];
+    for (dst.y = 0; dst.y < TILE_LAYER_HEIGHT; dst.y += TILE_HEIGHT) {
+      for (dst.x = 0; dst.x < TILE_LAYER_WIDTH; dst.x += TILE_WIDTH) {
+        uint16_t tile_value = cc.tile_layers[i].tiles[tile_index];
+        src.x = tile_value % (VRAM_WIDTH / TILE_WIDTH) * TILE_WIDTH;
+        src.y = tile_value / (VRAM_WIDTH / TILE_WIDTH) * TILE_HEIGHT;
+        SDL_BlitSurface(renderer.vram, &src, layer, &dst);
+        ++tile_index;
+      }
+    }
+
+    // Render the tile layer surface onto the screen.
+    SDL_Rect screen_dst;
+    screen_dst.x = cc.tile_layers[i].x;
+    screen_dst.y = cc.tile_layers[i].y;
+    SDL_BlitSurface(layer, NULL, renderer.screen, &screen_dst);
+  }
+  // TODO: draw sprites.
+
+  SDL_Flip(renderer.screen);
 }

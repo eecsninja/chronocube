@@ -51,4 +51,16 @@ void CC_SetScrollOffset(uint16_t x, uint16_t y);
 CCTileLayer* CC_GetTileLayer(uint8_t index);
 CCSprite* CC_GetSprite(uint16_t index);
 
+// These are for the emulator renderer.
+// TODO: put in separate file.
+
+// Initialize renderer resources.
+void CC_RendererInit();
+
+// Free renderer resources.
+void CC_RendererCleanup();
+
+// Main ChronoCube emulator function.  Draws to screen.
+void CC_RendererDraw();
+
 #endif  // _CC_CORE_H_
