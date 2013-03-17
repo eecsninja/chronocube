@@ -30,8 +30,8 @@ static struct {
   uint8_t* vram;
 
   struct {
-    uint8_t x;
-    uint8_t y;
+    uint16_t x;
+    uint16_t y;
   } scroll;
 
   uint8_t enabled;
@@ -220,8 +220,30 @@ void CC_RendererDraw() {
 
     // Render the tile layer surface onto the screen.
     SDL_Rect screen_dst;
-    screen_dst.x = cc.tile_layers[i].x;
-    screen_dst.y = cc.tile_layers[i].y;
+    screen_dst.x = cc.tile_layers[i].x - cc.scroll.x;
+    screen_dst.y = cc.tile_layers[i].y - cc.scroll.y;
+
+    // Handle wrap-around.
+
+    // Wrap horizontally.
+    if (screen_dst.x + TILE_LAYER_WIDTH < SCREEN_WIDTH) {
+      SDL_Rect screen_dst_wrap_x = screen_dst;
+      screen_dst_wrap_x.x += TILE_LAYER_WIDTH;
+      SDL_BlitSurface(layer, NULL, renderer.screen, &screen_dst_wrap_x);
+    }
+    // Wrap vertically.
+    if (screen_dst.y + TILE_LAYER_HEIGHT < SCREEN_HEIGHT) {
+      SDL_Rect screen_dst_wrap_y = screen_dst;
+      screen_dst_wrap_y.y += TILE_LAYER_WIDTH;
+
+      // Wrap diagonally.
+      if (screen_dst.x + TILE_LAYER_WIDTH < SCREEN_WIDTH) {
+        SDL_Rect screen_dst_wrap_xy = screen_dst_wrap_y;
+        screen_dst_wrap_xy.x += TILE_LAYER_WIDTH;
+        SDL_BlitSurface(layer, NULL, renderer.screen, &screen_dst_wrap_xy);
+      }
+      SDL_BlitSurface(layer, NULL, renderer.screen, &screen_dst_wrap_y);
+    }
     SDL_BlitSurface(layer, NULL, renderer.screen, &screen_dst);
   }
   // TODO: draw sprites.
