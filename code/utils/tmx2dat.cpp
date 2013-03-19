@@ -39,6 +39,23 @@ struct TileInfo {
   bool dflip:1;
 };
 
+// Rounds a value up to the next power of two, if it is not already one.  e.g:
+//     0 ->  1
+//     1 ->  1
+//     2 ->  2
+//     3 ->  4
+//     4 ->  4
+//     5 ->  8
+//    10 -> 16
+//    23 -> 32
+unsigned int round_up_to_power_of_2(unsigned int value) {
+    unsigned int i;
+    value -= 1;
+    for (i = 0; value > 0; ++i)
+        value >>= 1;
+    return 1 << i;
+}
+
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     printf("Missing input file argument.\n");
@@ -71,11 +88,13 @@ int main(int argc, char* argv[]) {
   for (int i = 0; i < map.GetNumLayers(); ++i) {
     // Get a layer.
     const Tmx::Layer& layer = *map.GetLayer(i);
+    int layer_width = layer.GetWidth();
+    int layer_height = layer.GetHeight();
 
-    layers[i].resize(layer.GetWidth() * layer.GetHeight());
+    layers[i].resize(layer_width * layer_height);
     int j = 0;
-    for (int y = 0; y < layer.GetHeight(); ++y) {
-      for (int x = 0; x < layer.GetWidth(); ++x) {
+    for (int y = 0; y < layer_height; ++y) {
+      for (int x = 0; x < layer_width; ++x) {
         TileInfo& info = layers[i][j++];
         info.hflip = layer.IsTileFlippedHorizontally(x, y);
         info.vflip = layer.IsTileFlippedVertically(x, y);
@@ -87,19 +106,27 @@ int main(int argc, char* argv[]) {
     }
 
     // Write layer data to file.
+    // Make sure to align to a width that is a power of 2.
+    unsigned int aligned_layer_width = round_up_to_power_of_2(layer_width);
     char map_filename[1024];
     sprintf(map_filename, "%s.layer%0d.dat", tmx_filename, i);
     FILE *layer_file = fopen(map_filename, "wb");
     unsigned int offset;
-    for (offset = 0; offset < layers[i].size(); ++offset)
-      fwrite(&layers[i][offset], sizeof(uint16_t), 1, layer_file);
+    std::vector<uint16_t> layer_line;
+    layer_line.resize(aligned_layer_width, 0);
+    for (offset = 0; offset < layers[i].size(); offset += layer_width) {
+      memcpy(&layer_line[0],
+             &layers[i][offset],
+             sizeof(uint16_t) * layer_width);
+      fwrite(&layer_line[0], sizeof(uint16_t), aligned_layer_width, layer_file);
+    }
     fclose(layer_file);
     printf("Wrote layer %d data to %s\n", i, map_filename);
 
     // Write layer info to resource file.
     fprintf(res_file, "[%s]\n", map_filename);
-    fprintf(res_file, "width=%u\n", layer.GetWidth());
-    fprintf(res_file, "height=%u\n", layer.GetHeight());
+    fprintf(res_file, "width=%u\n", aligned_layer_width);
+    fprintf(res_file, "height=%u\n", layer_height);
     fprintf(res_file, "\n");
   }
   printf("Wrote resource info to %s\n", res_filename);
