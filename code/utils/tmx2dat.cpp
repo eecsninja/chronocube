@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
   }
 
   Tmx::Map map;
-  const char* tmx_filename = "./example/example.tmx";
+  const char* tmx_filename = argv[1];
   map.ParseFile(tmx_filename);
 
   if (map.HasError()) {
