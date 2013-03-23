@@ -32,24 +32,30 @@
 `define X_OFFSET_ADDR 'h0c
 `define Y_OFFSET_ADDR 'h0d
 
+`define MAIN_REG_ADDR_SPACE 'h100
+
+`define REGISTER_RW 0         // Read-write register.
+`define REGISTER_RO 1         // Read-only register.
+
 // This function returns the register size in bits, given a register address.
 // A zero size means there is no register at that address.
-function register_size;
+function register_info;
   input [31:0] address;
 
-  integer result;
+  integer width, type;
   begin
     case (address)
-    `MAIN_CTRL_ADDR:          result = 5;
-    `X_POS_ADDR:              result = 10;
-    `Y_POS_ADDR:              result = 10;
-    `X_OFFSET_ADDR:           result = 10;
-    `Y_OFFSET_ADDR:           result = 10;
-    default:                  result = 0;
+    `MAIN_CTRL_ADDR:  begin   width = 5;   type = `REGISTER_RW;  end
+    `X_POS_ADDR:      begin   width = 10;  type = `REGISTER_RO;  end
+    `Y_POS_ADDR:      begin   width = 10;  type = `REGISTER_RO;  end
+    `X_OFFSET_ADDR:   begin   width = 10;  type = `REGISTER_RW;  end
+    `Y_OFFSET_ADDR:   begin   width = 10;  type = `REGISTER_RW;  end
+    default:          begin   width = 0;   type =            0;  end
     endcase
 
-    register_size = result;
+    register_info = width | (type << 16);
   end
+
 endfunction
 
 `endif  // _REGISTERS_VH_
