@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
 
 #include <vector>
 
@@ -38,6 +39,8 @@ struct TileInfo {
   bool vflip:1;
   bool dflip:1;
 };
+
+namespace {
 
 // Rounds a value up to the next power of two, if it is not already one.  e.g:
 //     0 ->  1
@@ -56,15 +59,39 @@ unsigned int round_up_to_power_of_2(unsigned int value) {
     return 1 << i;
 }
 
+void PrintUsage() {
+  printf("Usage:\n");
+  printf("  tmx2dat -a [input_file].\n");
+  printf("Options:\n");
+  printf("  -a       Align the width to a power of 2.\n");
+  printf("           Default: false\n");
+  printf("\n");
+}
+
+}  // namespace
+
 int main(int argc, char* argv[]) {
   if (argc < 2) {
-    printf("Missing input file argument.\n");
-    printf("Usage: %s [TMX file]\n", argv[0]);
+    PrintUsage();
     return 0;
   }
 
+  int c;
+  bool do_align = false;
+  while ((c = getopt(argc, argv, "a")) != -1) {
+    switch(c) {
+    case 'a':
+      do_align = true;
+      break;
+    default:
+      fprintf(stderr, "Unrecognized option: -%c\n", c);
+      return 1;
+      break;
+    }
+  }
+
   Tmx::Map map;
-  const char* tmx_filename = argv[1];
+  const char* tmx_filename = argv[optind];
   map.ParseFile(tmx_filename);
 
   if (map.HasError()) {
@@ -81,7 +108,7 @@ int main(int argc, char* argv[]) {
   FILE* res_file = fopen(res_filename, "w");
   assert(res_file);
 
-  std::vector<std::vector<TileInfo> > layers;
+  std::vector<std::vector<uint16_t> > layers;
   layers.resize(map.GetNumLayers());
 
   // Iterate through the layers.
@@ -90,12 +117,18 @@ int main(int argc, char* argv[]) {
     const Tmx::Layer& layer = *map.GetLayer(i);
     int layer_width = layer.GetWidth();
     int layer_height = layer.GetHeight();
+    if (layer_width <= 0 || layer_height <= 0) {
+      fprintf(stderr, "Invalid layer dimensions %d x %d.\n", layer_width,
+              layer_height);
+      fclose(res_file);
+      return 2;
+    }
 
     layers[i].resize(layer_width * layer_height);
     int j = 0;
     for (int y = 0; y < layer_height; ++y) {
       for (int x = 0; x < layer_width; ++x) {
-        TileInfo& info = layers[i][j++];
+        TileInfo& info = *((TileInfo*)&layers[i][j++]);
         info.hflip = layer.IsTileFlippedHorizontally(x, y);
         info.vflip = layer.IsTileFlippedVertically(x, y);
         info.dflip = layer.IsTileFlippedDiagonally(x, y);
@@ -107,17 +140,17 @@ int main(int argc, char* argv[]) {
 
     // Write layer data to file.
     // Make sure to align to a width that is a power of 2.
-    unsigned int aligned_layer_width = round_up_to_power_of_2(layer_width);
+    unsigned int aligned_layer_width = do_align ?
+                                       round_up_to_power_of_2(layer_width) :
+                                       layer_width;
     char map_filename[1024];
     sprintf(map_filename, "%s.layer%0d.dat", tmx_filename, i);
     FILE *layer_file = fopen(map_filename, "wb");
     unsigned int offset;
     std::vector<uint16_t> layer_line;
-    layer_line.resize(aligned_layer_width, 0);
     for (offset = 0; offset < layers[i].size(); offset += layer_width) {
-      memcpy(&layer_line[0],
-             &layers[i][offset],
-             sizeof(uint16_t) * layer_width);
+      layer_line.assign(layers[i].begin(), layers[i].begin() + layer_width);
+      layer_line.resize(aligned_layer_width, 0);
       fwrite(&layer_line[0], sizeof(uint16_t), aligned_layer_width, layer_file);
     }
     fclose(layer_file);
