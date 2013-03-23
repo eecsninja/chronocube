@@ -23,6 +23,39 @@
 
 `include "registers.vh"
 
+module Register(reset, clk, en, be, d, q);
+  parameter WIDTH=16;         // Number of bits in the register.
+  parameter BUS_WIDTH=16;     // Width of data bus used to access register.
+
+  input clk;        // System clock
+  input reset;      // System reset
+  input en;         // Access enable
+  input [1:0] be;   // Byte enable
+
+  input [BUS_WIDTH-1:0] d;      // Input and output ports.
+  output [BUS_WIDTH-1:0] q;
+
+  wire byte_lo_en = be[0];
+  wire byte_hi_en = be[1];
+
+  // Set up low byte.
+  genvar i;
+  generate
+    for (i = 0; i < BUS_WIDTH; i = i + 1) begin: REG
+      if (i < WIDTH) begin
+        CC_DFlipFlop dff(.clk(clk),
+                         .reset(reset),
+                         .en(en & ((i < 8) ? byte_lo_en : byte_hi_en)),
+                         .d(d[i]),
+                         .q(q[i]));
+      end else begin
+        assign q[i] = 1'b0;
+      end
+    end
+  endgenerate
+
+endmodule
+
 module Registers(reset, en, rd, wr, be, addr, data, values);
   parameter ADDR_WIDTH=8;
   parameter DATA_WIDTH=16;
@@ -52,12 +85,13 @@ module Registers(reset, en, rd, wr, be, addr, data, values);
   //  2 Video mode [2]
   //  4 Take screenshot
   wire [`MAIN_CTRL_SIZE-1:0] main_ctrl_value;
-  CC_DFlipFlop #(`MAIN_CTRL_SIZE)
-      main_ctrl_lo(.clk(~wr),
-                   .en(en & ~rd & byte_lo_en & reg_select[`MAIN_CTRL_ADDR]),
-                   .reset(reset),
-                   .d(data_lo),
-                   .q(main_ctrl_value));
+  Register #(`MAIN_CTRL_SIZE)
+      main_ctrl(.clk(~wr),
+                .en(en & ~rd & reg_select[`MAIN_CTRL_ADDR]),
+                .reset(reset),
+                .be(be),
+                .d(data),
+                .q(main_ctrl_value));
 
   // X_POS, Y_POS: display refresh coordinates
   // Read-only, not stored in register file.
@@ -71,33 +105,24 @@ module Registers(reset, en, rd, wr, be, addr, data, values);
   // X_OFFSET, Y_OFFSET: display offset
   wire [`X_OFFSET_SIZE-1:0] x_offset_value;
   wire [`Y_OFFSET_SIZE-1:0] y_offset_value;
-  CC_DFlipFlop #(8)
-      x_offset_lo(.clk(~wr),
-                  .en(en & ~rd & byte_lo_en & reg_select[`X_OFFSET_ADDR]),
-                  .reset(reset),
-                  .d(data_lo),
-                  .q(x_offset_value[7:0]));
-  CC_DFlipFlop #(`X_OFFSET_SIZE-8)
-      x_offset_hi(.clk(~wr),
-                  .en(en & ~rd & byte_hi_en & reg_select[`X_OFFSET_ADDR]),
-                  .reset(reset),
-                  .d(data_hi),
-                  .q(x_offset_value[`X_OFFSET_SIZE-1:8]));
+  Register #(`X_OFFSET_SIZE)
+      x_offset(.clk(~wr),
+               .en(en & ~rd & reg_select[`X_OFFSET_ADDR]),
+               .reset(reset),
+               .be(be),
+               .d(data),
+               .q(x_offset_value));
+
   assign values[DATA_WIDTH * `X_OFFSET_ADDR + `X_OFFSET_SIZE - 1:
                 DATA_WIDTH * `X_OFFSET_ADDR] = x_offset_value;
 
-  CC_DFlipFlop #(8)
-      y_offset_lo(.clk(~wr),
-                  .en(en & ~rd & byte_lo_en & reg_select[`Y_OFFSET_ADDR]),
-                  .reset(reset),
-                  .d(data_lo),
-                  .q(y_offset_value[7:0]));
-  CC_DFlipFlop #(`Y_OFFSET_SIZE-8)
-      y_offset_hi(.clk(~wr),
-                  .en(en & ~rd & byte_hi_en & reg_select[`Y_OFFSET_ADDR]),
-                  .reset(reset),
-                  .d(data_hi),
-                  .q(y_offset_value[`Y_OFFSET_SIZE-1:8]));
+  Register #(`Y_OFFSET_SIZE)
+      y_offset(.clk(~wr),
+               .en(en & ~rd & reg_select[`Y_OFFSET_ADDR]),
+               .reset(reset),
+               .be(be),
+               .d(data),
+               .q(y_offset_value));
   assign values[DATA_WIDTH * `Y_OFFSET_ADDR + `Y_OFFSET_SIZE - 1:
                 DATA_WIDTH * `Y_OFFSET_ADDR] = y_offset_value;
 
