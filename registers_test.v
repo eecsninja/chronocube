@@ -55,6 +55,8 @@ module Registers_Test;
     #1 clk = ~clk;
 
   integer i;
+  integer stage = 0;
+
   initial begin
     clk = 0;
 
@@ -69,12 +71,14 @@ module Registers_Test;
     #5 reset = 1;
     #1 reset = 0;
 
-    #5 read_test();
+    #5 stage = 1;
+    #1 read_test();
 
     #1 addr = 'bx;
 
     // Test some writes
-    #5 write16(0, 'hdead);
+    #5 stage = 2;
+    #1 write16(0, 'hdead);
     #1 write16(2, 'hbeef);
     #1 write16(4, 'hcafe);
     #1 write16(8, 'hface);
@@ -88,11 +92,13 @@ module Registers_Test;
     #1 addr = 'bx;
 
     // Test some reads
-    #5 read_test();
+    #5 stage = 3;
+    #1 read_test();
 
     #1 addr = 'bx;
 
     // Test some byte writes
+    #5 stage = 4;
     for (i = 0; i < 15; i = i + 1)
     begin
       #1 write8(i * 2, 'h0000);
@@ -100,7 +106,8 @@ module Registers_Test;
     end
 
     // Test some reads
-    #5 read_test();
+    #5 stage = 5;
+    #1 read_test();
 
   end
 
