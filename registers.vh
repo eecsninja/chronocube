@@ -24,17 +24,32 @@
 
 `define REG_DATA_WIDTH 16
 
-`define MAIN_CTRL_SIZE 5
-`define MAIN_CTRL_ADDR 'h00
+`define MAIN_CTRL_ADDR 5
 
-`define X_POS_SIZE 10
-`define Y_POS_SIZE 10
 `define X_POS_ADDR 'h08
 `define Y_POS_ADDR 'h09
 
-`define X_OFFSET_SIZE 10
-`define Y_OFFSET_SIZE 10
 `define X_OFFSET_ADDR 'h0c
 `define Y_OFFSET_ADDR 'h0d
+
+// This function returns the register size in bits, given a register address.
+// A zero size means there is no register at that address.
+function register_size;
+  input [31:0] address;
+
+  integer result;
+  begin
+    case (address)
+    `MAIN_CTRL_ADDR:          result = 5;
+    `X_POS_ADDR:              result = 10;
+    `Y_POS_ADDR:              result = 10;
+    `X_OFFSET_ADDR:           result = 10;
+    `Y_OFFSET_ADDR:           result = 10;
+    default:                  result = 0;
+    endcase
+
+    register_size = result;
+  end
+endfunction
 
 `endif  // _REGISTERS_VH_

@@ -84,8 +84,8 @@ module Registers(reset, en, rd, wr, be, addr, data, values);
   //  1 Enable MPU VRAM access
   //  2 Video mode [2]
   //  4 Take screenshot
-  wire [`MAIN_CTRL_SIZE-1:0] main_ctrl_value;
-  Register #(`MAIN_CTRL_SIZE)
+  wire [`REG_DATA_WIDTH-1:0] main_ctrl_value;
+  Register #(register_size(`MAIN_CTRL_ADDR))
       main_ctrl(.clk(~wr),
                 .en(en & ~rd & reg_select[`MAIN_CTRL_ADDR]),
                 .reset(reset),
@@ -95,17 +95,19 @@ module Registers(reset, en, rd, wr, be, addr, data, values);
 
   // X_POS, Y_POS: display refresh coordinates
   // Read-only, not stored in register file.
-  wire [`X_POS_SIZE-1:0] x_pos_value;
-  wire [`Y_POS_SIZE-1:0] y_pos_value;
-  assign x_pos_value = values[DATA_WIDTH * `X_POS_ADDR + `X_POS_SIZE - 1:
+  wire [`REG_DATA_WIDTH-1:0] x_pos_value;
+  wire [`REG_DATA_WIDTH-1:0] y_pos_value;
+  assign x_pos_value = values[DATA_WIDTH * `X_POS_ADDR +
+                              register_size(`X_POS_ADDR) - 1:
                               DATA_WIDTH * `X_POS_ADDR];
-  assign y_pos_value = values[DATA_WIDTH * `Y_POS_ADDR + `Y_POS_SIZE - 1:
+  assign y_pos_value = values[DATA_WIDTH * `Y_POS_ADDR +
+                              register_size(`Y_POS_ADDR) - 1:
                               DATA_WIDTH * `Y_POS_ADDR];
 
   // X_OFFSET, Y_OFFSET: display offset
-  wire [`X_OFFSET_SIZE-1:0] x_offset_value;
-  wire [`Y_OFFSET_SIZE-1:0] y_offset_value;
-  Register #(`X_OFFSET_SIZE)
+  wire [`REG_DATA_WIDTH-1:0] x_offset_value;
+  wire [`REG_DATA_WIDTH-1:0] y_offset_value;
+  Register #(register_size(`X_OFFSET_ADDR))
       x_offset(.clk(~wr),
                .en(en & ~rd & reg_select[`X_OFFSET_ADDR]),
                .reset(reset),
@@ -113,17 +115,17 @@ module Registers(reset, en, rd, wr, be, addr, data, values);
                .d(data),
                .q(x_offset_value));
 
-  assign values[DATA_WIDTH * `X_OFFSET_ADDR + `X_OFFSET_SIZE - 1:
+  assign values[DATA_WIDTH * `X_OFFSET_ADDR + register_size(`X_OFFSET_ADDR) - 1:
                 DATA_WIDTH * `X_OFFSET_ADDR] = x_offset_value;
 
-  Register #(`Y_OFFSET_SIZE)
+  Register #(register_size(`Y_OFFSET_ADDR))
       y_offset(.clk(~wr),
                .en(en & ~rd & reg_select[`Y_OFFSET_ADDR]),
                .reset(reset),
                .be(be),
                .d(data),
                .q(y_offset_value));
-  assign values[DATA_WIDTH * `Y_OFFSET_ADDR + `Y_OFFSET_SIZE - 1:
+  assign values[DATA_WIDTH * `Y_OFFSET_ADDR + register_size(`Y_OFFSET_ADDR) - 1:
                 DATA_WIDTH * `Y_OFFSET_ADDR] = y_offset_value;
 
   // Logic for reading the registers.
