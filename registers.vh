@@ -22,20 +22,25 @@
 `ifndef _REGISTERS_VH_
 `define _REGISTERS_VH_
 
-`define REG_DATA_WIDTH 16
+`define REG_DATA_WIDTH         16
 
-`define MAIN_CTRL_ADDR 5
+`define ID                   'h00
+`define MEM_CTRL             'h01
 
-`define X_POS_ADDR 'h08
-`define Y_POS_ADDR 'h09
+`define OUTPUT_STATUS        'h08
+`define OUTPUT_CTRL          'h09
+`define COLOR_MODE           'h0a
+`define VIDEO_MODE           'h0b
 
-`define X_OFFSET_ADDR 'h0c
-`define Y_OFFSET_ADDR 'h0d
+`define SCAN_X               'h0c
+`define SCAN_Y               'h0d
+`define SCROLL_X             'h0e
+`define SCROLL_Y             'h0f
 
 `define MAIN_REG_ADDR_SPACE 'h100
 
-`define REGISTER_RW 0         // Read-write register.
-`define REGISTER_RO 1         // Read-only register.
+`define REGISTER_RW             0   // Read-write register.
+`define REGISTER_RO             1   // Read-only register.
 
 // This function returns the register size in bits, given a register address.
 // A zero size means there is no register at that address.
@@ -45,12 +50,20 @@ function register_info;
   integer width, type;
   begin
     case (address)
-    `MAIN_CTRL_ADDR:  begin   width = 5;   type = `REGISTER_RW;  end
-    `X_POS_ADDR:      begin   width = 10;  type = `REGISTER_RO;  end
-    `Y_POS_ADDR:      begin   width = 10;  type = `REGISTER_RO;  end
-    `X_OFFSET_ADDR:   begin   width = 10;  type = `REGISTER_RW;  end
-    `Y_OFFSET_ADDR:   begin   width = 10;  type = `REGISTER_RW;  end
-    default:          begin   width = 0;   type =            0;  end
+      `ID:            begin   width = 16;  type = `REGISTER_RO;  end
+      `MEM_CTRL:      begin   width = 16;  type = `REGISTER_RW;  end
+
+      `OUTPUT_STATUS: begin   width = 16;  type = `REGISTER_RO;  end
+      `OUTPUT_CTRL:   begin   width = 16;  type = `REGISTER_RW;  end
+      `COLOR_MODE:    begin   width = 16;  type = `REGISTER_RW;  end
+      `VIDEO_MODE:    begin   width = 16;  type = `REGISTER_RW;  end
+
+      `SCAN_X:        begin   width = 16;  type = `REGISTER_RO;  end
+      `SCAN_Y:        begin   width = 16;  type = `REGISTER_RO;  end
+      `SCROLL_X:      begin   width = 16;  type = `REGISTER_RW;  end
+      `SCROLL_Y:      begin   width = 16;  type = `REGISTER_RW;  end
+
+      default:        begin   width = 0;   type =            0;  end
     endcase
 
     register_info = width | (type << 16);
