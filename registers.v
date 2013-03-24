@@ -38,7 +38,6 @@ module Register(reset, clk, en, be, d, q);
   wire byte_lo_en = be[0];
   wire byte_hi_en = be[1];
 
-  // Set up low byte.
   genvar i;
   generate
     for (i = 0; i < BUS_WIDTH; i = i + 1) begin: REG
