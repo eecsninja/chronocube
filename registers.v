@@ -85,13 +85,22 @@ module Registers(reset, en, rd, wr, be, addr, data, values_in, values_out);
       localparam integer dir = register_info(i) >> 16;
       wire [DATA_WIDTH-1:0] data_in;
       wire [DATA_WIDTH-1:0] q;
-      Register #(16) register(.clk(~wr),
-                              .en(en & ~rd & (i == addr)),
-                              .reset(reset),
-                              .be(be),
-                              .d((dir == `REGISTER_RW) ? data : data_in),
-                              .q(q));
-
+      if (dir == `REGISTER_RW) begin
+        // TODO: use variable size.
+        Register #(16) register(.clk(~wr),
+                                .en(en & ~rd & (i == addr)),
+                                .reset(reset),
+                                .be(be),
+                                .d(data),
+                                .q(q));
+      end else if (dir == `REGISTER_RO) begin
+        Register #(16) register(.clk(clk),
+                                .en(1),
+                                .reset(reset),
+                                .be(3'b11),
+                                .d(data_in),
+                                .q(q));
+      end
       assign q_array[i] = q;
       assign data_in = values_in[DATA_WIDTH * (i + 1) - 1 : DATA_WIDTH * i];
       assign values_out[DATA_WIDTH * (i + 1) - 1 : DATA_WIDTH * i] = q;
