@@ -45,6 +45,8 @@
 // This function returns the register size in bits, given a register address.
 // A zero size means there is no register at that address.
 
+// This has been disabled because functions cannot be defined globally.
+/*
 function register_info;
   input [31:0] address;
 
@@ -71,5 +73,6 @@ function register_info;
   end
 
 endfunction
+*/
 
 `endif  // _REGISTERS_VH_
