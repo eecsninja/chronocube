@@ -44,29 +44,30 @@
 
 // This function returns the register size in bits, given a register address.
 // A zero size means there is no register at that address.
+
 function register_info;
   input [31:0] address;
 
-  integer width, type;
+  integer width, dir;
   begin
     case (address)
-      `ID:            begin   width = 16;  type = `REG_RO;  end
-      `MEM_CTRL:      begin   width = 16;  type = `REG_RW;  end
+      `ID:            begin   width = 16;  dir = `REG_RO;  end
+      `MEM_CTRL:      begin   width = 16;  dir = `REG_RW;  end
 
-      `OUTPUT_STATUS: begin   width = 16;  type = `REG_RO;  end
-      `OUTPUT_CTRL:   begin   width = 16;  type = `REG_RW;  end
-      `COLOR_MODE:    begin   width = 16;  type = `REG_RW;  end
-      `VIDEO_MODE:    begin   width = 16;  type = `REG_RW;  end
+      `OUTPUT_STATUS: begin   width = 16;  dir = `REG_RO;  end
+      `OUTPUT_CTRL:   begin   width = 16;  dir = `REG_RW;  end
+      `COLOR_MODE:    begin   width = 16;  dir = `REG_RW;  end
+      `VIDEO_MODE:    begin   width = 16;  dir = `REG_RW;  end
 
-      `SCAN_X:        begin   width = 16;  type = `REG_RO;  end
-      `SCAN_Y:        begin   width = 16;  type = `REG_RO;  end
-      `SCROLL_X:      begin   width = 16;  type = `REG_RW;  end
-      `SCROLL_Y:      begin   width = 16;  type = `REG_RW;  end
+      `SCAN_X:        begin   width = 16;  dir = `REG_RO;  end
+      `SCAN_Y:        begin   width = 16;  dir = `REG_RO;  end
+      `SCROLL_X:      begin   width = 16;  dir = `REG_RW;  end
+      `SCROLL_Y:      begin   width = 16;  dir = `REG_RW;  end
 
-      default:        begin   width = 0;   type =       0;  end
+      default:        begin   width = 0;   dir =       0;  end
     endcase
 
-    register_info = width | (type << 16);
+    register_info = width | (dir << 16);
   end
 
 endfunction
