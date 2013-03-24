@@ -56,7 +56,7 @@ endmodule
 module Registers(reset, en, rd, wr, be, addr, data, values_out);
   parameter ADDR_WIDTH=16;
   parameter DATA_WIDTH=16;
-  parameter NUM_REGS=256;
+  parameter NUM_REGS=(1 << ADDR_WIDTH);
 
   input reset;      // System reset
   input en;         // Access enable
