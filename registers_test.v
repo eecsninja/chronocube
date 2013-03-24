@@ -35,13 +35,9 @@ module Registers_Test;
   reg [ADDR_WIDTH-1:0] addr;
   reg [DATA_WIDTH-1:0] data_in;
   wire [DATA_WIDTH-1:0] data;
-/*
-  CC_Bidir #(DATA_WIDTH) bidir(.sel_in(en & wr),
-                               .io(data),
-                               .in(data_in));
-*/
+
   assign data = data_in;
-  Registers #(.ADDR_BUS_WIDTH(ADDR_WIDTH), .DATA_BUS_WIDTH(DATA_WIDTH))
+  Registers #(.ADDR_WIDTH(ADDR_WIDTH), .DATA_WIDTH(DATA_WIDTH))
       registers(.reset(reset),
                 .en(en),
                 .rd(rd),
