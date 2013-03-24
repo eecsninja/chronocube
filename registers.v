@@ -21,8 +21,6 @@
 // Access to registers is asynchronous.  It is only controlled by the memory bus
 // signals, and not by the system clock.
 
-`include "registers.vh"
-
 module Register(reset, clk, en, be, d, q);
   parameter WIDTH=16;         // Number of bits in the register.
   parameter BUS_WIDTH=16;     // Width of data bus used to access register.
@@ -55,9 +53,10 @@ module Register(reset, clk, en, be, d, q);
 
 endmodule
 
-module Registers(reset, en, rd, wr, be, addr, data, values_in, values_out);
-  parameter ADDR_WIDTH=8;
+module Registers(reset, en, rd, wr, be, addr, data, values_out);
+  parameter ADDR_WIDTH=16;
   parameter DATA_WIDTH=16;
+  parameter NUM_REGS=256;
 
   input reset;      // System reset
   input en;         // Access enable
@@ -67,10 +66,7 @@ module Registers(reset, en, rd, wr, be, addr, data, values_in, values_out);
   input [ADDR_WIDTH-1:0] addr;    // Address bus
   inout [DATA_WIDTH-1:0] data;    // Data bus
 
-  input [DATA_WIDTH * `MAIN_REG_ADDR_SPACE - 1 : 0] values_in;
-  output [DATA_WIDTH * `MAIN_REG_ADDR_SPACE - 1 : 0] values_out;
-
-  wire [DATA_WIDTH:0] q_array [`MAIN_REG_ADDR_SPACE - 1:0];
+  output [DATA_WIDTH * NUM_REGS - 1 : 0] values_out;
 
   wire [DATA_WIDTH-1:0] data_out;
   CC_Bidir #(DATA_WIDTH)
@@ -78,35 +74,22 @@ module Registers(reset, en, rd, wr, be, addr, data, values_in, values_out);
               .io(data),
               .out(data_out));
 
+  // Generate the registers.
+  wire [DATA_WIDTH-1:0] q_array [NUM_REGS - 1:0];
   genvar i;
   generate
-    for (i = 0; i < `MAIN_REG_ADDR_SPACE; i = i + 1) begin: REGS
-      localparam integer size = register_info(i) & 8'hfff;
-      localparam integer dir = register_info(i) >> 16;
-      wire [DATA_WIDTH-1:0] data_in;
-      wire [DATA_WIDTH-1:0] q;
-      if (dir == `REGISTER_RW) begin
-        // TODO: use variable size.
-        Register #(16) register(.clk(~wr),
-                                .en(en & ~rd & (i == addr)),
-                                .reset(reset),
-                                .be(be),
-                                .d(data),
-                                .q(q));
-      end else if (dir == `REGISTER_RO) begin
-        Register #(16) register(.clk(clk),
-                                .en(1),
-                                .reset(reset),
-                                .be(3'b11),
-                                .d(data_in),
-                                .q(q));
-      end
-      assign q_array[i] = q;
-      assign data_in = values_in[DATA_WIDTH * (i + 1) - 1 : DATA_WIDTH * i];
-      assign values_out[DATA_WIDTH * (i + 1) - 1 : DATA_WIDTH * i] = q;
+    for (i = 0; i < NUM_REGS; i = i + 1) begin: REGS
+      Register #(DATA_WIDTH) register(.clk(~wr),
+                                       .en(en & ~rd & (i == addr)),
+                                       .reset(reset),
+                                       .be(be),
+                                       .d(data),
+                                       .q(q_array[i]));
+      assign values_out[DATA_WIDTH * (i + 1) - 1 : DATA_WIDTH * i] = q_array[i];
     end
   endgenerate
 
+  // Memory bus data read.
   assign data_out = (rd & en & ~reset) ? q_array[addr] : {DATA_WIDTH {1'bz}};
 
 endmodule
