@@ -15,9 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with ChronoCube.  If not, see <http://www.gnu.org/licenses/>.
 
-
-// ChronoCube register sizes and addresses.
-
+// ChronoCube main register sizes and addresses.
 
 `ifndef _REGISTERS_VH_
 `define _REGISTERS_VH_
@@ -37,7 +35,8 @@
 `define SCROLL_X             'h0e
 `define SCROLL_Y             'h0f
 
-`define MAIN_REG_ADDR_SPACE 'h100
+`define MAIN_REG_ADDR_BASE  'h000   // Start of main regs.
+`define MAIN_REG_ADDR_LEN   'h100   // Length of main regs.
 
 `define REGISTER_RW             0   // Read-write register.
 `define REGISTER_RO             1   // Read-only register.
