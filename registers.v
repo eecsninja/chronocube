@@ -56,7 +56,7 @@ module Register(reset, clk, en, be, d, q);
 
 endmodule
 
-module Registers(reset, en, rd, wr, be, addr, data, values);
+module Registers(reset, en, rd, wr, be, addr, data, values_in, values_out);
   parameter ADDR_WIDTH=8;
   parameter DATA_WIDTH=16;
 
@@ -68,7 +68,8 @@ module Registers(reset, en, rd, wr, be, addr, data, values);
   input [ADDR_WIDTH-1:0] addr;    // Address bus
   inout [DATA_WIDTH-1:0] data;    // Data bus
 
-  input [DATA_WIDTH * `MAIN_REG_ADDR_SPACE - 1 : 0] values;
+  input [DATA_WIDTH * `MAIN_REG_ADDR_SPACE - 1 : 0] values_in;
+  output [DATA_WIDTH * `MAIN_REG_ADDR_SPACE - 1 : 0] values_out;
 
   wire [DATA_WIDTH:0] q_array [`MAIN_REG_ADDR_SPACE - 1:0];
 
@@ -93,8 +94,8 @@ module Registers(reset, en, rd, wr, be, addr, data, values);
                               .q(q));
 
       assign q_array[i] = q;
-      assign data_in = values[DATA_WIDTH * (i + 1) - 1 : DATA_WIDTH * i];
-
+      assign data_in = values_in[DATA_WIDTH * (i + 1) - 1 : DATA_WIDTH * i];
+      assign values_out[DATA_WIDTH * (i + 1) - 1 : DATA_WIDTH * i] = q;
     end
   endgenerate
 
