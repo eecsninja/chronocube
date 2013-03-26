@@ -77,7 +77,7 @@ module CC_DLatch(en, d, q);
 
   wire [WIDTH-1:0] reg_out;
 
-  CC_DFlipFlop #(WIDTH) r(~en, 1'b1, d, reg_out);
+  CC_DFlipFlop #(WIDTH) r(.clk(~en), .en(1'b1), .reset(0), .d(d), .q(reg_out));
 
   assign q = en ? d : reg_out;
 endmodule
