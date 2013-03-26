@@ -36,7 +36,7 @@
 `define SCROLL_Y             'h0f
 
 `define MAIN_REG_ADDR_BASE  'h000   // Start of main regs.
-`define NUM_MAIN_REGS       'h100   // Length of main regs.
+`define NUM_MAIN_REGS       'h010   // Length of main regs.
 `define MAIN_REG_ADDR_WIDTH     8   // Width of address bus for |NUM_MAIN_REGS|.
 
 `define REG_RW                  0   // Read-write register.
