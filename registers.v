@@ -40,11 +40,11 @@ module Register(reset, clk, en, be, d, q);
   generate
     for (i = 0; i < BUS_WIDTH; i = i + 1) begin: REG
       if (i < WIDTH) begin
-        CC_DFlipFlop dff(.clk(clk),
-                         .reset(reset),
-                         .en(en & ((i < 8) ? byte_lo_en : byte_hi_en)),
-                         .d(d[i]),
-                         .q(q[i]));
+        CC_DFlipFlop #(1) dff(.clk(clk),
+                              .reset(reset),
+                              .en(en & ((i < 8) ? byte_lo_en : byte_hi_en)),
+                              .d(d[i]),
+                              .q(q[i]));
       end else begin
         assign q[i] = 1'b0;
       end
