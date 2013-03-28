@@ -20,10 +20,10 @@
 
 `include "registers.vh"
 
-`define MPU_ADDR_WIDTH 17
+`define MPU_ADDR_WIDTH 16
 `define MPU_DATA_WIDTH 16
 
-`define VRAM_ADDR_WIDTH 17
+`define VRAM_ADDR_WIDTH 16
 `define VRAM_DATA_WIDTH 16
 
 `define RGB_COLOR_DEPTH 18
@@ -90,6 +90,7 @@ module ChronoCube(clk, _reset, _int,
   wire _gpu_bus_rd;
   wire _gpu_bus_wr;
   wire [1:0] _gpu_bus_be;
+  wire [`RGB_COLOR_DEPTH-1:0] gpu_rgb_out;
   GPU gpu(.clk(clk),
           ._reset(_reset),
           ._vram_en(_gpu_bus_en),
@@ -102,14 +103,30 @@ module ChronoCube(clk, _reset, _int,
           .y(v_pos),
           .vblank(vblank),
           .hblank(hblank),
-          .rgb_out(vga_rgb));
+          .rgb_out(gpu_rgb_out));
 
   wire [`REG_DATA_WIDTH * `NUM_MAIN_REGS - 1 : 0] reg_values;
-  wire main_reg_select = ~_mpu_en &
-                         (mpu_addr >= `MAIN_REG_ADDR_BASE) &
+
+  wire [`REG_DATA_WIDTH-1:0] reg_array [`NUM_MAIN_REGS-1:0];
+  genvar i;
+  generate
+    for (i = 0; i < `NUM_MAIN_REGS; i = i + 1) begin : REGS
+      assign reg_array[i] = reg_values[`REG_DATA_WIDTH * (i + 1) - 1:
+                                       `REG_DATA_WIDTH * i];
+    end
+  endgenerate
+
+  // For now, send the values of the register to the lines of the screen, for
+  // visual verification.
+  // TODO: This test mechanism needs to be changed later.
+  assign vga_rgb = (hblank | vblank) ? {`RGB_COLOR_DEPTH {1'b0}}
+                                     : {`RGB_COLOR_DEPTH {reg_values[v_pos]}};
+
+  wire main_reg_select = (mpu_addr >= `MAIN_REG_ADDR_BASE) &
                          (mpu_addr < `MAIN_REG_ADDR_BASE + `NUM_MAIN_REGS);
   Registers #(.DATA_WIDTH(`REG_DATA_WIDTH),
-              .ADDR_WIDTH(`MAIN_REG_ADDR_WIDTH))
+              .ADDR_WIDTH(`MAIN_REG_ADDR_WIDTH),
+              .NUM_REGS(`NUM_MAIN_REGS))
       registers(.reset(~_reset),
                 .en(main_reg_select),
                 .rd(~_mpu_rd),
@@ -117,19 +134,19 @@ module ChronoCube(clk, _reset, _int,
                 .be(~_mpu_be),
                 .addr(mpu_addr[`MAIN_REG_ADDR_WIDTH-1:0]),
                 .data(mpu_data),
-                .values(reg_values));
+                .values_out(reg_values));
 
   // VRAM interface logic
   // TODO: the multiplexed VRAM access by both GPU and MPU here may be too
   // simple.
-  assign vram_uses_mpu = ~_mpu_en;
+  wire vram_uses_mpu = ~_mpu_en;
   assign _vram_en = vram_uses_mpu ? _mpu_en : _gpu_bus_en;
   assign _vram_wr = vram_uses_mpu ? _mpu_wr : _gpu_bus_wr;
   assign _vram_rd = vram_uses_mpu ? _mpu_rd : _gpu_bus_rd;
   assign _vram_be = vram_uses_mpu ? _mpu_be : _gpu_bus_be;
   assign vram_addr = vram_uses_mpu ? mpu_addr : gpu_bus_addr;
 
-  assign vram_data = vram_uses_mpu ? mpu_data : 16'bz;
+  assign vram_data = vram_uses_mpu ? mpu_data : {`VRAM_DATA_WIDTH {1'bz}};
   assign gpu_bus_data = vram_data;
 
 endmodule
