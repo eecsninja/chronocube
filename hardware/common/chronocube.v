@@ -31,6 +31,9 @@
 `define DISPLAY_HCOUNT_WIDTH 10
 `define DISPLAY_VCOUNT_WIDTH 10
 
+`define PAL_ADDR_BASE   'h0800
+`define PAL_ADDR_LENGTH    512
+
 module ChronoCube(clk, _reset, _int,
                   _mpu_rd, _mpu_wr, _mpu_en, _mpu_be, mpu_addr, mpu_data,
                   _vram_en, _vram_rd, _vram_wr, _vram_be, vram_addr, vram_data,
@@ -92,18 +95,32 @@ module ChronoCube(clk, _reset, _int,
   wire [1:0] _gpu_bus_be;
   wire [`RGB_COLOR_DEPTH-1:0] gpu_rgb_out;
 
+  wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
-  assign mpu_data = (~_mpu_rd & ~_mpu_en) ? reg_data_out
-                                          : {`MPU_DATA_WIDTH {1'bz}};
+  assign mpu_data = (~_mpu_rd & ~_mpu_en) ?
+                    (palette_select ? pal_data_out : reg_data_out) :
+                    {`MPU_DATA_WIDTH {1'bz}};
 
+  wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
+                        (mpu_addr < `PAL_ADDR_BASE + `PAL_ADDR_LENGTH);
   GPU gpu(.clk(clk),
           ._reset(_reset),
+
           ._vram_en(_gpu_bus_en),
           ._vram_rd(_gpu_bus_rd),
           ._vram_wr(_gpu_bus_wr),
           ._vram_be(_gpu_bus_be),
           .vram_addr(gpu_bus_addr),
           .vram_data(gpu_bus_data),
+
+          ._pal_en(~palette_select),
+          ._pal_rd(_mpu_rd),
+          ._pal_wr(_mpu_wr),
+          ._pal_be(_mpu_be),
+          .pal_addr(mpu_addr),
+          .pal_data_in(mpu_data),
+          .pal_data_out(pal_data_out),
+
           .x(h_pos),
           .y(v_pos),
           .vblank(vblank),
