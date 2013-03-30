@@ -41,7 +41,8 @@
 `define NUM_PAL_CHANNELS 3
 
 module ChronoCube(clk, _reset, _int,
-                  _mpu_rd, _mpu_wr, _mpu_en, _mpu_be, mpu_addr, mpu_data,
+                  _mpu_rd, _mpu_wr, _mpu_en, _mpu_be,
+                  mpu_addr, mpu_data_in, mpu_data_out,
                   _vram_en, _vram_rd, _vram_wr, _vram_be, vram_addr, vram_data,
                   vga_vsync, vga_hsync, vga_rgb);
 
@@ -55,8 +56,9 @@ module ChronoCube(clk, _reset, _int,
   input _mpu_rd;            // Read enable (active low)
   input _mpu_wr;            // Write enable (active low)
   input [1:0] _mpu_be;      // Byte enable (active low)
-  input [`MPU_ADDR_WIDTH-1:0] mpu_addr;  // Address bus
-  inout [`MPU_DATA_WIDTH-1:0] mpu_data;  // Data bus
+  input [`MPU_ADDR_WIDTH-1:0] mpu_addr;           // Address bus
+  input [`MPU_DATA_WIDTH-1:0] mpu_data_in;        // Data-in bus
+  output [`MPU_DATA_WIDTH-1:0] mpu_data_out;      // Data-out bus
 
   // VRAM interface
   output _vram_en;          // Enable access (active low)
@@ -103,11 +105,11 @@ module ChronoCube(clk, _reset, _int,
 
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
-  assign mpu_data = (_mpu_rd | _mpu_en) ? {`MPU_DATA_WIDTH {1'bz}} :
-                    (palette_select  ? pal_data_out :
-                    (map_select      ? map_data_out :
-                    (main_reg_select ? reg_data_out :
-                    {`MPU_DATA_WIDTH {1'b0}})));
+  assign mpu_data_out = (_mpu_rd | _mpu_en) ? {`MPU_DATA_WIDTH {1'b0}} :
+                        (palette_select  ? pal_data_out :
+                        (map_select      ? map_data_out :
+                        (main_reg_select ? reg_data_out :
+                        {`MPU_DATA_WIDTH {1'b0}})));
 
   // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
@@ -131,7 +133,7 @@ module ChronoCube(clk, _reset, _int,
       .wr_a(pal_wr),
       .rd_a(pal_rd),
       .addr_a(mpu_addr >> 1),
-      .data_in_a({mpu_data, mpu_data}),
+      .data_in_a({mpu_data_in, mpu_data_in}),
       .data_out_a(pal_data_out_temp),
       .byte_en_a(pal_byte_en),
       .clk_b(clk),
@@ -153,7 +155,7 @@ module ChronoCube(clk, _reset, _int,
       .clock_b(clk),
       .address_a(mpu_addr),
       .byteena_a(map_be),
-      .data_a(mpu_data),
+      .data_a(mpu_data_in),
       .data_b(0),
       .rden_a(map_rd),
       .rden_b(0),
@@ -206,7 +208,7 @@ module ChronoCube(clk, _reset, _int,
                 .wr(~_mpu_wr),
                 .be(~_mpu_be),
                 .addr(mpu_addr[`MAIN_REG_ADDR_WIDTH-1:0]),
-                .data_in(mpu_data),
+                .data_in(mpu_data_in),
                 .data_out(reg_data_out),
                 .values_out(reg_values));
 
@@ -220,7 +222,7 @@ module ChronoCube(clk, _reset, _int,
   assign _vram_be = vram_uses_mpu ? _mpu_be : _ren_bus_be;
   assign vram_addr = vram_uses_mpu ? mpu_addr : ren_bus_addr;
 
-  assign vram_data = vram_uses_mpu ? mpu_data : {`VRAM_DATA_WIDTH {1'bz}};
+  assign vram_data = vram_uses_mpu ? mpu_data_in : {`VRAM_DATA_WIDTH {1'bz}};
   assign ren_bus_data = vram_data;
 
 endmodule

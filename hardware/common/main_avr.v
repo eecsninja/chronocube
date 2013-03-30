@@ -68,7 +68,7 @@ module MainAVR(clk, _reset,
   // - Shift address bits down by 1.
   // - Determine byte enable.
   //////////////////////////////////////////////////////////////////////
-  wire [`AVR_MPU_ADDR_WIDTH-1:0] mpu_addr;
+  wire [`AVR_MPU_ADDR_WIDTH-1:0] cc_addr;
   wire [`AVR_MPU_DATA_WIDTH-1:0] mpu_data_in;
   wire [`AVR_MPU_DATA_WIDTH-1:0] mpu_data_out;
 
@@ -79,24 +79,22 @@ module MainAVR(clk, _reset,
                   .d(mpu_ad),
                   .q(mpu_al));
   // Shift the address bits down by 1 to convert to a 16-bit bus address.
-  assign mpu_addr = {1'b0, mpu_ah, mpu_al[`AVR_MPU_AD_BUS_WIDTH-1:1]};
+  assign cc_addr = {1'b0, mpu_ah, mpu_al[`AVR_MPU_AD_BUS_WIDTH-1:1]};
 
   // Handle bidirectional data port.
   assign mpu_ad = (~_mpu_rd & _mpu_wr & ~mpu_ale) ? mpu_data_out
                                                   : {`AVR_MPU_DATA_WIDTH{1'bz}};
-  assign mpu_data_in = (~_mpu_wr & _mpu_rd) ? mpu_ad
-                                            : {`AVR_MPU_DATA_WIDTH{1'bz}};
 
   // Distribute the incoming 8-bit data to both bytes of the 16-bit data port.
-  wire [`MPU_DATA_WIDTH-1:0] mpu_data;
-  assign mpu_data = (~_mpu_wr & _mpu_rd) ? {mpu_data_in, mpu_data_in}
-                                         : {`MPU_DATA_WIDTH {1'bz}};
+  wire [`MPU_DATA_WIDTH-1:0] cc_data_in;
+  wire [`MPU_DATA_WIDTH-1:0] cc_data_out;
+  assign cc_data_in = {mpu_ad, mpu_ad};
 
   // Convert an outgoing 16-bit data bus to an 8-bit data bus by selecting the
   // high or low byte.
   assign mpu_data_out =
-      mpu_al[0] ? mpu_data[`MPU_DATA_WIDTH-1:`AVR_MPU_DATA_WIDTH]
-                : mpu_data[`AVR_MPU_DATA_WIDTH-1:0];
+      mpu_al[0] ? cc_data_out[`MPU_DATA_WIDTH-1:`AVR_MPU_DATA_WIDTH]
+                : cc_data_out[`AVR_MPU_DATA_WIDTH-1:0];
 
   // Determine byte enable based on whether the incoming address is odd or even.
   wire [1:0] _mpu_be = mpu_al[0] ? 2'b01 : 2'b10;
@@ -110,8 +108,9 @@ module MainAVR(clk, _reset,
                         ._mpu_wr(_mpu_wr),
                         ._mpu_en(~cc_enable),
                         ._mpu_be(_mpu_be),
-                        .mpu_addr(mpu_addr),
-                        .mpu_data(mpu_data),
+                        .mpu_addr(cc_addr),
+                        .mpu_data_in(cc_data_in),
+                        .mpu_data_out(cc_data_out),
 
                         ._vram_en(_vram_en),
                         ._vram_rd(_vram_rd),
