@@ -34,9 +34,8 @@ module Registers_Test;
 
   reg [ADDR_WIDTH-1:0] addr;
   reg [DATA_WIDTH-1:0] data_in;
-  wire [DATA_WIDTH-1:0] data;
+  wire [DATA_WIDTH-1:0] data_out;
 
-  assign data = data_in;
   Registers #(.ADDR_WIDTH(ADDR_WIDTH), .DATA_WIDTH(DATA_WIDTH))
       registers(.reset(reset),
                 .en(en),
@@ -44,7 +43,8 @@ module Registers_Test;
                 .wr(wr),
                 .be({byte_hi, byte_lo}),
                 .addr(addr),
-                .data(data));
+                .data_in(data_in),
+                .data_out(data_out));
 
   // Generate clock.
   always

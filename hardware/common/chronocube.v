@@ -91,6 +91,11 @@ module ChronoCube(clk, _reset, _int,
   wire _gpu_bus_wr;
   wire [1:0] _gpu_bus_be;
   wire [`RGB_COLOR_DEPTH-1:0] gpu_rgb_out;
+
+  wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
+  assign mpu_data = (~_mpu_rd & ~_mpu_en) ? reg_data_out
+                                          : {`MPU_DATA_WIDTH {1'bz}};
+
   GPU gpu(.clk(clk),
           ._reset(_reset),
           ._vram_en(_gpu_bus_en),
@@ -133,7 +138,8 @@ module ChronoCube(clk, _reset, _int,
                 .wr(~_mpu_wr),
                 .be(~_mpu_be),
                 .addr(mpu_addr[`MAIN_REG_ADDR_WIDTH-1:0]),
-                .data(mpu_data),
+                .data_in(mpu_data),
+                .data_out(reg_data_out),
                 .values_out(reg_values));
 
   // VRAM interface logic

@@ -53,7 +53,7 @@ module Register(reset, clk, en, be, d, q);
 
 endmodule
 
-module Registers(reset, en, rd, wr, be, addr, data, values_out);
+module Registers(reset, en, rd, wr, be, addr, data_in, data_out, values_out);
   parameter ADDR_WIDTH=16;
   parameter DATA_WIDTH=16;
   parameter NUM_REGS=(1 << ADDR_WIDTH);
@@ -63,16 +63,11 @@ module Registers(reset, en, rd, wr, be, addr, data, values_out);
   input rd;         // Read enable
   input wr;         // Write enable
   input [1:0] be;   // Byte enable
-  input [ADDR_WIDTH-1:0] addr;    // Address bus
-  inout [DATA_WIDTH-1:0] data;    // Data bus
+  input [ADDR_WIDTH-1:0] addr;      // Address bus
+  input [DATA_WIDTH-1:0] data_in;   // Data in bus
+  output [DATA_WIDTH-1:0] data_out; // Data out bus
 
   output [DATA_WIDTH * NUM_REGS - 1 : 0] values_out;
-
-  wire [DATA_WIDTH-1:0] data_out;
-  CC_Bidir #(DATA_WIDTH)
-      data_io(.sel_in(~(rd & en & ~reset)),
-              .io(data),
-              .out(data_out));
 
   // Generate the registers.
   wire [DATA_WIDTH-1:0] q_array [NUM_REGS - 1:0];
@@ -83,13 +78,13 @@ module Registers(reset, en, rd, wr, be, addr, data, values_out);
                                        .en(en & ~rd & (i == addr)),
                                        .reset(reset),
                                        .be(be),
-                                       .d(data),
+                                       .d(data_in),
                                        .q(q_array[i]));
       assign values_out[DATA_WIDTH * (i + 1) - 1 : DATA_WIDTH * i] = q_array[i];
     end
   endgenerate
 
   // Memory bus data read.
-  assign data_out = (rd & en & ~reset) ? q_array[addr] : {DATA_WIDTH {1'bz}};
+  assign data_out = q_array[addr];
 
 endmodule
