@@ -44,7 +44,4 @@
 `define TILE_REG_ADDR_BASE     'h0800
 `define TILE_REG_ADDR_STEP       'h40
 
-`define TILEMAP_ADDR_BASE      'h2000
-`define TILEMAP_ADDR_LENGTH    'h1000
-
 `endif  // _TILE_REGISTERS_VH_

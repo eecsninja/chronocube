@@ -18,6 +18,7 @@
 
 // Top-level ChronoCube module.
 
+`include "memory_map.vh"
 `include "registers.vh"
 `include "tile_registers.vh"
 
@@ -32,13 +33,7 @@
 `define DISPLAY_HCOUNT_WIDTH 10
 `define DISPLAY_VCOUNT_WIDTH 10
 
-`define PAL_ADDR_BASE   'h0800
-`define PAL_ADDR_LENGTH    512
-
-`define PAL_ADDR_WIDTH 10
-`define PAL_DATA_WIDTH 24
 `define MPU_DATA_WIDTH 16
-`define NUM_PAL_CHANNELS 3
 
 module ChronoCube(clk, _reset, _int,
                   _mpu_rd, _mpu_wr, _mpu_en, _mpu_be,
