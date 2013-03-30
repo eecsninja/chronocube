@@ -19,6 +19,7 @@
 // Top-level ChronoCube module.
 
 `include "registers.vh"
+`include "tile_registers.vh"
 
 `define MPU_ADDR_WIDTH 16
 `define MPU_DATA_WIDTH 16
@@ -102,9 +103,11 @@ module ChronoCube(clk, _reset, _int,
 
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
-  assign mpu_data = (~_mpu_rd & ~_mpu_en) ?
-                    (palette_select ? pal_data_out : reg_data_out) :
-                    {`MPU_DATA_WIDTH {1'bz}};
+  assign mpu_data = (_mpu_rd | _mpu_en) ? {`MPU_DATA_WIDTH {1'bz}} :
+                    (palette_select  ? pal_data_out :
+                    (map_select      ? map_data_out :
+                    (main_reg_select ? reg_data_out :
+                    {`MPU_DATA_WIDTH {1'b0}})));
 
   // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
@@ -138,6 +141,27 @@ module ChronoCube(clk, _reset, _int,
       .data_out_b(ren_pal_data_out)
       );
 
+  // Tile map
+  wire map_select = (mpu_addr >= `TILEMAP_ADDR_BASE) &
+                    (mpu_addr < `TILEMAP_ADDR_BASE + `TILEMAP_ADDR_LENGTH);
+  wire map_wr = map_select & ~_mpu_wr;
+  wire map_rd = map_select & ~_mpu_rd;
+  wire [1:0] map_be = ~_mpu_be;
+  wire [`MPU_DATA_WIDTH-1:0] map_data_out;
+  tilemap_ram_4Kx16 tilemap(
+      .clock_a(clk),
+      .clock_b(clk),
+      .address_a(mpu_addr),
+      .byteena_a(map_be),
+      .data_a(mpu_data),
+      .data_b(0),
+      .rden_a(map_rd),
+      .rden_b(0),
+      .wren_a(map_wr),
+      .wren_b(0),
+      .q_a(map_data_out));
+
+  // Renderer
   Renderer renderer(.clk(clk),
                     ._reset(_reset),
 
