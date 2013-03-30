@@ -38,8 +38,6 @@
 
 `define TILE_SCALE_X             'h0c
 `define TILE_SCALE_Y             'h0d
-`define TILE_OFFSET_X            'h0e
-`define TILE_OFFSET_Y            'h0f
 
 `define TILE_REG_ADDR_BASE     'h0800
 `define TILE_REG_ADDR_STEP       'h40
