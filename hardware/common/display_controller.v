@@ -48,7 +48,7 @@ module DisplayController(
   always @ (posedge clk)
     clk_25mhz <= ~clk_25mhz;
 
-  always @ (posedge ~clk_25mhz)
+  always @ (negedge clk_25mhz)
   begin
     if (reset == 1) begin
       h_pos <= 0;
