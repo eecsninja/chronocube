@@ -25,11 +25,11 @@
 `define MPU_DATA_WIDTH 16
 `define NUM_PAL_CHANNELS 3
 
-module GPU(clk, _reset, x, y, vblank, hblank,
-           _vram_en, _vram_rd, _vram_wr, _vram_be,
-           _pal_en, _pal_rd, _pal_wr, _pal_be, pal_addr,
-           pal_data_in, pal_data_out,
-           vram_addr, vram_data, rgb_out);
+module Renderer(clk, _reset, x, y, vblank, hblank,
+                _vram_en, _vram_rd, _vram_wr, _vram_be,
+                _pal_en, _pal_rd, _pal_wr, _pal_be, pal_addr,
+                pal_data_in, pal_data_out,
+                vram_addr, vram_data, rgb_out);
   parameter VRAM_ADDR_BUS_WIDTH=16;
   parameter VRAM_DATA_BUS_WIDTH=16;
   parameter RGB_COLOR_DEPTH=18;
@@ -93,7 +93,7 @@ module GPU(clk, _reset, x, y, vblank, hblank,
   assign _vram_be = 2'b11;
   assign vram_addr = { y[9:2], x[9:2] };
 
-  // TODO: Build GPU here.
+  // TODO: Build Renderer here.
   CC_DFlipFlop #(VRAM_DATA_BUS_WIDTH)
       rgb_reg(.clk(clk),
               .en(_vram_en),

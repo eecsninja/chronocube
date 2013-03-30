@@ -87,13 +87,13 @@ module ChronoCube(clk, _reset, _int,
 
   // Graphics processor
   // TODO: add switching between 16-bit full color and 8-bit palettes.
-  wire [`VRAM_ADDR_WIDTH-1:0] gpu_bus_addr;
-  wire [`VRAM_DATA_WIDTH-1:0] gpu_bus_data;
-  wire _gpu_bus_en;
-  wire _gpu_bus_rd;
-  wire _gpu_bus_wr;
-  wire [1:0] _gpu_bus_be;
-  wire [`RGB_COLOR_DEPTH-1:0] gpu_rgb_out;
+  wire [`VRAM_ADDR_WIDTH-1:0] ren_bus_addr;
+  wire [`VRAM_DATA_WIDTH-1:0] ren_bus_data;
+  wire _ren_bus_en;
+  wire _ren_bus_rd;
+  wire _ren_bus_wr;
+  wire [1:0] _ren_bus_be;
+  wire [`RGB_COLOR_DEPTH-1:0] ren_rgb_out;
 
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
@@ -103,29 +103,29 @@ module ChronoCube(clk, _reset, _int,
 
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
                         (mpu_addr < `PAL_ADDR_BASE + `PAL_ADDR_LENGTH);
-  GPU gpu(.clk(clk),
-          ._reset(_reset),
+  Renderer renderer(.clk(clk),
+                    ._reset(_reset),
 
-          ._vram_en(_gpu_bus_en),
-          ._vram_rd(_gpu_bus_rd),
-          ._vram_wr(_gpu_bus_wr),
-          ._vram_be(_gpu_bus_be),
-          .vram_addr(gpu_bus_addr),
-          .vram_data(gpu_bus_data),
+                    ._vram_en(_ren_bus_en),
+                    ._vram_rd(_ren_bus_rd),
+                    ._vram_wr(_ren_bus_wr),
+                    ._vram_be(_ren_bus_be),
+                    .vram_addr(ren_bus_addr),
+                    .vram_data(ren_bus_data),
 
-          ._pal_en(~palette_select),
-          ._pal_rd(_mpu_rd),
-          ._pal_wr(_mpu_wr),
-          ._pal_be(_mpu_be),
-          .pal_addr(mpu_addr),
-          .pal_data_in(mpu_data),
-          .pal_data_out(pal_data_out),
+                    ._pal_en(~palette_select),
+                    ._pal_rd(_mpu_rd),
+                    ._pal_wr(_mpu_wr),
+                    ._pal_be(_mpu_be),
+                    .pal_addr(mpu_addr),
+                    .pal_data_in(mpu_data),
+                    .pal_data_out(pal_data_out),
 
-          .x(h_pos),
-          .y(v_pos),
-          .vblank(vblank),
-          .hblank(hblank),
-          .rgb_out(gpu_rgb_out));
+                    .x(h_pos),
+                    .y(v_pos),
+                    .vblank(vblank),
+                    .hblank(hblank),
+                    .rgb_out(ren_rgb_out));
 
   wire [`REG_DATA_WIDTH * `NUM_MAIN_REGS - 1 : 0] reg_values;
 
@@ -160,16 +160,16 @@ module ChronoCube(clk, _reset, _int,
                 .values_out(reg_values));
 
   // VRAM interface logic
-  // TODO: the multiplexed VRAM access by both GPU and MPU here may be too
+  // TODO: the multiplexed VRAM access by both Renderer and MPU here may be too
   // simple.
   wire vram_uses_mpu = ~_mpu_en;
-  assign _vram_en = vram_uses_mpu ? _mpu_en : _gpu_bus_en;
-  assign _vram_wr = vram_uses_mpu ? _mpu_wr : _gpu_bus_wr;
-  assign _vram_rd = vram_uses_mpu ? _mpu_rd : _gpu_bus_rd;
-  assign _vram_be = vram_uses_mpu ? _mpu_be : _gpu_bus_be;
-  assign vram_addr = vram_uses_mpu ? mpu_addr : gpu_bus_addr;
+  assign _vram_en = vram_uses_mpu ? _mpu_en : _ren_bus_en;
+  assign _vram_wr = vram_uses_mpu ? _mpu_wr : _ren_bus_wr;
+  assign _vram_rd = vram_uses_mpu ? _mpu_rd : _ren_bus_rd;
+  assign _vram_be = vram_uses_mpu ? _mpu_be : _ren_bus_be;
+  assign vram_addr = vram_uses_mpu ? mpu_addr : ren_bus_addr;
 
   assign vram_data = vram_uses_mpu ? mpu_data : {`VRAM_DATA_WIDTH {1'bz}};
-  assign gpu_bus_data = vram_data;
+  assign ren_bus_data = vram_data;
 
 endmodule
