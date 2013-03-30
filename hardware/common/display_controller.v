@@ -59,11 +59,11 @@ module DisplayController(
         if (v_pos + 1 == 525)
           v_pos <= 0;
         else
-          v_pos <= v_pos + 1;
+          v_pos <= v_pos + {{(VCOUNT_WIDTH-1){1'b0}}, 1'b1};
         h_pos <= 0;
       end else
       begin
-        h_pos <= h_pos + 1;
+        h_pos <= h_pos + {{(HCOUNT_WIDTH-1){1'b0}}, 1'b1};
       end
     end
   end
