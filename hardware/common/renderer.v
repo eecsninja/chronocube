@@ -20,15 +20,8 @@
 // TODO: implement scrolling.
 // TODO: implement tilemaps.
 
-`define PAL_ADDR_WIDTH 10
-`define PAL_DATA_WIDTH 24
-`define MPU_DATA_WIDTH 16
-`define NUM_PAL_CHANNELS 3
-
 module Renderer(clk, _reset, x, y, vblank, hblank,
                 _vram_en, _vram_rd, _vram_wr, _vram_be,
-                _pal_en, _pal_rd, _pal_wr, _pal_be, pal_addr,
-                pal_data_in, pal_data_out,
                 vram_addr, vram_data, rgb_out);
   parameter VRAM_ADDR_BUS_WIDTH=16;
   parameter VRAM_DATA_BUS_WIDTH=16;
@@ -51,41 +44,7 @@ module Renderer(clk, _reset, x, y, vblank, hblank,
   output [VRAM_ADDR_BUS_WIDTH-1:0] vram_addr;     // Address bus
   input [VRAM_DATA_BUS_WIDTH-1:0] vram_data;      // Data bus
 
-  // Palette interface
-  input _pal_en;
-  input _pal_wr;
-  input _pal_rd;
-  input [1:0] _pal_be;
-  input [`PAL_ADDR_WIDTH-1:0] pal_addr;
-  input [`MPU_DATA_WIDTH-1:0] pal_data_in;
-  output [`MPU_DATA_WIDTH-1:0] pal_data_out;
-
   output wire [RGB_COLOR_DEPTH-1:0] rgb_out;      // Color output.
-
-  wire [`PAL_ADDR_WIDTH-1:0] pal_addr_b;
-  wire [`PAL_DATA_WIDTH-1:0] pal_data_b;
-  wire [`NUM_PAL_CHANNELS-1:0] pal_byte_en;
-  assign pal_byte_en[0] = (pal_addr[0] == 0) & ~_pal_be[0];
-  assign pal_byte_en[1] = (pal_addr[0] == 0) & ~_pal_be[1];
-  assign pal_byte_en[2] = (pal_addr[0] == 1) & ~_pal_be[0];
-  wire [`NUM_PAL_CHANNELS * 8 - 1 : 0] pal_data_out_temp;
-  assign pal_data_out = (pal_addr[0] == 0) ? pal_data_out_temp[15:0]
-                                           : pal_data_out_temp[23:16];
-  Palette #(.NUM_CHANNELS(`NUM_PAL_CHANNELS)) palette(
-      .clk_a(clk),
-      .wr_a(~_pal_wr & ~_pal_en),
-      .rd_a(~_pal_rd & ~_pal_en),
-      .addr_a(pal_addr >> 1),
-      .data_in_a({pal_data_in, pal_data_in}),
-      .data_out_a(pal_data_out_temp),
-      .byte_en_a(pal_byte_en),
-      .clk_b(clk),
-      .wr_b(0),
-      .rd_b(1),
-      .addr_b(pal_addr_b),
-      .data_in_b(0),
-      .data_out_b(pal_data_b)
-      );
 
   assign _vram_wr = 1'b0;
   assign _vram_rd = ~hblank && ~vblank;

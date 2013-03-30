@@ -34,6 +34,11 @@
 `define PAL_ADDR_BASE   'h0800
 `define PAL_ADDR_LENGTH    512
 
+`define PAL_ADDR_WIDTH 10
+`define PAL_DATA_WIDTH 24
+`define MPU_DATA_WIDTH 16
+`define NUM_PAL_CHANNELS 3
+
 module ChronoCube(clk, _reset, _int,
                   _mpu_rd, _mpu_wr, _mpu_en, _mpu_be, mpu_addr, mpu_data,
                   _vram_en, _vram_rd, _vram_wr, _vram_be, vram_addr, vram_data,
@@ -101,8 +106,38 @@ module ChronoCube(clk, _reset, _int,
                     (palette_select ? pal_data_out : reg_data_out) :
                     {`MPU_DATA_WIDTH {1'bz}};
 
+  // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
                         (mpu_addr < `PAL_ADDR_BASE + `PAL_ADDR_LENGTH);
+  wire pal_wr = palette_select & ~_mpu_wr;
+  wire pal_rd = palette_select & ~_mpu_rd;
+
+  wire [`NUM_PAL_CHANNELS-1:0] pal_byte_en;
+  assign pal_byte_en[0] = (mpu_addr[0] == 0) & ~_mpu_be[0];
+  assign pal_byte_en[1] = (mpu_addr[0] == 0) & ~_mpu_be[1];
+  assign pal_byte_en[2] = (mpu_addr[0] == 1) & ~_mpu_be[0];
+
+  wire [`NUM_PAL_CHANNELS*8-1:0] pal_data_out_temp;
+  assign pal_data_out = (mpu_addr[0] == 0) ? pal_data_out_temp[15:0]
+                                           : pal_data_out_temp[23:16];
+
+  wire [`PAL_ADDR_WIDTH-1:0] ren_pal_addr;
+  wire [`NUM_PAL_CHANNELS*8-1:0] ren_pal_data_out;
+  Palette #(.NUM_CHANNELS(`NUM_PAL_CHANNELS)) palette(
+      .clk_a(clk),
+      .wr_a(pal_wr),
+      .rd_a(pal_rd),
+      .addr_a(mpu_addr >> 1),
+      .data_in_a({mpu_data, mpu_data}),
+      .data_out_a(pal_data_out_temp),
+      .byte_en_a(pal_byte_en),
+      .clk_b(clk),
+      .wr_b(0),
+      .rd_b(1),
+      .addr_b(ren_pal_addr),
+      .data_out_b(ren_pal_data_out)
+      );
+
   Renderer renderer(.clk(clk),
                     ._reset(_reset),
 
@@ -112,14 +147,6 @@ module ChronoCube(clk, _reset, _int,
                     ._vram_be(_ren_bus_be),
                     .vram_addr(ren_bus_addr),
                     .vram_data(ren_bus_data),
-
-                    ._pal_en(~palette_select),
-                    ._pal_rd(_mpu_rd),
-                    ._pal_wr(_mpu_wr),
-                    ._pal_be(_mpu_be),
-                    .pal_addr(mpu_addr),
-                    .pal_data_in(mpu_data),
-                    .pal_data_out(pal_data_out),
 
                     .x(h_pos),
                     .y(v_pos),
