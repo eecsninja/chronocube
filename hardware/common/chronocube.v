@@ -104,7 +104,8 @@ module ChronoCube(clk, _reset, _int,
                         (palette_select  ? pal_data_out :
                         (map_select      ? map_data_out :
                         (main_reg_select ? reg_data_out :
-                        {`MPU_DATA_WIDTH {1'b0}})));
+                        (vram_select     ? vram_data_out :
+                        {`MPU_DATA_WIDTH {1'b0}}))));
 
   // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
@@ -175,6 +176,24 @@ module ChronoCube(clk, _reset, _int,
       .address_b(ren_map_addr),
       .data_b(0),
       .q_b(ren_map_data)
+      );
+
+  // Temporary internal VRAM
+  // TODO: set up external VRAM interface.
+  wire vram_select = (mpu_addr >= `VRAM_ADDR_BASE) &
+                     (mpu_addr < `VRAM_ADDR_BASE + `VRAM_ADDR_LENGTH);
+  wire [1:0] vram_be = ~_mpu_be;
+  wire vram_rd = vram_select & ~_mpu_rd;
+  wire vram_wr = vram_select & ~_mpu_wr;
+  wire [`VRAM_DATA_WIDTH-1:0] vram_data_out;
+  vram_8Kx16 temp_vram(
+      .clock_a(clk),
+      .address_a(mpu_addr),
+      .byteena_a(vram_be),
+      .rden_a(vram_rd),
+      .wren_a(vram_wr),
+      .data_a(mpu_data_in),
+      .q_a(vram_data_out),
       );
 
   // Renderer

@@ -36,4 +36,11 @@
 `define TILEMAP_ADDR_WIDTH         12
 `define TILEMAP_DATA_WIDTH         16
 
+// VRAM
+`define VRAM_ADDR_BASE         'h4000
+`define VRAM_ADDR_LENGTH       'h2000
+
+`define VRAM_ADDR_WIDTH            13
+`define VRAM_DATA_WIDTH            16
+
 `endif  // _MEMORY_MAP_VH_
