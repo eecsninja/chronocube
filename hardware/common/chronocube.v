@@ -124,8 +124,6 @@ module ChronoCube(clk, _reset, _int,
 
   // Port B: to renderer
   wire ren_pal_clk;
-  wire ren_pal_rd;
-  wire ren_pal_wr;
   wire [`PAL_ADDR_WIDTH-1:0] ren_pal_addr;
   wire [`PAL_DATA_WIDTH-1:0] ren_pal_data;
 
@@ -139,8 +137,8 @@ module ChronoCube(clk, _reset, _int,
       .byte_en_a(pal_byte_en),
 
       .clk_b(ren_pal_clk),
-      .wr_b(ren_pal_wr),
-      .rd_b(ren_pal_rd),
+      .wr_b(0),
+      .rd_b(1),
       .addr_b(ren_pal_addr),
       .data_in_b(0),
       .data_out_b(ren_pal_data)
@@ -156,8 +154,6 @@ module ChronoCube(clk, _reset, _int,
 
   // Port B: to renderer
   wire ren_map_clk;
-  wire ren_map_rd;
-  wire ren_map_wr;
   wire [`TILEMAP_ADDR_WIDTH-1:0] ren_map_addr;
   wire [`TILEMAP_DATA_WIDTH-1:0] ren_map_data;
 
@@ -171,8 +167,8 @@ module ChronoCube(clk, _reset, _int,
       .q_a(map_data_out),
 
       .clock_b(ren_map_clk),
-      .rden_b(ren_map_rd),
-      .wren_b(ren_map_wr),
+      .rden_b(1),
+      .wren_b(0),
       .address_b(ren_map_addr),
       .data_b(0),
       .q_b(ren_map_data)
@@ -208,14 +204,10 @@ module ChronoCube(clk, _reset, _int,
                     .vram_data(ren_bus_data),
 
                     .pal_clk(ren_pal_clk),
-                    .pal_rd(ren_pal_rd),
-                    .pal_wr(ren_pal_wr),
                     .pal_addr(ren_pal_addr),
                     .pal_data(ren_pal_data),
 
                     .map_clk(ren_map_clk),
-                    .map_rd(ren_map_rd),
-                    .map_wr(ren_map_wr),
                     .map_addr(ren_map_addr),
                     .map_data(ren_map_data),
 

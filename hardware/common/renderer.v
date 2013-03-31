@@ -22,8 +22,8 @@
 `include "memory_map.vh"
 
 module Renderer(clk, _reset, x, y, vblank, hblank,
-                pal_clk, pal_rd, pal_wr, pal_addr, pal_data,
-                map_clk, map_rd, map_wr, map_addr, map_data,
+                pal_clk, pal_addr, pal_data,
+                map_clk, map_addr, map_data,
                 _vram_en, _vram_rd, _vram_wr, _vram_be, vram_addr, vram_data,
                 rgb_out);
   parameter VRAM_ADDR_BUS_WIDTH=16;
@@ -40,15 +40,11 @@ module Renderer(clk, _reset, x, y, vblank, hblank,
 
   // Palette interface
   output pal_clk;
-  output pal_rd;
-  output pal_wr;
   output [`PAL_ADDR_WIDTH-1:0] pal_addr;
   input [`PAL_DATA_WIDTH-1:0] pal_data;
 
   // Palette interface
   output map_clk;
-  output map_rd;
-  output map_wr;
   output [`TILEMAP_ADDR_WIDTH-1:0] map_addr;
   input [`TILEMAP_DATA_WIDTH-1:0] map_data;
 
@@ -78,12 +74,8 @@ module Renderer(clk, _reset, x, y, vblank, hblank,
   wire [SCREEN_Y_WIDTH-2:0] screen_y = (y - 35) / 2;
 
   assign pal_clk = ~clk;
-  assign pal_rd = 1;
-  assign pal_wr = 0;
 
   assign map_clk = ~clk;
-  assign map_rd = 1;
-  assign map_wr = 0;
   assign map_addr = {screen_y, screen_x[7:1]};
 
   reg map_byte_select;
