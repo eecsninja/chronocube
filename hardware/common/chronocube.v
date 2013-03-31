@@ -121,8 +121,13 @@ module ChronoCube(clk, _reset, _int,
   assign pal_data_out = (mpu_addr[0] == 0) ? pal_data_out_temp[15:0]
                                            : pal_data_out_temp[23:16];
 
+  // Port B: to renderer
+  wire ren_pal_clk;
+  wire ren_pal_rd;
+  wire ren_pal_wr;
   wire [`PAL_ADDR_WIDTH-1:0] ren_pal_addr;
-  wire [`NUM_PAL_CHANNELS*8-1:0] ren_pal_data_out;
+  wire [`PAL_DATA_WIDTH-1:0] ren_pal_data;
+
   Palette #(.NUM_CHANNELS(`NUM_PAL_CHANNELS)) palette(
       .clk_a(clk),
       .wr_a(pal_wr),
@@ -131,11 +136,13 @@ module ChronoCube(clk, _reset, _int,
       .data_in_a({mpu_data_in, mpu_data_in}),
       .data_out_a(pal_data_out_temp),
       .byte_en_a(pal_byte_en),
-      .clk_b(clk),
-      .wr_b(0),
-      .rd_b(1),
+
+      .clk_b(ren_pal_clk),
+      .wr_b(ren_pal_wr),
+      .rd_b(ren_pal_rd),
       .addr_b(ren_pal_addr),
-      .data_out_b(ren_pal_data_out)
+      .data_in_b(0),
+      .data_out_b(ren_pal_data)
       );
 
   // Tile map
@@ -145,18 +152,30 @@ module ChronoCube(clk, _reset, _int,
   wire map_rd = map_select & ~_mpu_rd;
   wire [1:0] map_be = ~_mpu_be;
   wire [`MPU_DATA_WIDTH-1:0] map_data_out;
+
+  // Port B: to renderer
+  wire ren_map_clk;
+  wire ren_map_rd;
+  wire ren_map_wr;
+  wire [`TILEMAP_ADDR_WIDTH-1:0] ren_map_addr;
+  wire [`TILEMAP_DATA_WIDTH-1:0] ren_map_data;
+
   tilemap_ram_4Kx16 tilemap(
       .clock_a(clk),
-      .clock_b(clk),
       .address_a(mpu_addr),
       .byteena_a(map_be),
-      .data_a(mpu_data_in),
-      .data_b(0),
       .rden_a(map_rd),
-      .rden_b(0),
       .wren_a(map_wr),
-      .wren_b(0),
-      .q_a(map_data_out));
+      .data_a(mpu_data_in),
+      .q_a(map_data_out),
+
+      .clock_b(ren_map_clk),
+      .rden_b(ren_map_rd),
+      .wren_b(ren_map_wr),
+      .address_b(ren_map_addr),
+      .data_b(0),
+      .q_b(ren_map_data)
+      );
 
   // Renderer
   Renderer renderer(.clk(clk),
@@ -168,6 +187,18 @@ module ChronoCube(clk, _reset, _int,
                     ._vram_be(_ren_bus_be),
                     .vram_addr(ren_bus_addr),
                     .vram_data(ren_bus_data),
+
+                    .pal_clk(ren_pal_clk),
+                    .pal_rd(ren_pal_rd),
+                    .pal_wr(ren_pal_wr),
+                    .pal_addr(ren_pal_addr),
+                    .pal_data(ren_pal_data),
+
+                    .map_clk(ren_map_clk),
+                    .map_rd(ren_map_rd),
+                    .map_wr(ren_map_wr),
+                    .map_addr(ren_map_addr),
+                    .map_data(ren_map_data),
 
                     .x(h_pos),
                     .y(v_pos),
@@ -186,11 +217,8 @@ module ChronoCube(clk, _reset, _int,
     end
   endgenerate
 
-  // For now, send the values of the register to the lines of the screen, for
-  // visual verification.
-  // TODO: This test mechanism needs to be changed later.
-  assign vga_rgb = (hblank | vblank) ? {`RGB_COLOR_DEPTH {1'b0}}
-                                     : {`RGB_COLOR_DEPTH {reg_values[v_pos]}};
+  // Video output from renderer.
+  assign vga_rgb = (hblank | vblank) ? {`RGB_COLOR_DEPTH {1'b0}} : ren_rgb_out;
 
   wire main_reg_select = (mpu_addr >= `MAIN_REG_ADDR_BASE) &
                          (mpu_addr < `MAIN_REG_ADDR_BASE + `NUM_MAIN_REGS);

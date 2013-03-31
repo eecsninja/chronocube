@@ -33,4 +33,7 @@
 `define TILEMAP_ADDR_BASE      'h2000
 `define TILEMAP_ADDR_LENGTH    'h1000
 
+`define TILEMAP_ADDR_WIDTH         12
+`define TILEMAP_DATA_WIDTH         16
+
 `endif  // _MEMORY_MAP_VH_
