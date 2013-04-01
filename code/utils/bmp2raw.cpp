@@ -169,8 +169,8 @@ bool ProcessBMP(const std::string& input_file,
 // Usage: bmp2raw [input file] -f rNgNbN -s WxH -o [output file] -p [palette file]
 void PrintUsage() {
   printf("Usage:\n");
-  printf("  bmp2dat [input_file] -t WxH -o [output_file] -p [palette_file].\n");
-  printf("  -t WxH           Specify tile dimensions W x H in pixels.\n");
+  printf("  bmp2raw [input_file] -s WxH -o [output_file] -p [palette_file].\n");
+  printf("  -s WxH           Specify tile dimensions W x H in pixels.\n");
   printf("                   Tiles will not be linearized if not specified.\n");
   printf("  -o output_file   Specify file path for pixel data output.\n");
   printf("                   Default: \"[input_file].dat\"\n");
