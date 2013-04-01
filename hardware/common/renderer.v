@@ -24,7 +24,8 @@
 module Renderer(clk, _reset, x, y, vblank, hblank,
                 pal_clk, pal_addr, pal_data,
                 map_clk, map_addr, map_data,
-                _vram_en, _vram_rd, _vram_wr, _vram_be, vram_addr, vram_data,
+                _vram_en, _vram_rd, _vram_wr, _vram_be,
+                vram_clk, vram_addr, vram_data,
                 rgb_out);
   parameter VRAM_ADDR_BUS_WIDTH=16;
   parameter VRAM_DATA_BUS_WIDTH=16;
@@ -54,6 +55,7 @@ module Renderer(clk, _reset, x, y, vblank, hblank,
   output wire _vram_wr;         // Write enable (active low)
   output wire [1:0] _vram_be;   // Byte enable (active low)
 
+  output vram_clk;
   output [VRAM_ADDR_BUS_WIDTH-1:0] vram_addr;     // Address bus
   input [VRAM_DATA_BUS_WIDTH-1:0] vram_data;      // Data bus
 
@@ -63,7 +65,6 @@ module Renderer(clk, _reset, x, y, vblank, hblank,
   assign _vram_rd = ~hblank && ~vblank;
   assign _vram_en = ~hblank && ~vblank;
   assign _vram_be = 2'b11;
-  assign vram_addr = { y[9:2], x[9:2] };
 
   // TODO: complete the rendering pipeline.
   // For now, this setup uses contents of the tilemap RAM to look up palette
@@ -74,27 +75,45 @@ module Renderer(clk, _reset, x, y, vblank, hblank,
   wire [SCREEN_Y_WIDTH-2:0] screen_y = (y - 35) / 2;
 
   assign pal_clk = ~clk;
-
   assign map_clk = ~clk;
-  assign map_addr = {screen_y, screen_x[7:1]};
+  assign vram_clk = ~clk;
 
-  reg map_byte_select;
-  always @ (posedge map_clk) begin
-    map_byte_select <= screen_x[0];
+  wire [4:0] map_x = screen_x[8:4];
+  wire [4:0] map_y = screen_y[8:4];
+  wire [3:0] tile_x = screen_x[3:0];
+  wire [3:0] tile_y = screen_y[3:0];
+  // Screen location -> map address
+  assign map_addr = {map_y, map_x};
+
+  reg [3:0] tile_x_reg;
+  reg [3:0] tile_y_reg;
+  always @ (posedge clk) begin
+    tile_x_reg <= tile_x;
+    tile_y_reg <= tile_y;
   end
 
+  // Map data -> VRAM address
+  // TODO: unpack map entry fields.
+  assign vram_addr = {map_data, tile_y_reg, tile_x_reg[3:1]};
+
+  reg vram_byte_select;
+  always @ (posedge clk) begin
+    vram_byte_select <= tile_x_reg[0];
+  end
+
+  // VRAM data -> palette address
   CC_DFlipFlop #(`PAL_ADDR_WIDTH)
       rgb_reg(.clk(clk),
               .en(1),
-              .d((map_byte_select == 0) ? map_data[7:0] : map_data[15:8]),
+              .d((vram_byte_select == 0) ? vram_data[7:0] : vram_data[15:8]),
               .q(pal_addr));
   reg [RGB_COLOR_DEPTH-1:0] rgb_out_reg;
   assign rgb_out = rgb_out_reg;
 
+  // Palette data -> VGA output
   wire [5:0] pal_data_red = pal_data[7:2];
   wire [5:0] pal_data_green = pal_data[15:10];
   wire [5:0] pal_data_blue = pal_data[23:18];
-
   always @ (posedge clk) begin
     rgb_out_reg <= {pal_data_blue, pal_data_green, pal_data_red};
   end

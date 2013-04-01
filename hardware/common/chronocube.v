@@ -182,7 +182,12 @@ module ChronoCube(clk, _reset, _int,
   wire vram_rd = vram_select & ~_mpu_rd;
   wire vram_wr = vram_select & ~_mpu_wr;
   wire [`VRAM_DATA_WIDTH-1:0] vram_data_out;
-  vram_8Kx16 temp_vram(
+
+  // Port B: to renderer
+  wire ren_vram_clk;
+  wire [`VRAM_ADDR_WIDTH-1:0] ren_vram_addr;
+  wire [`VRAM_DATA_WIDTH-1:0] ren_vram_data;
+  vram_8Kx16 vram(
       .clock_a(clk),
       .address_a(mpu_addr),
       .byteena_a(vram_be),
@@ -190,6 +195,12 @@ module ChronoCube(clk, _reset, _int,
       .wren_a(vram_wr),
       .data_a(mpu_data_in),
       .q_a(vram_data_out),
+
+      .clock_b(ren_vram_clk),
+      .rden_b(1),
+      .wren_b(0),
+      .address_b(ren_vram_addr),
+      .q_b(ren_vram_data),
       );
 
   // Renderer
@@ -200,8 +211,9 @@ module ChronoCube(clk, _reset, _int,
                     ._vram_rd(_ren_bus_rd),
                     ._vram_wr(_ren_bus_wr),
                     ._vram_be(_ren_bus_be),
-                    .vram_addr(ren_bus_addr),
-                    .vram_data(ren_bus_data),
+                    .vram_clk(ren_vram_clk),
+                    .vram_addr(ren_vram_addr),
+                    .vram_data(ren_vram_data),
 
                     .pal_clk(ren_pal_clk),
                     .pal_addr(ren_pal_addr),
