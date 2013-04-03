@@ -20,10 +20,12 @@
 // TODO: implement tilemaps.
 
 `include "memory_map.vh"
+`include "registers.vh"
 
 `define LINE_BUF_ADDR_WIDTH 10
 
-module Renderer(clk, reset, x, y, vblank, hblank,
+module Renderer(clk, reset, reg_values,
+                x, y, vblank, hblank,
                 pal_clk, pal_addr, pal_data,
                 map_clk, map_addr, map_data,
                 _vram_en, _vram_rd, _vram_wr, _vram_be,
@@ -37,6 +39,10 @@ module Renderer(clk, reset, x, y, vblank, hblank,
 
   input clk;                      // System clock
   input reset;                    // Reset
+
+  // Main register values
+  input [`REG_DATA_WIDTH * `NUM_MAIN_REGS - 1 : 0] reg_values;
+
   input [SCREEN_X_WIDTH-1:0] x;   // Current screen refresh coordinates
   input [SCREEN_Y_WIDTH-1:0] y;
   input hblank, vblank;           // Screen blanking signals
@@ -68,6 +74,16 @@ module Renderer(clk, reset, x, y, vblank, hblank,
   assign _vram_en = ~hblank && ~vblank;
   assign _vram_be = 2'b11;
 
+  // Main register values.
+  wire [`REG_DATA_WIDTH-1:0] reg_array [`NUM_MAIN_REGS-1:0];
+  genvar i;
+  generate
+    for (i = 0; i < `NUM_MAIN_REGS; i = i + 1) begin : REGS
+      assign reg_array[i] = reg_values[`REG_DATA_WIDTH * (i + 1) - 1:
+                                       `REG_DATA_WIDTH * i];
+    end
+  endgenerate
+
   // TODO: complete the rendering pipeline.
   // For now, this setup uses contents of the tilemap RAM to look up palette
   // colors.  The palette color goes straight to the output.
@@ -85,6 +101,8 @@ module Renderer(clk, reset, x, y, vblank, hblank,
   `define STATE_DRAW     1
   reg [3:0] render_state;
   reg [`LINE_BUF_ADDR_WIDTH-2:0] render_x;
+  // Handle y-scrolling.
+  wire [`LINE_BUF_ADDR_WIDTH-2:0] render_y = screen_y + reg_array[`SCROLL_Y];
 
   // TODO: Create a function for computing the on-screen scanline number.
   wire [SCREEN_Y_WIDTH-1:0] scanline = y - 35;
@@ -120,10 +138,14 @@ module Renderer(clk, reset, x, y, vblank, hblank,
     end
   end
 
-  wire [4:0] map_x = render_x[8:4];
-  wire [4:0] map_y = screen_y[8:4];
-  wire [3:0] tile_x = render_x[3:0];
-  wire [3:0] tile_y = screen_y[3:0];
+  // Handle x-scrolling.
+  wire [`LINE_BUF_ADDR_WIDTH-2:0] render_x_world =
+      render_x + reg_array[`SCROLL_X];
+
+  wire [4:0] map_x = render_x_world[8:4];
+  wire [4:0] map_y = render_y[8:4];
+  wire [3:0] tile_x = render_x_world[3:0];
+  wire [3:0] tile_y = render_y[3:0];
   // Screen location -> map address
   assign map_addr = {map_y, map_x};
 

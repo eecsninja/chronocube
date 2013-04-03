@@ -206,6 +206,7 @@ module ChronoCube(clk, _reset, _int,
   // Renderer
   Renderer renderer(.clk(clk),
                     .reset(~_reset),
+                    .reg_values(reg_values),
 
                     ._vram_en(_ren_bus_en),
                     ._vram_rd(_ren_bus_rd),
