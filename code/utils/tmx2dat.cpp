@@ -149,7 +149,8 @@ int main(int argc, char* argv[]) {
     unsigned int offset;
     std::vector<uint16_t> layer_line;
     for (offset = 0; offset < layers[i].size(); offset += layer_width) {
-      layer_line.assign(layers[i].begin(), layers[i].begin() + layer_width);
+      layer_line.assign(layers[i].begin() + offset,
+                        layers[i].begin() + offset + layer_width);
       layer_line.resize(aligned_layer_width, 0);
       fwrite(&layer_line[0], sizeof(uint16_t), aligned_layer_width, layer_file);
     }
