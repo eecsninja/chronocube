@@ -76,13 +76,53 @@ module Renderer(clk, reset, x, y, vblank, hblank,
   wire [SCREEN_X_WIDTH-2:0] screen_x = (x - 144) / 2;
   wire [SCREEN_Y_WIDTH-2:0] screen_y = (y - 35) / 2;
 
-  assign pal_clk = ~clk;
-  assign map_clk = ~clk;
-  assign vram_clk = ~clk;
+  assign pal_clk = clk;
+  assign map_clk = clk;
+  assign vram_clk = clk;
 
-  wire [4:0] map_x = screen_x[8:4];
+  // The logic for drawing to the line buffer.
+  `define STATE_IDLE     0
+  `define STATE_DRAW     1
+  reg [3:0] render_state;
+  reg [`LINE_BUF_ADDR_WIDTH-2:0] render_x;
+
+  // TODO: Create a function for computing the on-screen scanline number.
+  wire [SCREEN_Y_WIDTH-1:0] scanline = y - 35;
+  always @ (posedge clk or posedge reset) begin
+    if (reset)
+      render_state <= `STATE_IDLE;
+    else begin
+      case (render_state)
+      `STATE_IDLE:
+        begin
+          // Start drawing at the start of an even numbered VGA line.
+          if (x == 0 && vblank == 0 && scanline[0] == 0) begin
+            render_state <= `STATE_DRAW;
+            render_x <= 0;
+          end
+        end
+      `STATE_DRAW:
+        begin
+          // Stop drawing at the end of an odd numbered VGA line.
+          // TODO: create define for '800', the max 640x480 horizontal count.
+          if (x + 1 == 800 && scanline[0] == 1)
+            render_state <= `STATE_IDLE;
+          // Stop drawing if the screen has been drawn.
+          // TODO: direct drawing based on tile coordinates rather than screen
+          // coordinates.
+          // TODO: create define for '320', the horizontal image resolution.
+          else if (render_x + 1 == 320)
+            render_state <= `STATE_IDLE;
+          else
+            render_x <= render_x + 1;
+        end
+      endcase
+    end
+  end
+
+  wire [4:0] map_x = render_x[8:4];
   wire [4:0] map_y = screen_y[8:4];
-  wire [3:0] tile_x = screen_x[3:0];
+  wire [3:0] tile_x = render_x[3:0];
   wire [3:0] tile_y = screen_y[3:0];
   // Screen location -> map address
   assign map_addr = {map_y, map_x};
@@ -114,14 +154,16 @@ module Renderer(clk, reset, x, y, vblank, hblank,
   // Palette data -> Line buffer
 
   // Interface A: writing to the line buffer.
-  reg buf_wr;
-  reg [`LINE_BUF_ADDR_WIDTH-1:0] buf_addr;
+  wire buf_wr = (render_state == `STATE_DRAW);
+  wire [`LINE_BUF_ADDR_WIDTH-1:0] buf_addr;
 
-  // The logic for drawing to the line buffer.
-  always @ (posedge clk) begin
-    buf_wr <= ~(vblank | hblank);
-    buf_addr <= {screen_y[0], screen_x};
-  end
+  // Delay the line buffer write address by three cycles due to the tilemap ->
+  // VRAM -> palette pipeline.
+  CC_Delay #(.WIDTH(`LINE_BUF_ADDR_WIDTH), .DELAY(3))
+      buf_addr_delay(.clk(clk),
+                     .reset(reset),
+                     .d({screen_y[0], render_x}),
+                     .q(buf_addr));
 
   // The Palette memory module happens to be good for a line drawing buffer,
   // since its contents are of the same color format.
