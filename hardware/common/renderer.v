@@ -25,7 +25,7 @@
 `define LINE_BUF_ADDR_WIDTH 10
 
 module Renderer(clk, reset, reg_values,
-                x, y, vblank, hblank,
+                h_pos, v_pos, h_sync, v_sync,
                 pal_clk, pal_addr, pal_data,
                 map_clk, map_addr, map_data,
                 _vram_en, _vram_rd, _vram_wr, _vram_be,
@@ -34,8 +34,8 @@ module Renderer(clk, reset, reg_values,
   parameter VRAM_ADDR_BUS_WIDTH=16;
   parameter VRAM_DATA_BUS_WIDTH=16;
   parameter RGB_COLOR_DEPTH=18;
-  parameter SCREEN_X_WIDTH=10;
-  parameter SCREEN_Y_WIDTH=10;
+  localparam SCREEN_X_WIDTH=10;
+  localparam SCREEN_Y_WIDTH=10;
 
   input clk;                      // System clock
   input reset;                    // Reset
@@ -43,9 +43,18 @@ module Renderer(clk, reset, reg_values,
   // Main register values
   input [`REG_DATA_WIDTH * `NUM_MAIN_REGS - 1 : 0] reg_values;
 
-  input [SCREEN_X_WIDTH-1:0] x;   // Current screen refresh coordinates
-  input [SCREEN_Y_WIDTH-1:0] y;
-  input hblank, vblank;           // Screen blanking signals
+  input [SCREEN_X_WIDTH-1:0] h_pos;   // Current screen refresh coordinates
+  input [SCREEN_Y_WIDTH-1:0] v_pos;
+  output h_sync, v_sync;              // Sync signals
+
+  // Decode video scanout position.
+  wire h_blank, v_blank;
+  wire [SCREEN_X_WIDTH-1:0] h_visible;
+  wire [SCREEN_X_WIDTH-1:0] v_visible;
+  DisplayTiming timing(.h_pos(h_pos),              .v_pos(v_pos),
+                       .h_sync(h_sync),            .v_sync(v_sync),
+                       .h_blank(h_blank),          .v_blank(v_blank),
+                       .h_visible_pos(h_visible),  .v_visible_pos(v_visible));
 
   // Palette interface
   output pal_clk;
@@ -70,8 +79,8 @@ module Renderer(clk, reset, reg_values,
   output [RGB_COLOR_DEPTH-1:0] rgb_out;           // Color output.
 
   assign _vram_wr = 1'b0;
-  assign _vram_rd = ~hblank && ~vblank;
-  assign _vram_en = ~hblank && ~vblank;
+  assign _vram_rd = ~h_blank && ~v_blank;
+  assign _vram_en = ~h_blank && ~v_blank;
   assign _vram_be = 2'b11;
 
   // Main register values.
@@ -89,8 +98,8 @@ module Renderer(clk, reset, reg_values,
   // colors.  The palette color goes straight to the output.
   // TODO: create global functions or tasks for computing screen coordinates
   // from VGA counter values.
-  wire [SCREEN_X_WIDTH-2:0] screen_x = (x - 144) / 2;
-  wire [SCREEN_Y_WIDTH-2:0] screen_y = (y - 35) / 2;
+  wire [SCREEN_X_WIDTH-2:0] screen_x = h_visible / 2;
+  wire [SCREEN_Y_WIDTH-2:0] screen_y = v_visible / 2;
 
   assign pal_clk = clk;
   assign map_clk = clk;
@@ -104,8 +113,6 @@ module Renderer(clk, reset, reg_values,
   // Handle y-scrolling.
   wire [`LINE_BUF_ADDR_WIDTH-2:0] render_y = screen_y + reg_array[`SCROLL_Y];
 
-  // TODO: Create a function for computing the on-screen scanline number.
-  wire [SCREEN_Y_WIDTH-1:0] scanline = y - 35;
   always @ (posedge clk or posedge reset) begin
     if (reset)
       render_state <= `STATE_IDLE;
@@ -113,17 +120,17 @@ module Renderer(clk, reset, reg_values,
       case (render_state)
       `STATE_IDLE:
         begin
-          // Start drawing at the start of an even numbered VGA line.
-          if (x == 0 && vblank == 0 && scanline[0] == 0) begin
+          // Start drawing at the start of an even numbered on-screen scanline.
+          if (h_pos == 0 && v_blank == 0 && v_visible[0] == 0) begin
             render_state <= `STATE_DRAW;
             render_x <= 0;
           end
         end
       `STATE_DRAW:
         begin
-          // Stop drawing at the end of an odd numbered VGA line.
+          // Stop drawing at the end of an odd numbered on-screen scanline.
           // TODO: create define for '800', the max 640x480 horizontal count.
-          if (x + 1 == 800 && scanline[0] == 1)
+          if (h_pos + 1 == 800 && v_visible[0] == 1)
             render_state <= `STATE_IDLE;
           // Stop drawing if the screen has been drawn.
           // TODO: direct drawing based on tile coordinates rather than screen
@@ -218,9 +225,13 @@ module Renderer(clk, reset, reg_values,
   wire [7:0] buf_scanout_green = buf_scanout_data[15:8];
   wire [7:0] buf_scanout_blue = buf_scanout_data[23:16];
   always @ (posedge clk) begin
-    rgb_out <= {buf_scanout_blue[7:2],
-                buf_scanout_green[7:2],
-                buf_scanout_red[7:2]};
+    if (h_blank | v_blank) begin
+      rgb_out <= {`RGB_COLOR_DEPTH {1'b0}};
+    end else begin
+      rgb_out <= {buf_scanout_blue[7:2],
+                  buf_scanout_green[7:2],
+                  buf_scanout_red[7:2]};
+    end
   end
 
 endmodule

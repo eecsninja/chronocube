@@ -74,19 +74,12 @@ module ChronoCube(clk, _reset, _int,
   // Counters for the position of the refresh.
   wire [`DISPLAY_HCOUNT_WIDTH-1:0] h_pos;
   wire [`DISPLAY_VCOUNT_WIDTH-1:0] v_pos;
-  // Signals to indicate that refresh is in an off-screen area.
-  wire hblank;
-  wire vblank;
   DisplayController #(.HCOUNT_WIDTH(`DISPLAY_HCOUNT_WIDTH),
                       .VCOUNT_WIDTH(`DISPLAY_VCOUNT_WIDTH))
       display(.clk(clk),
               .reset(~_reset),
               .v_pos(v_pos),
-              .h_pos(h_pos),
-              .hsync(vga_hsync),
-              .vsync(vga_vsync),
-              .vblank(vblank),
-              .hblank(hblank));
+              .h_pos(h_pos));
 
   // Graphics processor
   // TODO: add switching between 16-bit full color and 8-bit palettes.
@@ -96,7 +89,6 @@ module ChronoCube(clk, _reset, _int,
   wire _ren_bus_rd;
   wire _ren_bus_wr;
   wire [1:0] _ren_bus_be;
-  wire [`RGB_COLOR_DEPTH-1:0] ren_rgb_out;
 
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
@@ -224,11 +216,11 @@ module ChronoCube(clk, _reset, _int,
                     .map_addr(ren_map_addr),
                     .map_data(ren_map_data),
 
-                    .x(h_pos),
-                    .y(v_pos),
-                    .vblank(vblank),
-                    .hblank(hblank),
-                    .rgb_out(ren_rgb_out));
+                    .h_pos(h_pos),
+                    .v_pos(v_pos),
+                    .h_sync(vga_hsync),
+                    .v_sync(vga_vsync),
+                    .rgb_out(vga_rgb));
 
   wire [`REG_DATA_WIDTH * `NUM_MAIN_REGS - 1 : 0] reg_values;
 
@@ -240,9 +232,6 @@ module ChronoCube(clk, _reset, _int,
                                        `REG_DATA_WIDTH * i];
     end
   endgenerate
-
-  // Video output from renderer.
-  assign vga_rgb = (hblank | vblank) ? {`RGB_COLOR_DEPTH {1'b0}} : ren_rgb_out;
 
   wire main_reg_select = (mpu_addr >= `MAIN_REG_ADDR_BASE) &
                          (mpu_addr < `MAIN_REG_ADDR_BASE + `NUM_MAIN_REGS);

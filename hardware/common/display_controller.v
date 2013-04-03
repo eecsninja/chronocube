@@ -21,8 +21,7 @@
 // See: http://tinyvga.com/vga-timing/640x480@60Hz
 // TODO: support other display modes.
 
-module DisplayController(
-    clk, reset, h_pos, v_pos, hsync, vsync, hblank, vblank);
+module DisplayController(clk, reset, h_pos, v_pos);
 
   parameter HCOUNT_WIDTH=10;
   parameter VCOUNT_WIDTH=10;
@@ -32,15 +31,6 @@ module DisplayController(
 
   output reg [HCOUNT_WIDTH-1:0] h_pos;    // Output scan position counters.
   output reg [VCOUNT_WIDTH-1:0] v_pos;
-  output hsync;       // Horizontal sync
-  output vsync;       // Vertical sync
-  output hblank;      // Horizontal blanking indicator
-  output vblank;      // Vertical blanking indicator
-
-  assign hsync = get_hsync(h_pos);
-  assign vsync = get_vsync(v_pos);
-  assign hblank = get_hblank(h_pos);
-  assign vblank = get_vblank(v_pos);
 
   reg clk_25mhz;
   always @ (posedge clk or posedge reset)
@@ -69,24 +59,50 @@ module DisplayController(
     end
   end
 
-  function get_hsync;
-  input [HCOUNT_WIDTH-1:0] h_pos;
-    get_hsync = (h_pos < 96) ? 1'b0 : 1'b1;
-  endfunction
+endmodule
 
-  function get_vsync;
-  input [VCOUNT_WIDTH-1:0] v_pos;
-    get_vsync = (v_pos < 2) ? 1'b0 : 1'b1;
-  endfunction
+// Decodes horizontal and vertical scan position into blanking, sync, etc.
+module DisplayTiming(h_pos, v_pos, h_sync, v_sync, h_blank, v_blank,
+                     h_visible_pos, v_visible_pos);
+  localparam FIELD_WIDTH = 10;
+  input [FIELD_WIDTH-1:0] h_pos;
+  input [FIELD_WIDTH-1:0] v_pos;
 
-  function get_hblank;
-  input [HCOUNT_WIDTH-1:0] h_pos;
-    get_hblank = (h_pos < 144 || h_pos >= 784);
-  endfunction
+  // VGA timing values, measured in pixel clock cycles.
+  `define H_VISIBLE_LENGTH               640
+  `define H_FRONT_LENGTH                  16
+  `define H_SYNC_LENGTH                   96
+  `define H_BACK_LENGTH                   48
+  `define H_SYNC_START                     0
+  `define H_BACK_START         (`H_SYNC_START + `H_SYNC_LENGTH)
+  `define H_VISIBLE_START      (`H_BACK_START + `H_BACK_LENGTH)
+  `define H_FRONT_START        (`H_VISIBLE_START + `H_VISIBLE_LENGTH)
+  `define H_TOTAL_LENGTH       (`H_VISIBLE_LENGTH + `H_FRONT_LENGTH + \
+                                `H_SYNC_LENGTH + `H_BACK_LENGTH)
 
-  function get_vblank;
-  input [VCOUNT_WIDTH-1:0] v_pos;
-    get_vblank = (v_pos < 35 || v_pos >= 515);
-  endfunction
+  `define V_VISIBLE_LENGTH               480
+  `define V_FRONT_LENGTH                  10
+  `define V_SYNC_LENGTH                    2
+  `define V_BACK_LENGTH                   33
+  `define V_SYNC_START                     0
+  `define V_BACK_START         (`V_SYNC_START + `V_SYNC_LENGTH)
+  `define V_VISIBLE_START      (`V_BACK_START + `V_BACK_LENGTH)
+  `define V_FRONT_START        (`V_VISIBLE_START + `V_VISIBLE_LENGTH)
+  `define V_TOTAL_LENGTH       (`V_VISIBLE_LENGTH + `V_FRONT_LENGTH + \
+                                `V_SYNC_LENGTH + `V_BACK_LENGTH)
 
+  // Sync signals.
+  output h_sync = (h_pos < `H_SYNC_LENGTH);
+  output v_sync = (v_pos < `V_SYNC_LENGTH);
+
+  // Blanking signals indicating that scanout is in an off-screen area.
+  wire hblank;
+  wire vblank;
+    output h_blank = (h_pos < `H_VISIBLE_START || h_pos >= `H_FRONT_START);
+  output v_blank = (v_pos < `V_VISIBLE_START || v_pos >= `V_FRONT_START);
+
+  // Position of scanout relative to upper-left corner of visible portion of
+  // screen.
+  output [FIELD_WIDTH-1:0] h_visible_pos = h_pos - `H_VISIBLE_START;
+  output [FIELD_WIDTH-1:0] v_visible_pos = v_pos - `V_VISIBLE_START;
 endmodule
