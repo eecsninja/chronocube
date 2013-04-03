@@ -22,13 +22,13 @@
 // TODO: support other display modes.
 
 module DisplayController(
-    clk, _reset, h_pos, v_pos, hsync, vsync, hblank, vblank);
+    clk, reset, h_pos, v_pos, hsync, vsync, hblank, vblank);
 
   parameter HCOUNT_WIDTH=10;
   parameter VCOUNT_WIDTH=10;
 
   input clk;          // System clock
-  input _reset;       // System reset
+  input reset;        // System reset
 
   output reg [HCOUNT_WIDTH-1:0] h_pos;    // Output scan position counters.
   output reg [VCOUNT_WIDTH-1:0] v_pos;
@@ -41,8 +41,6 @@ module DisplayController(
   assign vsync = get_vsync(v_pos);
   assign hblank = get_hblank(h_pos);
   assign vblank = get_vblank(v_pos);
-
-  wire reset = ~_reset;
 
   reg clk_25mhz;
   always @ (posedge clk)

@@ -80,7 +80,7 @@ module ChronoCube(clk, _reset, _int,
   DisplayController #(.HCOUNT_WIDTH(`DISPLAY_HCOUNT_WIDTH),
                       .VCOUNT_WIDTH(`DISPLAY_VCOUNT_WIDTH))
       display(.clk(clk),
-              ._reset(_reset),
+              .reset(~_reset),
               .v_pos(v_pos),
               .h_pos(h_pos),
               .hsync(vga_hsync),
@@ -205,7 +205,7 @@ module ChronoCube(clk, _reset, _int,
 
   // Renderer
   Renderer renderer(.clk(clk),
-                    ._reset(_reset),
+                    .reset(~_reset),
 
                     ._vram_en(_ren_bus_en),
                     ._vram_rd(_ren_bus_rd),

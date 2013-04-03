@@ -23,7 +23,7 @@
 
 `define LINE_BUF_ADDR_WIDTH 10
 
-module Renderer(clk, _reset, x, y, vblank, hblank,
+module Renderer(clk, reset, x, y, vblank, hblank,
                 pal_clk, pal_addr, pal_data,
                 map_clk, map_addr, map_data,
                 _vram_en, _vram_rd, _vram_wr, _vram_be,
@@ -36,7 +36,7 @@ module Renderer(clk, _reset, x, y, vblank, hblank,
   parameter SCREEN_Y_WIDTH=10;
 
   input clk;                      // System clock
-  input _reset;                   // Reset (active low)
+  input reset;                    // Reset
   input [SCREEN_X_WIDTH-1:0] x;   // Current screen refresh coordinates
   input [SCREEN_Y_WIDTH-1:0] y;
   input hblank, vblank;           // Screen blanking signals
