@@ -43,12 +43,15 @@ module DisplayController(
   assign vblank = get_vblank(v_pos);
 
   reg clk_25mhz;
-  always @ (posedge clk)
-    clk_25mhz <= ~clk_25mhz;
+  always @ (posedge clk or posedge reset)
+    if (reset)
+      clk_25mhz <= 0;
+    else
+      clk_25mhz <= ~clk_25mhz;
 
-  always @ (negedge clk_25mhz)
+  always @ (posedge clk_25mhz or posedge reset)
   begin
-    if (reset == 1) begin
+    if (reset) begin
       h_pos <= 0;
       v_pos <= 0;
     end else begin
