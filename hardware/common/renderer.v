@@ -21,6 +21,8 @@
 
 `include "memory_map.vh"
 
+`define LINE_BUF_ADDR_WIDTH 10
+
 module Renderer(clk, _reset, x, y, vblank, hblank,
                 pal_clk, pal_addr, pal_data,
                 map_clk, map_addr, map_data,
@@ -107,15 +109,54 @@ module Renderer(clk, _reset, x, y, vblank, hblank,
               .en(1),
               .d((vram_byte_select == 0) ? vram_data[7:0] : vram_data[15:8]),
               .q(pal_addr));
-  reg [RGB_COLOR_DEPTH-1:0] rgb_out_reg;
-  assign rgb_out = rgb_out_reg;
+  reg [RGB_COLOR_DEPTH-1:0] rgb_out;
 
-  // Palette data -> VGA output
-  wire [5:0] pal_data_red = pal_data[7:2];
-  wire [5:0] pal_data_green = pal_data[15:10];
-  wire [5:0] pal_data_blue = pal_data[23:18];
+  // Palette data -> Line buffer
+
+  // Interface A: writing to the line buffer.
+  reg buf_wr;
+  reg [`LINE_BUF_ADDR_WIDTH-1:0] buf_addr;
+
+  // The logic for drawing to the line buffer.
   always @ (posedge clk) begin
-    rgb_out_reg <= {pal_data_blue, pal_data_green, pal_data_red};
+    buf_wr <= ~(vblank | hblank);
+    buf_addr <= {screen_y[0], screen_x};
+  end
+
+  // The Palette memory module happens to be good for a line drawing buffer,
+  // since its contents are of the same color format.
+  Palette #(.NUM_CHANNELS(`NUM_PAL_CHANNELS)) line_buffer(
+      .clk_a(clk),
+      .wr_a(buf_wr),
+      .rd_a(0),
+      .addr_a(buf_addr),
+      .data_in_a(pal_data),
+      .byte_en_a(3'b111),
+
+      .clk_b(clk),
+      .wr_b(0),
+      .rd_b(1),
+      .addr_b(buf_scanout_addr),
+      .data_in_b(0),
+      .data_out_b(buf_scanout_data)
+      );
+
+  // Line buffer -> VGA output
+
+  // Interface B: reading from the line buffer
+  wire [`LINE_BUF_ADDR_WIDTH-1:0] buf_scanout_addr;
+  wire [`PAL_DATA_WIDTH-1:0] buf_scanout_data;
+  // Make sure to scan out from the part of the buffer that was rendered to
+  // the previous line.
+  assign buf_scanout_addr = {~screen_y[0], screen_x};
+
+  wire [7:0] buf_scanout_red = buf_scanout_data[7:0];
+  wire [7:0] buf_scanout_green = buf_scanout_data[15:8];
+  wire [7:0] buf_scanout_blue = buf_scanout_data[23:16];
+  always @ (posedge clk) begin
+    rgb_out <= {buf_scanout_blue[7:2],
+                buf_scanout_green[7:2],
+                buf_scanout_red[7:2]};
   end
 
 endmodule
