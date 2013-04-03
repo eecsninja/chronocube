@@ -18,6 +18,8 @@
 
 // Test bench for main module.
 
+`timescale 10 ns / 1 ns
+
 module Main_Test;
 
   parameter ADDR_WIDTH=16;
