@@ -49,12 +49,22 @@ module Renderer(clk, reset, reg_values,
 
   // Decode video scanout position.
   wire h_blank, v_blank;
+  wire h_sync_in, v_sync_in;
   wire [SCREEN_X_WIDTH-1:0] h_visible;
   wire [SCREEN_X_WIDTH-1:0] v_visible;
   DisplayTiming timing(.h_pos(h_pos),              .v_pos(v_pos),
-                       .h_sync(h_sync),            .v_sync(v_sync),
+                       .h_sync(h_sync_in),         .v_sync(v_sync_in),
                        .h_blank(h_blank),          .v_blank(v_blank),
                        .h_visible_pos(h_visible),  .v_visible_pos(v_visible));
+
+  // Delay the vertical sync output by two horizontal lines to match the delayed
+  // line buffer scanout.
+  DisplayTiming delayed(.h_pos(h_pos),              .v_pos(v_pos - 2),
+                        .h_sync(h_sync),            .v_sync(v_sync),
+                        .h_blank(h_blank_delayed),  .v_blank(v_blank_delayed));
+
+  wire h_blank_delayed;
+  wire v_blank_delayed;
 
   // Palette interface
   output pal_clk;
@@ -206,7 +216,7 @@ module Renderer(clk, reset, reg_values,
 
       .clk_b(clk),
       .wr_b(0),
-      .rd_b(1),
+      .rd_b(~(h_blank_delayed | v_blank_delayed)),
       .addr_b(buf_scanout_addr),
       .data_in_b(0),
       .data_out_b(buf_scanout_data)
@@ -225,7 +235,7 @@ module Renderer(clk, reset, reg_values,
   wire [7:0] buf_scanout_green = buf_scanout_data[15:8];
   wire [7:0] buf_scanout_blue = buf_scanout_data[23:16];
   always @ (posedge clk) begin
-    if (h_blank | v_blank) begin
+    if (h_blank_delayed | v_blank_delayed) begin
       rgb_out <= {`RGB_COLOR_DEPTH {1'b0}};
     end else begin
       rgb_out <= {buf_scanout_blue[7:2],
