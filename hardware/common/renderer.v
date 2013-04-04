@@ -57,14 +57,21 @@ module Renderer(clk, reset, reg_values,
                        .h_blank(h_blank),          .v_blank(v_blank),
                        .h_visible_pos(h_visible),  .v_visible_pos(v_visible));
 
-  // Delay the vertical sync output by two horizontal lines to match the delayed
-  // line buffer scanout.
-  DisplayTiming delayed(.h_pos(h_pos),              .v_pos(v_pos - 2),
-                        .h_sync(h_sync),            .v_sync(v_sync),
-                        .h_blank(h_blank_delayed),  .v_blank(v_blank_delayed));
-
   wire h_blank_delayed;
   wire v_blank_delayed;
+
+  // Delay the vertical sync output by two horizontal lines to match the delayed
+  // line buffer scanout.
+  DisplayTiming v_delay(.h_pos(h_pos),
+                        .v_pos(v_pos - 2),
+                        .v_sync(v_sync),
+                        .v_blank(v_blank_delayed));
+  // Delay horizontal sync and blank by two clocks.  This is to to match the
+  // scanout from the line buffer plus the registered RGB output.
+  CC_Delay #(.WIDTH(2), .DELAY(2)) h_delay(.clk(clk),
+                                           .reset(reset),
+                                           .d({h_sync_in, h_blank}),
+                                           .q({h_sync, h_blank_delayed}));
 
   // Palette interface
   output pal_clk;
@@ -193,16 +200,30 @@ module Renderer(clk, reset, reg_values,
   // Palette data -> Line buffer
 
   // Interface A: writing to the line buffer.
-  wire buf_wr = (render_state == `STATE_DRAW);
+  wire buf_wr;
   wire [`LINE_BUF_ADDR_WIDTH-1:0] buf_addr;
 
-  // Delay the line buffer write address by three cycles due to the tilemap ->
-  // VRAM -> palette pipeline.
-  CC_Delay #(.WIDTH(`LINE_BUF_ADDR_WIDTH), .DELAY(3))
+  // Delay the line buffer write address by five cycles due to the need for data
+  // to pass through the rendering pipeline.
+  // The five-clock delay is broken down as follows:
+  // - Tile map RAM access
+  // - VRAM access
+  // - Registering of VRAM data (TODO: remove this after switching to external
+  //   asynchronous VRAM)
+  // - VRAM to Palette
+  // - Something else in the pipeline that I can't account for.  But it works if
+  //   I use a delay of 5.
+  `define RENDER_DELAY 5
+  CC_Delay #(.WIDTH(`LINE_BUF_ADDR_WIDTH), .DELAY(`RENDER_DELAY))
       buf_addr_delay(.clk(clk),
                      .reset(reset),
                      .d({screen_y[0], render_x}),
                      .q(buf_addr));
+  CC_Delay #(.WIDTH(1), .DELAY(`RENDER_DELAY))
+      buf_wr_delay(.clk(clk),
+                   .reset(reset),
+                   .d((render_state == `STATE_DRAW)),
+                   .q(buf_wr));
 
   // The Palette memory module happens to be good for a line drawing buffer,
   // since its contents are of the same color format.
@@ -216,7 +237,7 @@ module Renderer(clk, reset, reg_values,
 
       .clk_b(clk),
       .wr_b(0),
-      .rd_b(~(h_blank_delayed | v_blank_delayed)),
+      .rd_b(~(h_blank | v_blank_delayed)),
       .addr_b(buf_scanout_addr),
       .data_in_b(0),
       .data_out_b(buf_scanout_data)
