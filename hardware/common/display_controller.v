@@ -92,17 +92,19 @@ module DisplayTiming(h_pos, v_pos, h_sync, v_sync, h_blank, v_blank,
                                 `V_SYNC_LENGTH + `V_BACK_LENGTH)
 
   // Sync signals.
-  output h_sync = (h_pos < `H_SYNC_LENGTH);
-  output v_sync = (v_pos < `V_SYNC_LENGTH);
-
+  output h_sync, v_sync;
   // Blanking signals indicating that scanout is in an off-screen area.
-  wire hblank;
-  wire vblank;
-  output h_blank = (h_pos < `H_VISIBLE_START || h_pos >= `H_FRONT_START);
-  output v_blank = (v_pos < `V_VISIBLE_START || v_pos >= `V_FRONT_START);
-
+  output h_blank, v_blank;
   // Position of scanout relative to upper-left corner of visible portion of
   // screen.
-  output [FIELD_WIDTH-1:0] h_visible_pos = h_pos - `H_VISIBLE_START;
-  output [FIELD_WIDTH-1:0] v_visible_pos = v_pos - `V_VISIBLE_START;
+  output [FIELD_WIDTH-1:0] h_visible_pos;
+  output [FIELD_WIDTH-1:0] v_visible_pos;
+
+  assign h_sync = (h_pos < `H_SYNC_LENGTH);
+  assign v_sync = (v_pos < `V_SYNC_LENGTH);
+  assign h_blank = (h_pos < `H_VISIBLE_START || h_pos >= `H_FRONT_START);
+  assign v_blank = (v_pos < `V_VISIBLE_START || v_pos >= `V_FRONT_START);
+  assign h_visible_pos = h_pos - `H_VISIBLE_START;
+  assign v_visible_pos = v_pos - `V_VISIBLE_START;
+
 endmodule

@@ -236,7 +236,7 @@ module Renderer(clk, reset, reg_values,
   wire [7:0] buf_scanout_blue = buf_scanout_data[23:16];
   always @ (posedge clk) begin
     if (h_blank_delayed | v_blank_delayed) begin
-      rgb_out <= {`RGB_COLOR_DEPTH {1'b0}};
+      rgb_out <= {RGB_COLOR_DEPTH {1'b0}};
     end else begin
       rgb_out <= {buf_scanout_blue[7:2],
                   buf_scanout_green[7:2],

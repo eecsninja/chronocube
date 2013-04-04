@@ -25,7 +25,6 @@
 `define MPU_ADDR_WIDTH 16
 `define MPU_DATA_WIDTH 16
 
-`define VRAM_ADDR_WIDTH 16
 `define VRAM_DATA_WIDTH 16
 
 `define RGB_COLOR_DEPTH 18
@@ -192,7 +191,7 @@ module ChronoCube(clk, _reset, _int,
       .rden_b(1),
       .wren_b(0),
       .address_b(ren_vram_addr),
-      .q_b(ren_vram_data),
+      .q_b(ren_vram_data)
       );
 
   // Renderer
