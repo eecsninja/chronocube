@@ -42,4 +42,6 @@
 `define REG_RW                  0   // Read-write register.
 `define REG_RO                  1   // Read-only register.
 
+`define ID_REG_VALUE       'h4343   // "CC" in ASCII, used to identify system.
+
 `endif  // _REGISTERS_VH_

@@ -242,6 +242,9 @@ module ChronoCube(clk, _reset, _int,
     end
   endgenerate
 
+  // Assing ID value to ID register.
+  assign reg_array_in[`ID] = `ID_REG_VALUE;
+
   // Output VGA status
   DisplayTiming timing(.h_pos(h_pos),
                        .v_pos(v_pos),
