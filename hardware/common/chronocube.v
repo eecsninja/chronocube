@@ -197,7 +197,7 @@ module ChronoCube(clk, _reset, _int,
   // Renderer
   Renderer renderer(.clk(clk),
                     .reset(~_reset),
-                    .reg_values(reg_values),
+                    .reg_values(reg_values_out),
 
                     ._vram_en(_ren_bus_en),
                     ._vram_rd(_ren_bus_rd),
@@ -221,16 +221,36 @@ module ChronoCube(clk, _reset, _int,
                     .v_sync(vga_vsync),
                     .rgb_out(vga_rgb));
 
-  wire [`REG_DATA_WIDTH * `NUM_MAIN_REGS - 1 : 0] reg_values;
-
-  wire [`REG_DATA_WIDTH-1:0] reg_array [`NUM_MAIN_REGS-1:0];
+  // Values from the read/write registers.
+  wire [`REG_DATA_WIDTH * `NUM_MAIN_REGS - 1 : 0] reg_values_out;
+  wire [`REG_DATA_WIDTH-1:0] reg_array_out [`NUM_MAIN_REGS-1:0];
   genvar i;
   generate
-    for (i = 0; i < `NUM_MAIN_REGS; i = i + 1) begin : REGS
-      assign reg_array[i] = reg_values[`REG_DATA_WIDTH * (i + 1) - 1:
-                                       `REG_DATA_WIDTH * i];
+    for (i = 0; i < `NUM_MAIN_REGS; i = i + 1) begin : OUT_REGS
+      assign reg_array_out[i] = reg_values_out[`REG_DATA_WIDTH * (i + 1) - 1:
+                                               `REG_DATA_WIDTH * i];
     end
   endgenerate
+
+  // Values to the read-only registers.
+  wire [`REG_DATA_WIDTH * `NUM_MAIN_REGS - 1 : 0] reg_values_in;
+  wire [`REG_DATA_WIDTH-1:0] reg_array_in [`NUM_MAIN_REGS-1:0];
+  generate
+    for (i = 0; i < `NUM_MAIN_REGS; i = i + 1) begin : IN_REGS
+      assign reg_values_in[`REG_DATA_WIDTH * (i + 1) - 1: `REG_DATA_WIDTH * i] =
+         reg_array_in[i];
+    end
+  endgenerate
+
+  // Output VGA status
+  DisplayTiming timing(.h_pos(h_pos),
+                       .v_pos(v_pos),
+                       .h_sync(reg_array_in[`OUTPUT_STATUS][0]),
+                       .v_sync(reg_array_in[`OUTPUT_STATUS][1]),
+                       .h_blank(reg_array_in[`OUTPUT_STATUS][2]),
+                       .v_blank(reg_array_in[`OUTPUT_STATUS][3]),
+                       .h_visible_pos(reg_array_in[`SCAN_X]),
+                       .v_visible_pos(reg_array_in[`SCAN_Y]));
 
   wire main_reg_select = (mpu_addr >= `MAIN_REG_ADDR_BASE) &
                          (mpu_addr < `MAIN_REG_ADDR_BASE + `NUM_MAIN_REGS);
@@ -245,7 +265,8 @@ module ChronoCube(clk, _reset, _int,
                 .addr(mpu_addr[`MAIN_REG_ADDR_WIDTH-1:0]),
                 .data_in(mpu_data_in),
                 .data_out(reg_data_out),
-                .values_out(reg_values));
+                .values_in(reg_values_in),
+                .values_out(reg_values_out));
 
   // VRAM interface logic
   // TODO: the multiplexed VRAM access by both Renderer and MPU here may be too
