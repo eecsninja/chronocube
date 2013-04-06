@@ -21,9 +21,12 @@
 // Access to registers is asynchronous.  It is only controlled by the memory bus
 // signals, and not by the system clock.
 
-module Register(reset, clk, en, be, d, q);
+`include "registers.vh"
+
+module Register(reset, clk, en, be, d, q, value_in);
   parameter WIDTH=16;         // Number of bits in the register.
   parameter BUS_WIDTH=16;     // Width of data bus used to access register.
+  parameter TYPE=`REG_RW;     // Register type: read/write, read-only, etc.
 
   input clk;        // System clock
   input reset;      // System reset
@@ -32,28 +35,36 @@ module Register(reset, clk, en, be, d, q);
 
   input [BUS_WIDTH-1:0] d;      // Input and output ports.
   output [BUS_WIDTH-1:0] q;
+  input [BUS_WIDTH-1:0] value_in;   // Read value for read-only registers.
 
   wire byte_lo_en = be[0];
   wire byte_hi_en = be[1];
 
   genvar i;
   generate
-    for (i = 0; i < BUS_WIDTH; i = i + 1) begin: REG
-      if (i < WIDTH) begin
-        CC_DFlipFlop #(1) dff(.clk(clk),
-                              .reset(reset),
-                              .en(en & ((i < 8) ? byte_lo_en : byte_hi_en)),
-                              .d(d[i]),
-                              .q(q[i]));
-      end else begin
-        assign q[i] = 1'b0;
+    if (TYPE == `REG_RW) begin
+      for (i = 0; i < BUS_WIDTH; i = i + 1) begin: REG
+        if (i < WIDTH) begin
+          CC_DFlipFlop #(1) dff(.clk(clk),
+                                .reset(reset),
+                                .en(en & ((i < 8) ? byte_lo_en : byte_hi_en)),
+                                .d(d[i]),
+                                .q(q[i]));
+        end else begin
+          // Unused bits default to zero.
+          assign q[i] = 1'b0;
+        end
       end
+    end else begin // if (TYPE == `REG_RO)
+      // Read only register uses the |value_in| port.
+      assign q = value_in;
     end
   endgenerate
 
 endmodule
 
-module Registers(reset, en, rd, wr, be, addr, data_in, data_out, values_out);
+module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
+                 values_in, values_out);
   parameter ADDR_WIDTH=16;
   parameter DATA_WIDTH=16;
   parameter NUM_REGS=(1 << ADDR_WIDTH);
@@ -67,19 +78,52 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out, values_out);
   input [DATA_WIDTH-1:0] data_in;   // Data in bus
   output [DATA_WIDTH-1:0] data_out; // Data out bus
 
+  // Port for obtaining read-only register values.
+  input [DATA_WIDTH * NUM_REGS - 1 : 0] values_in;
+  // Port for exposing all read/write register values.
   output [DATA_WIDTH * NUM_REGS - 1 : 0] values_out;
+
+  // This function returns the register type, given a register address.
+  function integer register_type;
+    input [31:0] address;
+    integer type;
+    begin
+      case (address)
+        `ID:            begin   type = `REG_RO;  end
+        `MEM_CTRL:      begin   type = `REG_RW;  end
+
+        `OUTPUT_STATUS: begin   type = `REG_RO;  end
+        `OUTPUT_CTRL:   begin   type = `REG_RW;  end
+        `COLOR_MODE:    begin   type = `REG_RW;  end
+        `VIDEO_MODE:    begin   type = `REG_RW;  end
+
+        `SCAN_X:        begin   type = `REG_RO;  end
+        `SCAN_Y:        begin   type = `REG_RO;  end
+        `SCROLL_X:      begin   type = `REG_RW;  end
+        `SCROLL_Y:      begin   type = `REG_RW;  end
+
+        default:        begin   type = `REG_RO;  end
+      endcase
+      register_type = type;
+    end
+
+  endfunction
 
   // Generate the registers.
   wire [DATA_WIDTH-1:0] q_array [NUM_REGS - 1:0];
   genvar i;
   generate
     for (i = 0; i < NUM_REGS; i = i + 1) begin: REGS
-      Register #(DATA_WIDTH) register(.clk(~wr),
-                                       .en(en & ~rd & (i == addr)),
-                                       .reset(reset),
-                                       .be(be),
-                                       .d(data_in),
-                                       .q(q_array[i]));
+      Register #(.WIDTH(DATA_WIDTH),
+                 .TYPE(register_type(i)))
+          register(.clk(~wr),
+                   .en(en & ~rd & (i == addr)),
+                   .reset(reset),
+                   .be(be),
+                   .d(data_in),
+                   .q(q_array[i]),
+                   .value_in(values_in[DATA_WIDTH * (i + 1) - 1 :
+                                       DATA_WIDTH * i]));
       assign values_out[DATA_WIDTH * (i + 1) - 1 : DATA_WIDTH * i] = q_array[i];
     end
   endgenerate
