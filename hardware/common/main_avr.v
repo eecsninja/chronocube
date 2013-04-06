@@ -101,7 +101,26 @@ module MainAVR(clk, _reset,
 
   // Bus enable is just if either read or write is enabled.
   wire cc_enable = (~_mpu_rd ^ ~_mpu_wr);
+  /////////////////////////////////////////////////
+  // VRAM interface
+  /////////////////////////////////////////////////
+  wire vram_en;          // All control signals are internally active high.
+  wire vram_rd;
+  wire vram_wr;
+  wire [1:0] vram_be;
 
+  assign _vram_en = ~vram_en;
+  assign _vram_rd = ~vram_rd;
+  assign _vram_wr = ~vram_wr;
+  assign _vram_be = ~vram_be;
+
+  // Set up VRAM bidirectional I/Os.
+  wire [`VRAM_DATA_WIDTH-1:0] vram_data_in;
+  wire [`VRAM_DATA_WIDTH-1:0] vram_data_out;
+  // Data output active only during read.
+  assign vram_data = (~_vram_en & ~_vram_wr) ? vram_data_out
+                                             : {`VRAM_DATA_WIDTH {1'bz}};
+  assign vram_data_in = vram_data;
   ChronoCube chronocube(.clk(clk),
                         ._reset(_reset),
                         ._mpu_rd(_mpu_rd),
@@ -112,12 +131,13 @@ module MainAVR(clk, _reset,
                         .mpu_data_in(cc_data_in),
                         .mpu_data_out(cc_data_out),
 
-                        ._vram_en(_vram_en),
-                        ._vram_rd(_vram_rd),
-                        ._vram_wr(_vram_wr),
-                        ._vram_be(_vram_be),
+                        .vram_en(vram_en),
+                        .vram_rd(vram_rd),
+                        .vram_wr(vram_wr),
+                        .vram_be(vram_be),
                         .vram_addr(vram_addr),
-                        .vram_data(vram_data),
+                        .vram_data_in(vram_data_in),
+                        .vram_data_out(vram_data_out),
 
                         .vga_vsync(vsync),
                         .vga_hsync(hsync),

@@ -32,11 +32,11 @@
 `define DISPLAY_HCOUNT_WIDTH 10
 `define DISPLAY_VCOUNT_WIDTH 10
 
-module ChronoCube(clk, _reset, _int,
-                  _mpu_rd, _mpu_wr, _mpu_en, _mpu_be,
-                  mpu_addr_in, mpu_data_in, mpu_data_out,
-                  _vram_en, _vram_rd, _vram_wr, _vram_be, vram_addr, vram_data,
-                  vga_vsync, vga_hsync, vga_rgb);
+module ChronoCube(
+    clk, _reset, _int,
+    _mpu_rd, _mpu_wr, _mpu_en, _mpu_be, mpu_addr_in, mpu_data_in, mpu_data_out,
+    vram_en, vram_rd, vram_wr, vram_be, vram_addr, vram_data_in, vram_data_out,
+    vga_vsync, vga_hsync, vga_rgb);
 
   input clk;                // System clock
 
@@ -53,12 +53,13 @@ module ChronoCube(clk, _reset, _int,
   output [`MPU_DATA_WIDTH-1:0] mpu_data_out;      // Data-out bus
 
   // VRAM interface
-  output _vram_en;          // Enable access (active low)
-  output _vram_rd;          // Read enable (active low)
-  output _vram_wr;          // Write enable (active low)
-  output [1:0] _vram_be;    // Byte enable (active low)
-  output [`VRAM_ADDR_WIDTH-1:0] vram_addr;   // Address bus
-  inout [`VRAM_DATA_WIDTH-1:0]  vram_data;   // Data bus
+  output vram_en;           // Enable access (active low)
+  output vram_rd;           // Read enable (active low)
+  output vram_wr;           // Write enable (active low)
+  output [1:0] vram_be;     // Byte enable (active low)
+  output [`VRAM_ADDR_WIDTH-1:0] vram_addr;        // Address bus
+  input [`VRAM_DATA_WIDTH-1:0] vram_data_in;      // Data input bus
+  output [`VRAM_DATA_WIDTH-1:0] vram_data_out;    // Data output bus
 
   // VGA display interface
   // Note that Hsync and Vsync are active low for some modes and active high for
@@ -94,10 +95,10 @@ module ChronoCube(clk, _reset, _int,
   // TODO: add switching between 16-bit full color and 8-bit palettes.
   wire [`VRAM_ADDR_WIDTH-1:0] ren_bus_addr;
   wire [`VRAM_DATA_WIDTH-1:0] ren_bus_data;
-  wire _ren_bus_en;
-  wire _ren_bus_rd;
-  wire _ren_bus_wr;
-  wire [1:0] _ren_bus_be;
+  wire ren_bus_en;
+  wire ren_bus_rd;
+  wire ren_bus_wr;
+  wire [1:0] ren_bus_be;
 
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
@@ -209,10 +210,10 @@ module ChronoCube(clk, _reset, _int,
                     .reset(~_reset),
                     .reg_values(reg_values_out),
 
-                    ._vram_en(_ren_bus_en),
-                    ._vram_rd(_ren_bus_rd),
-                    ._vram_wr(_ren_bus_wr),
-                    ._vram_be(_ren_bus_be),
+                    .vram_en(ren_bus_en),
+                    .vram_rd(ren_bus_rd),
+                    .vram_wr(ren_bus_wr),
+                    .vram_be(ren_bus_be),
                     .vram_clk(ren_vram_clk),
                     .vram_addr(ren_vram_addr),
                     .vram_data(ren_vram_data),
@@ -285,13 +286,14 @@ module ChronoCube(clk, _reset, _int,
   // TODO: the multiplexed VRAM access by both Renderer and MPU here may be too
   // simple.
   wire vram_uses_mpu = ~_mpu_en;
-  assign _vram_en = vram_uses_mpu ? _mpu_en : _ren_bus_en;
-  assign _vram_wr = vram_uses_mpu ? _mpu_wr : _ren_bus_wr;
-  assign _vram_rd = vram_uses_mpu ? _mpu_rd : _ren_bus_rd;
-  assign _vram_be = vram_uses_mpu ? _mpu_be : _ren_bus_be;
+  assign vram_en = vram_uses_mpu ? _mpu_en : ren_bus_en;
+//  assign vram_wr = vram_uses_mpu ? _mpu_wr : ren_bus_wr;
+//  assign vram_rd = vram_uses_mpu ? _mpu_rd : ren_bus_rd;
+//  assign vram_be = vram_uses_mpu ? _mpu_be : ren_bus_be;
   assign vram_addr = vram_uses_mpu ? mpu_addr : ren_bus_addr;
 
-  assign vram_data = vram_uses_mpu ? mpu_data_in : {`VRAM_DATA_WIDTH {1'bz}};
-  assign ren_bus_data = vram_data;
+//  assign vram_data_out =
+//      vram_uses_mpu ? mpu_data_in : {`VRAM_DATA_WIDTH {1'b0}};
+  assign ren_bus_data = vram_data_in;
 
 endmodule

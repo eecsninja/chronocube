@@ -28,7 +28,7 @@ module Renderer(clk, reset, reg_values,
                 h_pos, v_pos, h_sync, v_sync,
                 pal_clk, pal_addr, pal_data,
                 map_clk, map_addr, map_data,
-                _vram_en, _vram_rd, _vram_wr, _vram_be,
+                vram_en, vram_rd, vram_wr, vram_be,
                 vram_clk, vram_addr, vram_data,
                 rgb_out);
   parameter VRAM_ADDR_BUS_WIDTH=16;
@@ -84,10 +84,10 @@ module Renderer(clk, reset, reg_values,
   input [`TILEMAP_DATA_WIDTH-1:0] map_data;
 
   // VRAM interface
-  output wire _vram_en;         // Chip enable (active low)
-  output wire _vram_rd;         // Read enable (active low)
-  output wire _vram_wr;         // Write enable (active low)
-  output wire [1:0] _vram_be;   // Byte enable (active low)
+  output wire vram_en;         // Chip enable (active low)
+  output wire vram_rd;         // Read enable (active low)
+  output wire vram_wr;         // Write enable (active low)
+  output wire [1:0] vram_be;   // Byte enable (active low)
 
   output vram_clk;
   output [VRAM_ADDR_BUS_WIDTH-1:0] vram_addr;     // Address bus
@@ -95,10 +95,10 @@ module Renderer(clk, reset, reg_values,
 
   output [RGB_COLOR_DEPTH-1:0] rgb_out;           // Color output.
 
-  assign _vram_wr = 1'b0;
-  assign _vram_rd = ~h_blank && ~v_blank;
-  assign _vram_en = ~h_blank && ~v_blank;
-  assign _vram_be = 2'b11;
+  assign vram_wr = 1'b0;
+  assign vram_rd = 1'b1;    // TODO: switch these off when not rendering.
+  assign vram_en = 1'b1;
+  assign vram_be = 2'b11;
 
   // Main register values.
   wire [`REG_DATA_WIDTH-1:0] reg_array [`NUM_MAIN_REGS-1:0];
