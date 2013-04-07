@@ -86,24 +86,22 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
   // This function returns the register type, given a register address.
   function integer register_type;
     input [31:0] address;
-    integer type;
     begin
       case (address)
-        `ID:            begin   type = `REG_RO;  end
-        `OUTPUT_STATUS: begin   type = `REG_RO;  end
-        `SCAN_X:        begin   type = `REG_RO;  end
-        `SCAN_Y:        begin   type = `REG_RO;  end
+        `ID:            begin   register_type = `REG_RO;  end
+        `OUTPUT_STATUS: begin   register_type = `REG_RO;  end
+        `SCAN_X:        begin   register_type = `REG_RO;  end
+        `SCAN_Y:        begin   register_type = `REG_RO;  end
 
-        `MODE_CTRL:     begin   type = `REG_RW;  end
-        `MEM_CTRL:      begin   type = `REG_RW;  end
-        `OUTPUT_CTRL:   begin   type = `REG_RW;  end
+        `MODE_CTRL:     begin   register_type = `REG_RW;  end
+        `MEM_CTRL:      begin   register_type = `REG_RW;  end
+        `OUTPUT_CTRL:   begin   register_type = `REG_RW;  end
 
-        `SCROLL_X:      begin   type = `REG_RW;  end
-        `SCROLL_Y:      begin   type = `REG_RW;  end
+        `SCROLL_X:      begin   register_type = `REG_RW;  end
+        `SCROLL_Y:      begin   register_type = `REG_RW;  end
 
-        default:        begin   type = `REG_RO;  end
+        default:        begin   register_type = `REG_RO;  end
       endcase
-      register_type = type;
     end
 
   endfunction
