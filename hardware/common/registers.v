@@ -90,15 +90,14 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
     begin
       case (address)
         `ID:            begin   type = `REG_RO;  end
-        `MEM_CTRL:      begin   type = `REG_RW;  end
-
         `OUTPUT_STATUS: begin   type = `REG_RO;  end
-        `OUTPUT_CTRL:   begin   type = `REG_RW;  end
-        `COLOR_MODE:    begin   type = `REG_RW;  end
-        `VIDEO_MODE:    begin   type = `REG_RW;  end
-
         `SCAN_X:        begin   type = `REG_RO;  end
         `SCAN_Y:        begin   type = `REG_RO;  end
+
+        `MODE_CTRL:     begin   type = `REG_RW;  end
+        `MEM_CTRL:      begin   type = `REG_RW;  end
+        `OUTPUT_CTRL:   begin   type = `REG_RW;  end
+
         `SCROLL_X:      begin   type = `REG_RW;  end
         `SCROLL_Y:      begin   type = `REG_RW;  end
 

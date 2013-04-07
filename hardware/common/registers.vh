@@ -23,15 +23,14 @@
 `define REG_DATA_WIDTH         16
 
 `define ID                   'h00
-`define MEM_CTRL             'h01
+`define OUTPUT_STATUS        'h01
+`define SCAN_X               'h02
+`define SCAN_Y               'h03
 
-`define OUTPUT_STATUS        'h08
-`define OUTPUT_CTRL          'h09
-`define COLOR_MODE           'h0a
-`define VIDEO_MODE           'h0b
+`define MODE_CTRL            'h04
+`define MEM_CTRL             'h05
+`define OUTPUT_CTRL          'h06
 
-`define SCAN_X               'h0c
-`define SCAN_Y               'h0d
 `define SCROLL_X             'h0e
 `define SCROLL_Y             'h0f
 
