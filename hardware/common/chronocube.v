@@ -93,12 +93,6 @@ module ChronoCube(
 
   // Graphics processor
   // TODO: add switching between 16-bit full color and 8-bit palettes.
-  wire [`VRAM_ADDR_WIDTH-1:0] ren_bus_addr;
-  wire [`VRAM_DATA_WIDTH-1:0] ren_bus_data;
-  wire ren_bus_en;
-  wire ren_bus_rd;
-  wire ren_bus_wr;
-  wire [1:0] ren_bus_be;
 
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
@@ -106,7 +100,7 @@ module ChronoCube(
                         (palette_select  ? pal_data_out :
                         (map_select      ? map_data_out :
                         (main_reg_select ? reg_data_out :
-                        (vram_select     ? vram_data_out :
+                        (vram_select     ? vram_data_in :
                         {`MPU_DATA_WIDTH {1'b0}}))));
 
   // Palette interface
@@ -176,45 +170,37 @@ module ChronoCube(
       .q_b(ren_map_data)
       );
 
-  // Temporary internal VRAM
-  // TODO: set up external VRAM interface.
+  // VRAM interface logic
   wire vram_select = (mpu_addr >= `VRAM_ADDR_BASE) &
                      (mpu_addr < `VRAM_ADDR_BASE + `VRAM_ADDR_LENGTH);
-  wire [1:0] vram_be = ~_mpu_be;
-  wire vram_rd = vram_select & ~_mpu_rd;
-  wire vram_wr = vram_select & ~_mpu_wr;
-  wire [`VRAM_DATA_WIDTH-1:0] vram_data_out;
+  // Allow MPU access to VRAM only when the first bit of the MEM_CTRL register
+  // is set.
+  wire vram_uses_mpu = reg_array_out[`MEM_CTRL][0];
+  wire vram_en = vram_uses_mpu ? vram_uses_mpu : ren_vram_en;
+  wire vram_wr = vram_uses_mpu ? ~_mpu_wr : ren_vram_wr;
+  wire vram_rd = vram_uses_mpu ? ~_mpu_rd : ren_vram_rd;
+  wire [1:0] vram_be = vram_uses_mpu ? ~_mpu_be : ren_vram_be;
+  wire [`VRAM_ADDR_WIDTH-1:0] vram_addr =
+      vram_uses_mpu ? mpu_addr : ren_vram_addr;
+  wire [`VRAM_DATA_WIDTH-1:0] vram_data_out =
+      vram_uses_mpu ? mpu_data_in : {`VRAM_DATA_WIDTH {1'b0}};
 
-  // Port B: to renderer
-  wire ren_vram_clk;
+  wire ren_vram_en;
+  wire ren_vram_rd;
+  wire ren_vram_wr;
+  wire [1:0] ren_vram_be;
   wire [`VRAM_ADDR_WIDTH-1:0] ren_vram_addr;
-  wire [`VRAM_DATA_WIDTH-1:0] ren_vram_data;
-  vram_8Kx16 vram(
-      .clock_a(clk),
-      .address_a(mpu_addr),
-      .byteena_a(vram_be),
-      .rden_a(vram_rd),
-      .wren_a(vram_wr),
-      .data_a(mpu_data_in),
-      .q_a(vram_data_out),
-
-      .clock_b(ren_vram_clk),
-      .rden_b(1),
-      .wren_b(0),
-      .address_b(ren_vram_addr),
-      .q_b(ren_vram_data)
-      );
+  wire [`VRAM_DATA_WIDTH-1:0] ren_vram_data = vram_uses_mpu ? 0 : vram_data_in;
 
   // Renderer
   Renderer renderer(.clk(clk),
                     .reset(~_reset),
                     .reg_values(reg_values_out),
 
-                    .vram_en(ren_bus_en),
-                    .vram_rd(ren_bus_rd),
-                    .vram_wr(ren_bus_wr),
-                    .vram_be(ren_bus_be),
-                    .vram_clk(ren_vram_clk),
+                    .vram_en(ren_vram_en),
+                    .vram_rd(ren_vram_rd),
+                    .vram_wr(ren_vram_wr),
+                    .vram_be(ren_vram_be),
                     .vram_addr(ren_vram_addr),
                     .vram_data(ren_vram_data),
 
@@ -281,19 +267,5 @@ module ChronoCube(
                 .data_out(reg_data_out),
                 .values_in(reg_values_in),
                 .values_out(reg_values_out));
-
-  // VRAM interface logic
-  // TODO: the multiplexed VRAM access by both Renderer and MPU here may be too
-  // simple.
-  wire vram_uses_mpu = ~_mpu_en;
-  assign vram_en = vram_uses_mpu ? _mpu_en : ren_bus_en;
-//  assign vram_wr = vram_uses_mpu ? _mpu_wr : ren_bus_wr;
-//  assign vram_rd = vram_uses_mpu ? _mpu_rd : ren_bus_rd;
-//  assign vram_be = vram_uses_mpu ? _mpu_be : ren_bus_be;
-  assign vram_addr = vram_uses_mpu ? mpu_addr : ren_bus_addr;
-
-//  assign vram_data_out =
-//      vram_uses_mpu ? mpu_data_in : {`VRAM_DATA_WIDTH {1'b0}};
-  assign ren_bus_data = vram_data_in;
 
 endmodule
