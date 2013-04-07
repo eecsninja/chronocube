@@ -118,24 +118,9 @@ module MainAVR(clk, _reset,
   wire [`VRAM_DATA_WIDTH-1:0] vram_data_in;
   wire [`VRAM_DATA_WIDTH-1:0] vram_data_out;
   // Output to VRAM active only during write.
-  // TODO: replace with external VRAM, remove the VRAM module below, and
-  // uncomment the next two assignments.
-  // assign vram_data = (vram_en & vram_wr) ? vram_data_out
-  //                                        : {`VRAM_DATA_WIDTH {1'bz}};
-  // assign vram_data_in = vram_data;
-  vram_8Kx16 vram(
-      .clock_a(clk),
-      .address_a(vram_addr),
-      .byteena_a(vram_be),
-      .rden_a(vram_rd),
-      .wren_a(vram_wr),
-      .data_a(vram_data_out),
-      .q_a(vram_data_in),
-
-      .clock_b(clk),
-      .rden_b(0),
-      .wren_b(0)
-      );
+  assign vram_data = (vram_en & vram_wr) ? vram_data_out
+                                         : {`VRAM_DATA_WIDTH {1'bz}};
+  assign vram_data_in = vram_data;
 
   ChronoCube chronocube(.clk(clk),
                         ._reset(_reset),

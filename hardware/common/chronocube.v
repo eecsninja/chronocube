@@ -181,7 +181,7 @@ module ChronoCube(
   wire vram_rd = vram_uses_mpu ? ~_mpu_rd : ren_vram_rd;
   wire [1:0] vram_be = vram_uses_mpu ? ~_mpu_be : ren_vram_be;
   wire [`VRAM_ADDR_WIDTH-1:0] vram_addr =
-      vram_uses_mpu ? mpu_addr : ren_vram_addr;
+      vram_uses_mpu ? (mpu_addr - `VRAM_ADDR_BASE) : ren_vram_addr;
   wire [`VRAM_DATA_WIDTH-1:0] vram_data_out =
       vram_uses_mpu ? mpu_data_in : {`VRAM_DATA_WIDTH {1'b0}};
 
