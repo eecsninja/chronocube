@@ -32,11 +32,9 @@
 `define DISPLAY_HCOUNT_WIDTH 10
 `define DISPLAY_VCOUNT_WIDTH 10
 
-`define MPU_DATA_WIDTH 16
-
 module ChronoCube(clk, _reset, _int,
                   _mpu_rd, _mpu_wr, _mpu_en, _mpu_be,
-                  mpu_addr, mpu_data_in, mpu_data_out,
+                  mpu_addr_in, mpu_data_in, mpu_data_out,
                   _vram_en, _vram_rd, _vram_wr, _vram_be, vram_addr, vram_data,
                   vga_vsync, vga_hsync, vga_rgb);
 
@@ -50,7 +48,7 @@ module ChronoCube(clk, _reset, _int,
   input _mpu_rd;            // Read enable (active low)
   input _mpu_wr;            // Write enable (active low)
   input [1:0] _mpu_be;      // Byte enable (active low)
-  input [`MPU_ADDR_WIDTH-1:0] mpu_addr;           // Address bus
+  input [`MPU_ADDR_WIDTH-1:0] mpu_addr_in;        // Address bus
   input [`MPU_DATA_WIDTH-1:0] mpu_data_in;        // Data-in bus
   output [`MPU_DATA_WIDTH-1:0] mpu_data_out;      // Data-out bus
 
@@ -68,6 +66,18 @@ module ChronoCube(clk, _reset, _int,
   output vga_vsync;        // Hsync
   output vga_hsync;        // Vsync
   output [`RGB_COLOR_DEPTH-1:0] vga_rgb;   // RGB data
+
+  // Memory banking
+  // Break down the address input into page index and offset.
+  wire [`PAGE_OFFSET_WIDTH-1:0] page_offset =
+      mpu_addr_in[`PAGE_OFFSET_WIDTH-1:0];
+  wire [`MPU_ADDR_WIDTH0`PAGE_OFFSET_WIDTH-1:0] page_index =
+      mpu_addr_in >> `PAGE_OFFSET_WIDTH;
+
+  // Map the second page using the bank register.
+  wire [`INT_ADDR_WIDTH-1:0] mpu_addr;
+  wire [7:0] bank_value = reg_array_out[`MEM_CTRL][15:8];
+  assign mpu_addr = { ((page_index == 0) ? {16'b0} : bank_value), page_offset };
 
   // VGA signal generator
   // Counters for the position of the refresh.

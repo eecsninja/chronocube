@@ -108,7 +108,7 @@ module MainAVR(clk, _reset,
                         ._mpu_wr(_mpu_wr),
                         ._mpu_en(~cc_enable),
                         ._mpu_be(_mpu_be),
-                        .mpu_addr(cc_addr),
+                        .mpu_addr_in(cc_addr),
                         .mpu_data_in(cc_data_in),
                         .mpu_data_out(cc_data_out),
 

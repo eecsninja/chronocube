@@ -20,6 +20,26 @@
 `ifndef _MEMORY_MAP_VH_
 `define _MEMORY_MAP_VH_
 
+// The memory space exposed to a MCU with a 16-bit address space is 32 KB long,
+// so it can map to the second half of the 64-KB space, leaving the first half
+// for the MCU's memory, registers, peripherals -- both internal and external.
+
+// The 32 KB space is further broken down into two 16 KB pages.  The lower page
+// is normally mapped.  The upper page is banked memory, and can map to an
+// arbitrarily large internal memory space using a bank value.  The formula is:
+//     INT_ADDR = (ADDR - BANK_START) + BANK * 0x4000  if ADDR >= 0x4000 (16 KB)
+//     INT_ADDR = ADDR                                 if ADDR < 0x4000
+// If BANK = 0, then the second page becomes an alias of the first page.
+
+// All addresses and lengths here are expressed in 16-bit words.  For exmaple,
+// an address of 0x800 would correspond to address 0x1000 from the MCU's
+// perspective.
+
+// Memory pages and banking
+`define MEMORY_PAGE_SIZE       'h2000
+`define MEMORY_BANKED_PAGE_BASE (`MEMORY_PAGE_SIZE)
+`define INT_ADDR_WIDTH             32  // Arbitrary, but 32 is convenient.
+`define PAGE_OFFSET_WIDTH          13  // 8 KB x 16-bits = 16 KB
 
 // Palette memory
 `define PAL_ADDR_BASE          'h0800
