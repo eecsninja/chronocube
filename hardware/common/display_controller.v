@@ -100,8 +100,8 @@ module DisplayTiming(h_pos, v_pos, h_sync, v_sync, h_blank, v_blank,
   output [FIELD_WIDTH-1:0] h_visible_pos;
   output [FIELD_WIDTH-1:0] v_visible_pos;
 
-  assign h_sync = (h_pos < `H_SYNC_LENGTH);
-  assign v_sync = (v_pos < `V_SYNC_LENGTH);
+  assign h_sync = ~(h_pos < `H_SYNC_LENGTH);
+  assign v_sync = ~(v_pos < `V_SYNC_LENGTH);
   assign h_blank = (h_pos < `H_VISIBLE_START || h_pos >= `H_FRONT_START);
   assign v_blank = (v_pos < `V_VISIBLE_START || v_pos >= `V_FRONT_START);
   assign h_visible_pos = h_pos - `H_VISIBLE_START;
