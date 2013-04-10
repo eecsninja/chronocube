@@ -183,18 +183,10 @@ module Renderer(clk, reset, reg_values,
   // Map data -> VRAM address
   // TODO: unpack map entry fields.
   assign vram_addr = {map_data, tile_y_reg, tile_x_reg[3:1]};
-
-  reg vram_byte_select;
-  always @ (posedge clk) begin
-    vram_byte_select <= tile_x_reg[0];
-  end
+  wire vram_byte_select = tile_x_reg[0];
 
   // VRAM data -> palette address
-  CC_DFlipFlop #(`PAL_ADDR_WIDTH)
-      rgb_reg(.clk(clk),
-              .en(1),
-              .d((vram_byte_select == 0) ? vram_data[7:0] : vram_data[15:8]),
-              .q(pal_addr));
+  assign pal_addr= (vram_byte_select == 0) ? vram_data[7:0] : vram_data[15:8];
   reg [RGB_COLOR_DEPTH-1:0] rgb_out;
 
   // Palette data -> Line buffer
@@ -207,13 +199,13 @@ module Renderer(clk, reset, reg_values,
   // to pass through the rendering pipeline.
   // The five-clock delay is broken down as follows:
   // - Tile map RAM access
-  // - VRAM access
-  // - Registering of VRAM data (TODO: remove this after switching to external
-  //   asynchronous VRAM)
   // - VRAM to Palette
+  //     TODO: VRAM is currently asynchronous on both address and data ports.
+  //     This is cutting it close and might require one or both ports to be
+  //     registered.
   // - Something else in the pipeline that I can't account for.  But it works if
-  //   I use a delay of 5.
-  `define RENDER_DELAY 5
+  //   I use a delay of 3.
+  `define RENDER_DELAY 3
   CC_Delay #(.WIDTH(`LINE_BUF_ADDR_WIDTH), .DELAY(`RENDER_DELAY))
       buf_addr_delay(.clk(clk),
                      .reset(reset),
