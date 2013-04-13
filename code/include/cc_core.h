@@ -47,10 +47,6 @@ void CC_SetOutputBlank(uint8_t blanked);
 // Set scrolling offset, relative to world space.
 void CC_SetScrollOffset(uint16_t x, uint16_t y);
 
-// Get tile layer and sprite by index.
-CCTileLayer* CC_GetTileLayer(uint8_t index);
-CCSprite* CC_GetSprite(uint16_t index);
-
 // These are for the emulator renderer.
 // TODO: put in separate file.
 

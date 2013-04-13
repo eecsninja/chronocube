@@ -23,19 +23,20 @@
 
 #include "cc_internal.h"
 
-void CCSprite_SetLocation(CCSprite* sprite, uint16_t x, uint16_t y) {
+void CCSprite_SetLocation(uint16_t index, uint16_t x, uint16_t y) {
+  CCSprite* sprite = CC_GetSprite(index);
   sprite->x = x;
   sprite->y = y;
 }
 
-void CCSprite_SetAlpha(CCSprite* sprite, uint8_t alpha) {
-  sprite->alpha = alpha;
+void CCSprite_SetAlpha(uint16_t index, uint8_t alpha) {
+  CC_GetSprite(index)->alpha = alpha;
 }
 
-void CCSprite_SetEnabled(CCSprite* sprite, uint8_t enabled) {
-  sprite->enabled = enabled;
+void CCSprite_SetEnabled(uint16_t index, uint8_t enabled) {
+  CC_GetSprite(index)->enabled = enabled;
 }
 
-void CCSprite_SetPalette(CCSprite* sprite, uint8_t palette_index) {
-  sprite->palette = palette_index;
+void CCSprite_SetPalette(uint16_t index, uint8_t palette_index) {
+  CC_GetSprite(index)->palette = palette_index;
 }

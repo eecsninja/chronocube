@@ -24,8 +24,6 @@
 
 #include "cc_internal.h"
 
-typedef struct CCPalette_ CCPalette;
-
 static struct {
   uint8_t* vram;
 

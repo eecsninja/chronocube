@@ -22,20 +22,16 @@
 
 #include <stdint.h>
 
-// Sprite object forward declarations.
-struct CCSprite_;
-typedef struct CCSprite_ CCSprite;
-
 // Set the location of the sprite in world space.
-void CCSprite_SetLocation(CCSprite* sprite, uint16_t x, uint16_t y);
+void CCSprite_SetLocation(uint16_t index, uint16_t x, uint16_t y);
 
 // Set alpha value of sprite.
-void CCSprite_SetAlpha(CCSprite* sprite, uint8_t alpha);
+void CCSprite_SetAlpha(uint16_t index, uint8_t alpha);
 
 // Enable or disable a sprite.
-void CCSprite_SetEnabled(CCSprite* sprite, uint8_t enabled);
+void CCSprite_SetEnabled(uint16_t index, uint8_t enabled);
 
 // Select a palette to be used by the sprite.
-void CCSprite_SetPalette(CCSprite* sprite, uint8_t palette_index);
+void CCSprite_SetPalette(uint16_t index, uint8_t palette_index);
 
 #endif  // _CC_SPRITE_H_

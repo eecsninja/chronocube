@@ -23,30 +23,32 @@
 
 #include "cc_internal.h"
 
-void CCTileLayer_SetData(CCTileLayer* layer, void* data, uint32_t size) {
-  memcpy(layer->tiles, data, size);
+void CCTileLayer_SetData(uint8_t index, void* data, uint32_t size) {
+  memcpy(CC_GetTileLayer(index)->tiles, data, size);
 }
 
-void CCTileLayer_SetDataAt(CCTileLayer* layer,
+void CCTileLayer_SetDataAt(uint8_t index,
                            uint16_t value,
                            uint32_t x,
                            uint32_t y) {
+  CCTileLayer* layer = CC_GetTileLayer(index);
   layer->tiles[x + layer->w * y] = value;
 }
 
-void CCTileLayer_SetOffset(CCTileLayer* layer, uint16_t x, uint16_t y) {
+void CCTileLayer_SetOffset(uint8_t index, uint16_t x, uint16_t y) {
+  CCTileLayer* layer = CC_GetTileLayer(index);
   layer->x = x;
   layer->y = y;
 }
 
-void CCTileLayer_SetEnabled(CCTileLayer* layer, uint8_t enabled) {
-  layer->enabled = enabled;
+void CCTileLayer_SetEnabled(uint8_t index, uint8_t enabled) {
+  CC_GetTileLayer(index)->enabled = enabled;
 }
 
-void CCTileLayer_SetAlpha(CCTileLayer* layer, uint8_t alpha) {
-  layer->alpha = alpha;
+void CCTileLayer_SetAlpha(uint8_t index, uint8_t alpha) {
+  CC_GetTileLayer(index)->alpha = alpha;
 }
 
-void CCTileLayer_SetPalette(CCTileLayer* layer, uint8_t palette_index) {
-  layer->palette = palette_index;
+void CCTileLayer_SetPalette(uint8_t index, uint8_t palette_index) {
+  CC_GetTileLayer(index)->palette = palette_index;
 }

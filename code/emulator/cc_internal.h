@@ -31,9 +31,7 @@
 #define SCREEN_HEIGHT                        240
 
 // VRAM size.
-#define VRAM_WIDTH                           512
-#define VRAM_HEIGHT                          256
-#define VRAM_SIZE                 (VRAM_WIDTH * VRAM_HEIGHT)
+#define VRAM_SIZE                    (64 * 1024)
 
 // Palette definitions.
 #define NUM_PALETTES                           4
@@ -58,7 +56,7 @@
 #define NUM_SPRITES                          128
 
 // Emulates a palette.
-struct CCPalette_ {
+typedef struct CCPalette_ {
   // Points to an array of entries, packed to 4 bytes.
   union {
     char* data;
@@ -67,24 +65,28 @@ struct CCPalette_ {
       uint8_t padding;
     } *entries;
   };
-};
+} CCPalette;
 
 // Emulates a tile layer.
-struct CCTileLayer_ {
+typedef struct CCTileLayer_ {
   uint16_t* tiles;
   uint8_t enabled;
   uint16_t x, y;
   uint16_t w, h;
   uint16_t alpha;
   uint8_t palette;
-};
+} CCTileLayer;
 
 // Emulates a sprite.
-struct CCSprite_ {
+typedef struct CCSprite_ {
   uint8_t enabled;
   uint16_t x, y;
   uint16_t alpha;
   uint8_t palette;
-};
+} CCSprite;
+
+// Get tile layer and sprite by index.
+CCTileLayer* CC_GetTileLayer(uint8_t index);
+CCSprite* CC_GetSprite(uint16_t index);
 
 #endif  // _CC_INTERNAL_H_

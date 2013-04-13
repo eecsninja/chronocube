@@ -22,29 +22,25 @@
 
 #include <stdint.h>
 
-// TileLayer object forward declarations.
-struct CCTileLayer_;
-typedef struct CCTileLayer_ CCTileLayer;
-
 // Bulk copy tile map data.
-void CCTileLayer_SetData(CCTileLayer* layer, void* data, uint32_t size);
+void CCTileLayer_SetData(uint8_t index, void* data, uint32_t size);
 
 // Set the tile at a location (x, y) in the tile layer.
-void CCTileLayer_SetDataAt(CCTileLayer* layer,
+void CCTileLayer_SetDataAt(uint8_t index,
                            uint16_t value,
                            uint32_t x,
                            uint32_t y);
 
 // Set translation offset of the tile layer in world space.
-void CCTileLayer_SetOffset(CCTileLayer* layer, uint16_t x, uint16_t y);
+void CCTileLayer_SetOffset(uint8_t index, uint16_t x, uint16_t y);
 
 // Enable or disable a tile layer.
-void CCTileLayer_SetEnabled(CCTileLayer* layer, uint8_t enabled);
+void CCTileLayer_SetEnabled(uint8_t index, uint8_t enabled);
 
 // Set alpha value for tile layer.
-void CCTileLayer_SetAlpha(CCTileLayer* layer, uint8_t alpha);
+void CCTileLayer_SetAlpha(uint8_t index, uint8_t alpha);
 
 // Select a palette for tile layer.
-void CCTileLayer_SetPalette(CCTileLayer* layer, uint8_t palette_index);
+void CCTileLayer_SetPalette(uint8_t index, uint8_t palette_index);
 
 #endif  // _CC_TILE_LAYER_H_
