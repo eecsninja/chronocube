@@ -45,6 +45,18 @@ void CCTileLayer_SetEnabled(uint8_t index, uint8_t enabled) {
   CC_GetTileLayer(index)->enabled = enabled;
 }
 
+void CCTileLayer_EnableNopTile(uint8_t index, uint8_t enabled) {
+  CC_GetTileLayer(index)->enable_nop = enabled;
+}
+
+void CCTileLayer_SetNopValue(uint8_t index, uint16_t nop_value) {
+  CC_GetTileLayer(index)->nop_value = nop_value;
+}
+
+void CCTileLayer_EnableAlpha(uint8_t index, uint8_t enabled) {
+  CC_GetTileLayer(index)->enable_alpha = enabled;
+}
+
 void CCTileLayer_SetAlpha(uint8_t index, uint8_t alpha) {
   CC_GetTileLayer(index)->alpha = alpha;
 }

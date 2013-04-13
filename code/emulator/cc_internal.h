@@ -73,6 +73,9 @@ typedef struct CCTileLayer_ {
   uint8_t enabled;          // Set this flag to render the tile layer.
   uint16_t x, y;            // Location of tile layer in world coordinates.
   uint16_t w, h;            // Dimensions of tile layer.
+  uint8_t enable_nop;       // Set this flag to treat |nop_value| as no tile.
+  uint8_t enable_alpha;     // Set this flag to enable alpha blending.
+  uint16_t nop_value;       // Tile value indicating no tile.
   uint16_t alpha;           // Alpha blending value for rendering tile layer.
   uint8_t palette;          // Index of palette for rendering tile layer.
 } CCTileLayer;

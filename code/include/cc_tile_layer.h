@@ -37,6 +37,15 @@ void CCTileLayer_SetOffset(uint8_t index, uint16_t x, uint16_t y);
 // Enable or disable a tile layer.
 void CCTileLayer_SetEnabled(uint8_t index, uint8_t enabled);
 
+// Use a no-tile value for tile layer.
+void CCTileLayer_EnableNopTile(uint8_t index, uint8_t enabled);
+
+// Specify no-tile value for tile layer.
+void CCTileLayer_SetNopValue(uint8_t index, uint16_t nop_value);
+
+// Enable alpha blending for tile layer.
+void CCTileLayer_EnableAlpha(uint8_t index, uint8_t enabled);
+
 // Set alpha value for tile layer.
 void CCTileLayer_SetAlpha(uint8_t index, uint8_t alpha);
 
