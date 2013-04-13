@@ -156,10 +156,10 @@ void CC_RendererInit() {
 
   renderer.vram = SDL_CreateRGBSurfaceFrom(
       cc.vram,
-      VRAM_WIDTH,
-      VRAM_HEIGHT,
+      TILE_WIDTH,
+      VRAM_SIZE / TILE_WIDTH,
       8,              // TODO: make this a #define
-      VRAM_WIDTH,
+      TILE_WIDTH,
       rmask, gmask, bmask, amask);
   assert(renderer.vram);
 
@@ -211,8 +211,8 @@ void CC_RendererDraw() {
     for (dst.y = 0; dst.y < TILE_LAYER_HEIGHT; dst.y += TILE_HEIGHT) {
       for (dst.x = 0; dst.x < TILE_LAYER_WIDTH; dst.x += TILE_WIDTH) {
         uint16_t tile_value = cc.tile_layers[i].tiles[tile_index];
-        src.x = tile_value % (VRAM_WIDTH / TILE_WIDTH) * TILE_WIDTH;
-        src.y = tile_value / (VRAM_WIDTH / TILE_WIDTH) * TILE_HEIGHT;
+        src.x = 0;
+        src.y = tile_value * TILE_HEIGHT;
         SDL_BlitSurface(renderer.vram, &src, layer, &dst);
         ++tile_index;
       }
