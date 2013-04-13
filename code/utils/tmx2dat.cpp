@@ -33,8 +33,7 @@
 // Default format for ChronoCube.
 // TODO: make it expandable to different formats.
 struct TileInfo {
-  unsigned int index:12;
-  bool enabled:1;
+  unsigned int index:13;
   bool hflip:1;
   bool vflip:1;
   bool dflip:1;
@@ -67,6 +66,8 @@ void PrintUsage() {
   printf("           Default: false\n");
   printf("\n");
 }
+
+const int kNopTileValue = 0x1fff;
 
 }  // namespace
 
@@ -132,9 +133,10 @@ int main(int argc, char* argv[]) {
         info.hflip = layer.IsTileFlippedHorizontally(x, y);
         info.vflip = layer.IsTileFlippedVertically(x, y);
         info.dflip = layer.IsTileFlippedDiagonally(x, y);
-        if (layer.GetTileTilesetIndex(x, y) >= 0)
-            info.enabled = true;
-        info.index = layer.GetTileId(x, y);
+        if (layer.GetTileTilesetIndex(x, y) < 0)
+          info.index = kNopTileValue;
+        else
+          info.index = layer.GetTileId(x, y);
       }
     }
 
@@ -161,6 +163,7 @@ int main(int argc, char* argv[]) {
     fprintf(res_file, "[%s]\n", map_filename);
     fprintf(res_file, "width=%u\n", aligned_layer_width);
     fprintf(res_file, "height=%u\n", layer_height);
+    fprintf(res_file, "nop_value=0x%x\n", kNopTileValue);
     fprintf(res_file, "\n");
   }
   printf("Wrote resource info to %s\n", res_filename);
