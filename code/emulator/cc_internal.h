@@ -69,20 +69,20 @@ typedef struct CCPalette_ {
 
 // Emulates a tile layer.
 typedef struct CCTileLayer_ {
-  uint16_t* tiles;
-  uint8_t enabled;
-  uint16_t x, y;
-  uint16_t w, h;
-  uint16_t alpha;
-  uint8_t palette;
+  uint16_t* tiles;          // Tile map data.
+  uint8_t enabled;          // Set this flag to render the tile layer.
+  uint16_t x, y;            // Location of tile layer in world coordinates.
+  uint16_t w, h;            // Dimensions of tile layer.
+  uint16_t alpha;           // Alpha blending value for rendering tile layer.
+  uint8_t palette;          // Index of palette for rendering tile layer.
 } CCTileLayer;
 
 // Emulates a sprite.
 typedef struct CCSprite_ {
-  uint8_t enabled;
-  uint16_t x, y;
-  uint16_t alpha;
-  uint8_t palette;
+  uint8_t enabled;          // Set this flag to render the sprite.
+  uint16_t x, y;            // Location of sprite in world coordinates.
+  uint16_t alpha;           // Alpha blending value for rendering sprite.
+  uint8_t palette;          // Index of palette for rendering sprite.
 } CCSprite;
 
 // Get tile layer and sprite by index.
