@@ -23,44 +23,44 @@
 
 #include "cc_internal.h"
 
-void CCTileLayer_SetData(uint8_t index, void* data, uint32_t size) {
+void CC_TileLayer_SetData(uint8_t index, void* data, uint32_t size) {
   memcpy(CC_GetTileLayer(index)->tiles, data, size);
 }
 
-void CCTileLayer_SetDataAt(uint8_t index,
+void CC_TileLayer_SetDataAt(uint8_t index,
                            uint16_t value,
                            uint32_t x,
                            uint32_t y) {
-  CCTileLayer* layer = CC_GetTileLayer(index);
+  CC_TileLayer* layer = CC_GetTileLayer(index);
   layer->tiles[x + layer->w * y] = value;
 }
 
-void CCTileLayer_SetOffset(uint8_t index, uint16_t x, uint16_t y) {
-  CCTileLayer* layer = CC_GetTileLayer(index);
+void CC_TileLayer_SetOffset(uint8_t index, uint16_t x, uint16_t y) {
+  CC_TileLayer* layer = CC_GetTileLayer(index);
   layer->x = x;
   layer->y = y;
 }
 
-void CCTileLayer_SetEnabled(uint8_t index, uint8_t enabled) {
+void CC_TileLayer_SetEnabled(uint8_t index, uint8_t enabled) {
   CC_GetTileLayer(index)->enabled = enabled;
 }
 
-void CCTileLayer_EnableNopTile(uint8_t index, uint8_t enabled) {
+void CC_TileLayer_EnableNopTile(uint8_t index, uint8_t enabled) {
   CC_GetTileLayer(index)->enable_nop = enabled;
 }
 
-void CCTileLayer_SetNopValue(uint8_t index, uint16_t nop_value) {
+void CC_TileLayer_SetNopValue(uint8_t index, uint16_t nop_value) {
   CC_GetTileLayer(index)->nop_value = nop_value;
 }
 
-void CCTileLayer_EnableAlpha(uint8_t index, uint8_t enabled) {
+void CC_TileLayer_EnableAlpha(uint8_t index, uint8_t enabled) {
   CC_GetTileLayer(index)->enable_alpha = enabled;
 }
 
-void CCTileLayer_SetAlpha(uint8_t index, uint8_t alpha) {
+void CC_TileLayer_SetAlpha(uint8_t index, uint8_t alpha) {
   CC_GetTileLayer(index)->alpha = alpha;
 }
 
-void CCTileLayer_SetPalette(uint8_t index, uint8_t palette_index) {
+void CC_TileLayer_SetPalette(uint8_t index, uint8_t palette_index) {
   CC_GetTileLayer(index)->palette = palette_index;
 }

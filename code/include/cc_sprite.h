@@ -23,15 +23,15 @@
 #include <stdint.h>
 
 // Set the location of the sprite in world space.
-void CCSprite_SetLocation(uint16_t index, uint16_t x, uint16_t y);
+void CC_Sprite_SetLocation(uint16_t index, uint16_t x, uint16_t y);
 
 // Set alpha value of sprite.
-void CCSprite_SetAlpha(uint16_t index, uint8_t alpha);
+void CC_Sprite_SetAlpha(uint16_t index, uint8_t alpha);
 
 // Enable or disable a sprite.
-void CCSprite_SetEnabled(uint16_t index, uint8_t enabled);
+void CC_Sprite_SetEnabled(uint16_t index, uint8_t enabled);
 
 // Select a palette to be used by the sprite.
-void CCSprite_SetPalette(uint16_t index, uint8_t palette_index);
+void CC_Sprite_SetPalette(uint16_t index, uint8_t palette_index);
 
 #endif  // _CC_SPRITE_H_

@@ -35,13 +35,13 @@ static struct {
   uint8_t enabled;
   uint8_t blanked;
 
-  CCPalette* palettes;
+  CC_Palette* palettes;
   uint8_t num_palettes;
 
-  CCTileLayer* tile_layers;
+  CC_TileLayer* tile_layers;
   uint8_t num_tile_layers;
 
-  CCSprite* sprites;
+  CC_Sprite* sprites;
   uint16_t num_sprites;
 } cc;
 
@@ -57,17 +57,17 @@ void CC_Init() {
 
   cc.vram = malloc(VRAM_SIZE);
 
-  cc.palettes = calloc(NUM_PALETTES, sizeof(CCPalette));
+  cc.palettes = calloc(NUM_PALETTES, sizeof(CC_Palette));
   cc.num_palettes = NUM_PALETTES;
   for (i = 0; i < NUM_PALETTES; ++i)
     cc.palettes[i].data = calloc(NUM_COLORS_PER_PALETTE, 4);
 
-  cc.tile_layers = calloc(NUM_TILE_LAYERS, sizeof(CCTileLayer));
+  cc.tile_layers = calloc(NUM_TILE_LAYERS, sizeof(CC_TileLayer));
   cc.num_tile_layers = NUM_TILE_LAYERS;
   for (i = 0; i < NUM_TILE_LAYERS; ++i)
     cc.tile_layers[i].tiles = calloc(TILE_MAP_SIZE, sizeof(uint16_t));
 
-  cc.sprites = calloc(NUM_SPRITES, sizeof(CCSprite));
+  cc.sprites = calloc(NUM_SPRITES, sizeof(CC_Sprite));
   cc.num_sprites = NUM_SPRITES;
 
   cc.enabled = 0;
@@ -109,7 +109,7 @@ void CC_SetPaletteData(uint8_t index, void* data, uint16_t size) {
 
 void CC_SetPaletteEntry(uint8_t index, uint8_t r, uint8_t g, uint8_t b) {
   assert(index < cc.num_palettes);
-  CCPalette* palette = &cc.palettes[index];
+  CC_Palette* palette = &cc.palettes[index];
   palette->entries[index].r = r;
   palette->entries[index].g = g;
   palette->entries[index].b = b;
@@ -128,12 +128,12 @@ void CC_SetScrollOffset(uint16_t x, uint16_t y) {
   cc.scroll.y = y;
 }
 
-CCTileLayer* CC_GetTileLayer(uint8_t index) {
+CC_TileLayer* CC_GetTileLayer(uint8_t index) {
   assert(index < cc.num_tile_layers);
   return &cc.tile_layers[index];
 }
 
-CCSprite* CC_GetSprite(uint16_t index) {
+CC_Sprite* CC_GetSprite(uint16_t index) {
   assert(index < cc.num_sprites);
   return &cc.sprites[index];
 }
@@ -198,7 +198,7 @@ void CC_RendererDraw() {
       continue;
 
     // Set the rendering palette for this layer.
-    const CCPalette palette = cc.palettes[cc.tile_layers[i].palette];
+    const CC_Palette palette = cc.palettes[cc.tile_layers[i].palette];
     SDL_SetColors(renderer.vram,
                   (SDL_Color*)palette.data,
                   0,

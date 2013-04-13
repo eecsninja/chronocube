@@ -56,7 +56,7 @@
 #define NUM_SPRITES                          128
 
 // Emulates a palette.
-typedef struct CCPalette_ {
+typedef struct CC_Palette_ {
   // Points to an array of entries, packed to 4 bytes.
   union {
     char* data;
@@ -65,10 +65,10 @@ typedef struct CCPalette_ {
       uint8_t padding;
     } *entries;
   };
-} CCPalette;
+} CC_Palette;
 
 // Emulates a tile layer.
-typedef struct CCTileLayer_ {
+typedef struct CC_TileLayer_ {
   uint16_t* tiles;          // Tile map data.
   uint8_t enabled;          // Set this flag to render the tile layer.
   uint16_t x, y;            // Location of tile layer in world coordinates.
@@ -78,18 +78,18 @@ typedef struct CCTileLayer_ {
   uint16_t nop_value;       // Tile value indicating no tile.
   uint16_t alpha;           // Alpha blending value for rendering tile layer.
   uint8_t palette;          // Index of palette for rendering tile layer.
-} CCTileLayer;
+} CC_TileLayer;
 
 // Emulates a sprite.
-typedef struct CCSprite_ {
+typedef struct CC_Sprite_ {
   uint8_t enabled;          // Set this flag to render the sprite.
   uint16_t x, y;            // Location of sprite in world coordinates.
   uint16_t alpha;           // Alpha blending value for rendering sprite.
   uint8_t palette;          // Index of palette for rendering sprite.
-} CCSprite;
+} CC_Sprite;
 
 // Get tile layer and sprite by index.
-CCTileLayer* CC_GetTileLayer(uint8_t index);
-CCSprite* CC_GetSprite(uint16_t index);
+CC_TileLayer* CC_GetTileLayer(uint8_t index);
+CC_Sprite* CC_GetSprite(uint16_t index);
 
 #endif  // _CC_INTERNAL_H_

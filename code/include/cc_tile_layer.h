@@ -23,33 +23,33 @@
 #include <stdint.h>
 
 // Bulk copy tile map data.
-void CCTileLayer_SetData(uint8_t index, void* data, uint32_t size);
+void CC_TileLayer_SetData(uint8_t index, void* data, uint32_t size);
 
 // Set the tile at a location (x, y) in the tile layer.
-void CCTileLayer_SetDataAt(uint8_t index,
+void CC_TileLayer_SetDataAt(uint8_t index,
                            uint16_t value,
                            uint32_t x,
                            uint32_t y);
 
 // Set translation offset of the tile layer in world space.
-void CCTileLayer_SetOffset(uint8_t index, uint16_t x, uint16_t y);
+void CC_TileLayer_SetOffset(uint8_t index, uint16_t x, uint16_t y);
 
 // Enable or disable a tile layer.
-void CCTileLayer_SetEnabled(uint8_t index, uint8_t enabled);
+void CC_TileLayer_SetEnabled(uint8_t index, uint8_t enabled);
 
 // Use a no-tile value for tile layer.
-void CCTileLayer_EnableNopTile(uint8_t index, uint8_t enabled);
+void CC_TileLayer_EnableNopTile(uint8_t index, uint8_t enabled);
 
 // Specify no-tile value for tile layer.
-void CCTileLayer_SetNopValue(uint8_t index, uint16_t nop_value);
+void CC_TileLayer_SetNopValue(uint8_t index, uint16_t nop_value);
 
 // Enable alpha blending for tile layer.
-void CCTileLayer_EnableAlpha(uint8_t index, uint8_t enabled);
+void CC_TileLayer_EnableAlpha(uint8_t index, uint8_t enabled);
 
 // Set alpha value for tile layer.
-void CCTileLayer_SetAlpha(uint8_t index, uint8_t alpha);
+void CC_TileLayer_SetAlpha(uint8_t index, uint8_t alpha);
 
 // Select a palette for tile layer.
-void CCTileLayer_SetPalette(uint8_t index, uint8_t palette_index);
+void CC_TileLayer_SetPalette(uint8_t index, uint8_t palette_index);
 
 #endif  // _CC_TILE_LAYER_H_
