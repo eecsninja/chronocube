@@ -22,15 +22,6 @@
 
 #include <stdint.h>
 
-// These values represent sprite dimensions along either axis, in pixels.
-enum CC_Sprite_Dimensions {
-  CC_SPRITE_DIM_8,
-  CC_SPRITE_DIM_16,
-  CC_SPRITE_DIM_32,
-  CC_SPRITE_DIM_64,
-  CC_SPRITE_DIM_MAX,
-};
-
 // Set the location of the sprite in world space.
 void CC_Sprite_SetLocation(uint16_t index, uint16_t x, uint16_t y);
 

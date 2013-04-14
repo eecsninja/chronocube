@@ -21,6 +21,7 @@
 
 #include <assert.h>
 
+#include "cc_base.h"
 #include "cc_internal.h"
 
 // Wrapper define for sprite lookup by index.
@@ -42,7 +43,7 @@ void CC_Sprite_SetReferenceLocation(uint16_t index, uint8_t x, uint8_t y) {
 }
 
 void CC_Sprite_SetDimensions(uint16_t index, uint8_t dim_x, uint8_t dim_y) {
-  if (dim_x >= CC_SPRITE_DIM_MAX || dim_y >= CC_SPRITE_DIM_MAX)
+  if (dim_x >= CC_DIMENSION_MAX || dim_y >= CC_DIMENSION_MAX)
     return;
   SPRITE->w = kDimensionValues[dim_x];
   SPRITE->h = kDimensionValues[dim_y];
