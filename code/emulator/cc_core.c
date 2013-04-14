@@ -304,8 +304,16 @@ void CC_RendererDraw() {
                   0,
                   NUM_COLORS_PER_PALETTE);
 
-    // TODO: set alpha and transparency.
-    // TODO: use sprite reference location.
+    // Turn on alpha for the surface as a whole.
+    if (sprite->enable_alpha) {
+      SDL_SetAlpha(sprite_surface,
+                   SDL_SRCALPHA | SDL_SRCCOLORKEY,
+                   sprite->alpha);
+    }
+
+    // Set the transparency color for blitting from layer to screen.
+    if (sprite->enable_trans)
+      SDL_SetColorKey(sprite_surface, SDL_SRCCOLORKEY, sprite->trans_value);
 
     // Draw to the screen.
     SDL_Rect dst;
