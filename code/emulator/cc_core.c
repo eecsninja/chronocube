@@ -147,10 +147,13 @@ void CC_RendererInit() {
   renderer.screen =
       SDL_SetVideoMode (SCREEN_WIDTH, SCREEN_HEIGHT, 32, SDL_HWSURFACE);
   assert(renderer.screen);
+  // RGB masks for all surfaces should match the screen's.
   rmask = renderer.screen->format->Rmask;
   gmask = renderer.screen->format->Gmask;
   bmask = renderer.screen->format->Bmask;
-  amask = renderer.screen->format->Amask;
+  // The screen does not have an alpha mask.  Generate it from the bits that are
+  // not used up by RGB masks.
+  amask = ~(rmask | gmask | bmask);
 
   renderer.vram = SDL_CreateRGBSurfaceFrom(
       cc.vram,
@@ -187,13 +190,14 @@ void CC_RendererDraw() {
   src.w = TILE_WIDTH;
   src.h = TILE_HEIGHT;
   SDL_Rect dst;
+  dst.w = TILE_WIDTH;
+  dst.h = TILE_HEIGHT;
 
   // Clear the screen.
   SDL_FillRect(renderer.screen, NULL, 0);
 
   // TODO: implement scrolling and alpha.
   for (i = 0; i < NUM_TILE_LAYERS; ++i) {
-    int tile_index = 0;
     if (!cc.tile_layers[i].enabled)
       continue;
 
@@ -206,13 +210,21 @@ void CC_RendererDraw() {
 
     // Render tiles onto the tile layer surface.
     SDL_Surface* layer = renderer.tile_layers[i];
+    // Turn on alpha blending for this surface.
+    SDL_SetAlpha(layer, SDL_SRCALPHA, 0xff);
+
+    int tile_index = 0;
     for (dst.y = 0; dst.y < TILE_LAYER_HEIGHT; dst.y += TILE_HEIGHT) {
       for (dst.x = 0; dst.x < TILE_LAYER_WIDTH; dst.x += TILE_WIDTH) {
-        uint16_t tile_value = cc.tile_layers[i].tiles[tile_index];
+        const CC_TileLayer* tile_layer = &cc.tile_layers[i];
+        uint16_t tile_value = tile_layer->tiles[tile_index++] & 0x1fff;
+        if (tile_layer->enable_nop && tile_layer->nop_value == tile_value) {
+          SDL_FillRect(layer, &dst, 0);
+          continue;
+        }
         src.x = 0;
         src.y = tile_value * TILE_HEIGHT;
         SDL_BlitSurface(renderer.vram, &src, layer, &dst);
-        ++tile_index;
       }
     }
 
