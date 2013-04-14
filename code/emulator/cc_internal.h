@@ -74,8 +74,11 @@ typedef struct CC_TileLayer_ {
   uint16_t x, y;            // Location of tile layer in world coordinates.
   uint16_t w, h;            // Dimensions of tile layer.
   uint8_t enable_nop;       // Set this flag to treat |nop_value| as no tile.
+  uint8_t enable_trans;     // Set this flag to use |trans_value| as transparent
+                            //   color.
   uint8_t enable_alpha;     // Set this flag to enable alpha blending.
   uint16_t nop_value;       // Tile value indicating no tile.
+  uint16_t trans_value;     // Transparent color value.
   uint16_t alpha;           // Alpha blending value for rendering tile layer.
   uint8_t palette;          // Index of palette for rendering tile layer.
 } CC_TileLayer;

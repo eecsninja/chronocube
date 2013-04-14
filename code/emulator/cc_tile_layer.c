@@ -54,6 +54,14 @@ void CC_TileLayer_SetNopValue(uint8_t index, uint16_t nop_value) {
   LAYER->nop_value = nop_value;
 }
 
+void CC_TileLayer_EnableTransparency(uint8_t index, uint8_t enabled) {
+  LAYER->enable_trans = enabled;
+}
+
+void CC_TileLayer_SetTransparentValue(uint8_t index, uint8_t value) {
+  LAYER->trans_value = value;
+}
+
 void CC_TileLayer_EnableAlpha(uint8_t index, uint8_t enabled) {
   LAYER->enable_alpha = enabled;
 }

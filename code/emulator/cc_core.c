@@ -198,7 +198,8 @@ void CC_RendererDraw() {
 
   // TODO: implement scrolling and alpha.
   for (i = 0; i < NUM_TILE_LAYERS; ++i) {
-    if (!cc.tile_layers[i].enabled)
+    const CC_TileLayer* tile_layer = &cc.tile_layers[i];
+    if (!tile_layer->enabled)
       continue;
 
     // Set the rendering palette for this layer.
@@ -213,10 +214,13 @@ void CC_RendererDraw() {
     // Turn on alpha blending for this surface.
     SDL_SetAlpha(layer, SDL_SRCALPHA, 0xff);
 
+    // Set the transparent value (color key) specified for this layer.
+    if (tile_layer->enable_trans)
+      SDL_SetColorKey(renderer.vram, SDL_SRCCOLORKEY, tile_layer->trans_value);
+
     int tile_index = 0;
     for (dst.y = 0; dst.y < TILE_LAYER_HEIGHT; dst.y += TILE_HEIGHT) {
       for (dst.x = 0; dst.x < TILE_LAYER_WIDTH; dst.x += TILE_WIDTH) {
-        const CC_TileLayer* tile_layer = &cc.tile_layers[i];
         uint16_t tile_value = tile_layer->tiles[tile_index++] & 0x1fff;
         if (tile_layer->enable_nop && tile_layer->nop_value == tile_value) {
           SDL_FillRect(layer, &dst, 0);
