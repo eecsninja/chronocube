@@ -31,7 +31,7 @@
 #define SCREEN_HEIGHT                        240
 
 // VRAM size.
-#define VRAM_SIZE                    (64 * 1024)
+#define VRAM_SIZE                   (128 * 1024)
 
 // Palette definitions.
 #define NUM_PALETTES                           4
