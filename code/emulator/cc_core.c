@@ -286,15 +286,38 @@ void CC_RendererDraw() {
     char* surface_data = calloc(sprite->w * sprite->h, 1);
 
     // Copy the sprite data from VRAM to the sprite surface.
-    // TODO: allow for flipping.
-    memcpy(surface_data,
-           cc.vram + sprite->data_offset,
-           sprite->w * sprite->h);
+    const char* image_data = cc.vram + sprite->data_offset;
+    if (!sprite->flip_x && !sprite->flip_y && !sprite->flip_xy) {
+      // If no flipping enabled, just copy the memory verbatim.
+      memcpy(surface_data, image_data, sprite->w * sprite->h);
+    } else {
+      // Copy the sprite data one pixel at a time if flipping is enabled.
+      // TODO: this part is highly inefficient and error-prone.  Rewrite it.
+      int x, y;
+      int dst_x, dst_y;
+      int dst_w = sprite->flip_xy ? sprite->h : sprite->w;
+      for (y = 0; y < sprite->h; ++y) {
+        for (x = 0; x < sprite->w; ++x) {
+          if (sprite->flip_xy) {
+            dst_x = sprite->flip_y ? y : (sprite->h - 1 - y);
+            dst_y = sprite->flip_x ? x : (sprite->w - 1 - x);
+          } else {
+            dst_x = sprite->flip_x ? x : (sprite->w - 1 - x);
+            dst_y = sprite->flip_y ? y : (sprite->h - 1 - y);
+          }
+          assert(dst_y * dst_w + dst_x < sprite->w * sprite->h);
+          surface_data[dst_y * dst_w + dst_x] = image_data[y * sprite->w + x];
+        }
+      }
+    }
 
     // Now generate the surface from the copied sprite data.
     SDL_Surface *sprite_surface =
         SDL_CreateRGBSurfaceFrom(surface_data,
-                                 sprite->w, sprite->h, 8, sprite->w,
+                                 sprite->flip_xy ? sprite->h : sprite->w,
+                                 sprite->flip_xy ? sprite->w : sprite->h,
+                                 8,
+                                 sprite->flip_xy ? sprite->h : sprite->w,
                                  rmask, gmask, bmask, 0);
 
     // Set the rendering palette for the sprite.
