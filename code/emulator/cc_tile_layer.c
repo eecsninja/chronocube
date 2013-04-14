@@ -23,44 +23,45 @@
 
 #include "cc_internal.h"
 
+// Wrapper define for layer lookup by index.
+#define LAYER CC_GetTileLayer(index)
+
 void CC_TileLayer_SetData(uint8_t index, void* data, uint32_t size) {
-  memcpy(CC_GetTileLayer(index)->tiles, data, size);
+  memcpy(LAYER->tiles, data, size);
 }
 
 void CC_TileLayer_SetDataAt(uint8_t index,
                            uint16_t value,
                            uint32_t x,
                            uint32_t y) {
-  CC_TileLayer* layer = CC_GetTileLayer(index);
-  layer->tiles[x + layer->w * y] = value;
+  LAYER->tiles[x + LAYER->w * y] = value;
 }
 
 void CC_TileLayer_SetOffset(uint8_t index, uint16_t x, uint16_t y) {
-  CC_TileLayer* layer = CC_GetTileLayer(index);
-  layer->x = x;
-  layer->y = y;
+  LAYER->x = x;
+  LAYER->y = y;
 }
 
 void CC_TileLayer_SetEnabled(uint8_t index, uint8_t enabled) {
-  CC_GetTileLayer(index)->enabled = enabled;
+  LAYER->enabled = enabled;
 }
 
 void CC_TileLayer_EnableNopTile(uint8_t index, uint8_t enabled) {
-  CC_GetTileLayer(index)->enable_nop = enabled;
+  LAYER->enable_nop = enabled;
 }
 
 void CC_TileLayer_SetNopValue(uint8_t index, uint16_t nop_value) {
-  CC_GetTileLayer(index)->nop_value = nop_value;
+  LAYER->nop_value = nop_value;
 }
 
 void CC_TileLayer_EnableAlpha(uint8_t index, uint8_t enabled) {
-  CC_GetTileLayer(index)->enable_alpha = enabled;
+  LAYER->enable_alpha = enabled;
 }
 
 void CC_TileLayer_SetAlpha(uint8_t index, uint8_t alpha) {
-  CC_GetTileLayer(index)->alpha = alpha;
+  LAYER->alpha = alpha;
 }
 
 void CC_TileLayer_SetPalette(uint8_t index, uint8_t palette_index) {
-  CC_GetTileLayer(index)->palette = palette_index;
+  LAYER->palette = palette_index;
 }

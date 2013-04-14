@@ -23,20 +23,22 @@
 
 #include "cc_internal.h"
 
+// Wrapper define for sprite lookup by index.
+#define SPRITE CC_GetSprite(index)
+
 void CC_Sprite_SetLocation(uint16_t index, uint16_t x, uint16_t y) {
-  CC_Sprite* sprite = CC_GetSprite(index);
-  sprite->x = x;
-  sprite->y = y;
+  SPRITE->x = x;
+  SPRITE->y = y;
 }
 
 void CC_Sprite_SetAlpha(uint16_t index, uint8_t alpha) {
-  CC_GetSprite(index)->alpha = alpha;
+  SPRITE->alpha = alpha;
 }
 
 void CC_Sprite_SetEnabled(uint16_t index, uint8_t enabled) {
-  CC_GetSprite(index)->enabled = enabled;
+  SPRITE->enabled = enabled;
 }
 
 void CC_Sprite_SetPalette(uint16_t index, uint8_t palette_index) {
-  CC_GetSprite(index)->palette = palette_index;
+  SPRITE->palette = palette_index;
 }
