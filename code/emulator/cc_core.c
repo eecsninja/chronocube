@@ -276,7 +276,48 @@ void CC_RendererDraw() {
     }
     SDL_BlitSurface(layer, NULL, renderer.screen, &screen_dst);
   }
-  // TODO: draw sprites.
+
+  for (i = 0; i < NUM_SPRITES; ++i) {
+    const CC_Sprite* sprite = &cc.sprites[i];
+    if (!sprite->enabled)
+      continue;
+
+    // Allocate data for the sprite surface.
+    char* surface_data = calloc(sprite->w * sprite->h, 1);
+
+    // Copy the sprite data from VRAM to the sprite surface.
+    // TODO: allow for flipping.
+    memcpy(surface_data,
+           cc.vram + sprite->data_offset,
+           sprite->w * sprite->h);
+
+    // Now generate the surface from the copied sprite data.
+    SDL_Surface *sprite_surface =
+        SDL_CreateRGBSurfaceFrom(surface_data,
+                                 sprite->w, sprite->h, 8, sprite->w,
+                                 rmask, gmask, bmask, 0);
+
+    // Set the rendering palette for the sprite.
+    const CC_Palette* palette = &cc.palettes[sprite->palette];
+    SDL_SetColors(sprite_surface,
+                  (SDL_Color*)palette->data,
+                  0,
+                  NUM_COLORS_PER_PALETTE);
+
+    // TODO: set alpha and transparency.
+    // TODO: use sprite reference location.
+
+    // Draw to the screen.
+    SDL_Rect dst;
+    dst.x = sprite->x;
+    dst.y = sprite->y;
+    dst.w = sprite->w;
+    dst.h = sprite->h;
+    SDL_BlitSurface(sprite_surface, NULL, renderer.screen, &dst);
+
+    SDL_FreeSurface(sprite_surface);
+    free(surface_data);
+  }
 
   SDL_Flip(renderer.screen);
 }
