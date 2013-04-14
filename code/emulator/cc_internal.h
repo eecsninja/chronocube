@@ -96,6 +96,10 @@ typedef struct CC_Sprite_ {
   uint16_t trans_value;     // Transparent color value.
   uint16_t alpha;           // Alpha blending value for rendering sprite.
   uint8_t palette;          // Index of palette for rendering sprite.
+
+  uint8_t flip_x;           // Flip horizontally.
+  uint8_t flip_y;           // Flip vertically.
+  uint8_t flip_xy;          // Flip diagonally.
 } CC_Sprite;
 
 // Get tile layer and sprite by index.

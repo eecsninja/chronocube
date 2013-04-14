@@ -56,4 +56,7 @@ void CC_Sprite_SetPalette(uint16_t index, uint8_t palette_index);
 // 64-byte blocks.
 void CC_Sprite_SetDataOffset(uint16_t index, uint16_t data_offset);
 
+// Specify horizontal, vertical, and diagonal flipping.
+void CC_Sprite_SetFlip(uint16_t index, uint8_t flip_flags);
+
 #endif  // _CC_SPRITE_H_

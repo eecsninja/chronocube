@@ -31,4 +31,11 @@ enum CC_Dimension {
   CC_DIMENSION_MAX,
 };
 
+// Bit flags for flipping tiles or sprites.
+enum CC_FlipFlags {
+  CC_FLIP_X = (1 << 0),      // Flip horizontally.
+  CC_FLIP_Y = (1 << 1),      // Flip vertically.
+  CC_FLIP_XY = (1 << 2),     // Flip diagonally.
+};
+
 #endif  // _CC_BASE_H_

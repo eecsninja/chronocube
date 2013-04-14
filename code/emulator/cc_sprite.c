@@ -76,3 +76,9 @@ void CC_Sprite_SetPalette(uint16_t index, uint8_t palette_index) {
 void CC_Sprite_SetDataOffset(uint16_t index, uint16_t data_offset) {
   SPRITE->data_offset = data_offset * kDataBlockSize;
 }
+
+void CC_Sprite_SetFlip(uint16_t index, uint8_t flip_flags) {
+  SPRITE->flip_x = flip_flags & CC_FLIP_X;
+  SPRITE->flip_y = flip_flags & CC_FLIP_Y;
+  SPRITE->flip_xy = flip_flags & CC_FLIP_XY;
+}
