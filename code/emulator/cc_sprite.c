@@ -26,9 +26,38 @@
 // Wrapper define for sprite lookup by index.
 #define SPRITE CC_GetSprite(index)
 
+static const uint8_t kDimensionValues[] = { 8, 16, 32, 64 };
+
+// Size in bytes of a 8x8 data block.
+static const int kDataBlockSize = 64;
+
 void CC_Sprite_SetLocation(uint16_t index, uint16_t x, uint16_t y) {
   SPRITE->x = x;
   SPRITE->y = y;
+}
+
+void CC_Sprite_SetReferenceLocation(uint16_t index, uint8_t x, uint8_t y) {
+  SPRITE->ref_x = x;
+  SPRITE->ref_y = y;
+}
+
+void CC_Sprite_SetDimensions(uint16_t index, uint8_t dim_x, uint8_t dim_y) {
+  if (dim_x >= CC_SPRITE_DIM_MAX || dim_y >= CC_SPRITE_DIM_MAX)
+    return;
+  SPRITE->w = kDimensionValues[dim_x];
+  SPRITE->h = kDimensionValues[dim_y];
+}
+
+void CC_Sprite_EnableTransparency(uint16_t index, uint8_t enabled) {
+  SPRITE->enable_trans = enabled;
+}
+
+void CC_Sprite_SetTransparentValue(uint16_t index, uint8_t value) {
+  SPRITE->trans_value = value;
+}
+
+void CC_Sprite_EnableAlpha(uint16_t index, uint8_t enabled) {
+  SPRITE->enable_alpha = enabled;
 }
 
 void CC_Sprite_SetAlpha(uint16_t index, uint8_t alpha) {
@@ -41,4 +70,8 @@ void CC_Sprite_SetEnabled(uint16_t index, uint8_t enabled) {
 
 void CC_Sprite_SetPalette(uint16_t index, uint8_t palette_index) {
   SPRITE->palette = palette_index;
+}
+
+void CC_Sprite_SetDataOffset(uint16_t index, uint16_t data_offset) {
+  SPRITE->data_offset = data_offset * kDataBlockSize;
 }

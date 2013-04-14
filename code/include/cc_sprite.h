@@ -22,8 +22,35 @@
 
 #include <stdint.h>
 
+// These values represent sprite dimensions along either axis, in pixels.
+enum CC_Sprite_Dimensions {
+  CC_SPRITE_DIM_8,
+  CC_SPRITE_DIM_16,
+  CC_SPRITE_DIM_32,
+  CC_SPRITE_DIM_64,
+  CC_SPRITE_DIM_MAX,
+};
+
 // Set the location of the sprite in world space.
 void CC_Sprite_SetLocation(uint16_t index, uint16_t x, uint16_t y);
+
+// Set the reference point on the sprite to be used in rendering operations.
+void CC_Sprite_SetRefLocation(uint16_t index, uint8_t x, uint8_t y);
+
+// Set the dimensions of the sprite, in pixels.
+// |dim_x| and |dim_y| are not actual dimension values.  They are enums for the
+// values defined in CC_Sprite_Dimensions.
+// If invalid enum values are given, this function will do nothing.
+void CC_Sprite_SetDimensions(uint16_t index, uint8_t dim_x, uint8_t dim_y);
+
+// Enable transparent color key for sprite.
+void CC_Sprite_EnableTransparency(uint16_t index, uint8_t enabled);
+
+// Specify transparent color key for sprite.
+void CC_Sprite_SetTransparentValue(uint16_t index, uint8_t value);
+
+// Enable alpha blending for sprite.
+void CC_Sprite_EnableAlpha(uint16_t index, uint8_t enabled);
 
 // Set alpha value of sprite.
 void CC_Sprite_SetAlpha(uint16_t index, uint8_t alpha);
@@ -33,5 +60,9 @@ void CC_Sprite_SetEnabled(uint16_t index, uint8_t enabled);
 
 // Select a palette to be used by the sprite.
 void CC_Sprite_SetPalette(uint16_t index, uint8_t palette_index);
+
+// Specify the offset in VRAM of this sprite's data, given as a multiple of
+// 64-byte blocks.
+void CC_Sprite_SetDataOffset(uint16_t index, uint16_t data_offset);
 
 #endif  // _CC_SPRITE_H_

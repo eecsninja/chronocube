@@ -87,6 +87,13 @@ typedef struct CC_TileLayer_ {
 typedef struct CC_Sprite_ {
   uint8_t enabled;          // Set this flag to render the sprite.
   uint16_t x, y;            // Location of sprite in world coordinates.
+  uint8_t ref_x, ref_y;     // Reference location on sprite.
+  uint16_t w, h;            // Dimensions of sprite.
+  uint16_t data_offset;     // Location of data in VRAM in bytes.
+  uint8_t enable_trans;     // Set this flag to use |trans_value| as transparent
+                            //   color.
+  uint8_t enable_alpha;     // Set this flag to enable alpha blending.
+  uint16_t trans_value;     // Transparent color value.
   uint16_t alpha;           // Alpha blending value for rendering sprite.
   uint8_t palette;          // Index of palette for rendering sprite.
 } CC_Sprite;
