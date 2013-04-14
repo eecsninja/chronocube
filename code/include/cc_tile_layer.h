@@ -43,6 +43,12 @@ void CC_TileLayer_EnableNopTile(uint8_t index, uint8_t enabled);
 // Specify no-tile value for tile layer.
 void CC_TileLayer_SetNopValue(uint8_t index, uint16_t nop_value);
 
+// Enable transparent color key for tile layer.
+void CC_TileLayer_EnableTransparency(uint8_t index, uint8_t enabled);
+
+// Specify transparent color key for tile layer.
+void CC_TileLayer_SetTransparentValue(uint8_t index, uint8_t value);
+
 // Enable alpha blending for tile layer.
 void CC_TileLayer_EnableAlpha(uint8_t index, uint8_t enabled);
 
