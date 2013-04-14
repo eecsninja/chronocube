@@ -151,9 +151,7 @@ void CC_RendererInit() {
   rmask = renderer.screen->format->Rmask;
   gmask = renderer.screen->format->Gmask;
   bmask = renderer.screen->format->Bmask;
-  // The screen does not have an alpha mask.  Generate it from the bits that are
-  // not used up by RGB masks.
-  amask = ~(rmask | gmask | bmask);
+  amask = 0;  // Turn off per-pixel alpha.
 
   renderer.vram = SDL_CreateRGBSurfaceFrom(
       cc.vram,
@@ -196,7 +194,16 @@ void CC_RendererDraw() {
   // Clear the screen.
   SDL_FillRect(renderer.screen, NULL, 0);
 
-  // TODO: implement scrolling and alpha.
+  // Get the RGB masks for the screen.
+  uint32_t rmask = renderer.screen->format->Rmask;
+  uint32_t gmask = renderer.screen->format->Gmask;
+  uint32_t bmask = renderer.screen->format->Bmask;
+
+  // Use the RGB masks to determine which bits are not being used for color.
+  // They can be used to set a transparent color key that does not represent an
+  // actual color value.
+  uint32_t transparent_color = ~(rmask | gmask | bmask);
+
   for (i = 0; i < NUM_TILE_LAYERS; ++i) {
     const CC_TileLayer* tile_layer = &cc.tile_layers[i];
     if (!tile_layer->enabled)
@@ -211,21 +218,30 @@ void CC_RendererDraw() {
 
     // Render tiles onto the tile layer surface.
     SDL_Surface* layer = renderer.tile_layers[i];
-    // Turn on alpha blending for this surface.
-    SDL_SetAlpha(layer, SDL_SRCALPHA, 0xff);
 
-    // Set the transparent value (color key) specified for this layer.
+    // Turn on alpha for the surface as a whole.
+    uint8_t layer_alpha = tile_layer->enable_alpha ? tile_layer->alpha : 0xff;
+    if (tile_layer->enable_alpha)
+      SDL_SetAlpha(layer, SDL_SRCALPHA | SDL_SRCCOLORKEY, layer_alpha);
+
+    // Set the transparent value (color key) for blitting from VRAM to layer.
     if (tile_layer->enable_trans)
       SDL_SetColorKey(renderer.vram, SDL_SRCCOLORKEY, tile_layer->trans_value);
+
+    // Set the transparency color for blitting from layer to screen.
+    if (tile_layer->enable_trans | tile_layer->enable_nop)
+      SDL_SetColorKey(layer, SDL_SRCCOLORKEY, transparent_color);
+
+    // Clear the surface.  If there is no transparency, this will just be black.
+    SDL_FillRect(layer, NULL, transparent_color);
 
     int tile_index = 0;
     for (dst.y = 0; dst.y < TILE_LAYER_HEIGHT; dst.y += TILE_HEIGHT) {
       for (dst.x = 0; dst.x < TILE_LAYER_WIDTH; dst.x += TILE_WIDTH) {
         uint16_t tile_value = tile_layer->tiles[tile_index++] & 0x1fff;
-        if (tile_layer->enable_nop && tile_layer->nop_value == tile_value) {
-          SDL_FillRect(layer, &dst, 0);
+        // Skip rendering the tile if it is a NOP tile.
+        if (tile_layer->enable_nop && tile_layer->nop_value == tile_value)
           continue;
-        }
         src.x = 0;
         src.y = tile_value * TILE_HEIGHT;
         SDL_BlitSurface(renderer.vram, &src, layer, &dst);
