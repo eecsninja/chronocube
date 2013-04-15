@@ -254,6 +254,7 @@ void CC_RendererDraw() {
     screen_dst.y = cc.tile_layers[i].y - cc.scroll.y;
 
     // Handle wrap-around.
+    // TODO: drawing the layer four times is inefficient.
 
     // Wrap horizontally.
     if (screen_dst.x + TILE_LAYER_WIDTH < SCREEN_WIDTH) {
