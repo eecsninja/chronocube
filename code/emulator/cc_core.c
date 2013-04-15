@@ -340,8 +340,8 @@ void CC_RendererDraw() {
 
     // Draw to the screen.
     SDL_Rect dst;
-    dst.x = sprite->x;
-    dst.y = sprite->y;
+    dst.x = sprite->x - sprite->ref_x - cc.scroll.x;
+    dst.y = sprite->y - sprite->ref_y - cc.scroll.y;
     dst.w = sprite->w;
     dst.h = sprite->h;
     SDL_BlitSurface(sprite_surface, NULL, renderer.screen, &dst);
