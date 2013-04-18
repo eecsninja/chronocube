@@ -22,6 +22,7 @@
 // signals, and not by the system clock.
 
 `include "registers.vh"
+`include "tile_registers.vh"
 
 module Register(reset, clk, en, be, d, q, value_in);
   parameter WIDTH=16;         // Number of bits in the register.
@@ -68,6 +69,7 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
   parameter ADDR_WIDTH=16;
   parameter DATA_WIDTH=16;
   parameter NUM_REGS=(1 << ADDR_WIDTH);
+  parameter IS_GENERIC=1;
 
   input reset;      // System reset
   input en;         // Access enable
@@ -106,13 +108,34 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
 
   endfunction
 
+  function integer tile_reg_type;
+    input [31:0] address;
+    begin
+      case (address)
+        `TILE_CTRL0:          begin   tile_reg_type = `REG_RW;  end
+        `TILE_PALETTE:        begin   tile_reg_type = `REG_RW;  end
+        `TILE_DATA_OFFSET:    begin   tile_reg_type = `REG_RW;  end
+
+        `TILE_NOP_VALUE:      begin   tile_reg_type = `REG_RW;  end
+
+        `TILE_COLOR_KEY:      begin   tile_reg_type = `REG_RW;  end
+
+        `TILE_OFFSET_X:       begin   tile_reg_type = `REG_RW;  end
+        `TILE_OFFSET_Y:       begin   tile_reg_type = `REG_RW;  end
+
+        default:              begin   tile_reg_type = `REG_RO;  end
+      endcase
+    end
+
+  endfunction
+
   // Generate the registers.
   wire [DATA_WIDTH-1:0] q_array [NUM_REGS - 1:0];
   genvar i;
   generate
     for (i = 0; i < NUM_REGS; i = i + 1) begin: REGS
       Register #(.WIDTH(DATA_WIDTH),
-                 .TYPE(register_type(i)))
+                 .TYPE(IS_GENERIC ? register_type(i) : tile_reg_type(i)))
           register(.clk(~wr),
                    .en(en & ~rd & (i == addr)),
                    .reset(reset),

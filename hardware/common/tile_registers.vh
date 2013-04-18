@@ -22,15 +22,16 @@
 
 `include "registers.vh"
 
-`define TILE_CTRL                'h00
-`define TILE_DATA_OFFSET         'h01
-`define TILE_DISABLED_VALUE      'h02
-`define TILE_PALETTE             'h03
+`define TILE_CTRL0               'h00
+`define TILE_CTRL1               'h01
+`define TILE_PALETTE             'h02
+`define TILE_DATA_OFFSET         'h03
 
-`define TILE_OFFSET_X            'h04
-`define TILE_OFFSET_Y            'h05
+`define TILE_NOP_VALUE           'h04
+`define TILE_COLOR_KEY           'h05
 
-`define TILE_OFFSET_ALPHA        'h06
+`define TILE_OFFSET_X            'h08
+`define TILE_OFFSET_Y            'h09
 
 `define TILE_ROT_ANGLE           'h08
 `define TILE_ROT_X               'h0a
@@ -39,7 +40,12 @@
 `define TILE_SCALE_X             'h0c
 `define TILE_SCALE_Y             'h0d
 
-`define TILE_REG_ADDR_BASE     'h0800
+`define NUM_TILE_REGISTERS         16
+`define NUM_TILE_LAYERS             4
+
+`define TILE_REG_ADDR_BASE     'h0400
 `define TILE_REG_ADDR_STEP       'h40
+`define TILE_REG_ADDR_WIDTH         4
+`define TILE_BLOCK_ADDR_WIDTH       6
 
 `endif  // _TILE_REGISTERS_VH_

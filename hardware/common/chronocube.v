@@ -72,7 +72,7 @@ module ChronoCube(
   // Break down the address input into page index and offset.
   wire [`PAGE_OFFSET_WIDTH-1:0] page_offset =
       mpu_addr_in[`PAGE_OFFSET_WIDTH-1:0];
-  wire [`MPU_ADDR_WIDTH0`PAGE_OFFSET_WIDTH-1:0] page_index =
+  wire [`MPU_ADDR_WIDTH-`PAGE_OFFSET_WIDTH-1:0] page_index =
       mpu_addr_in >> `PAGE_OFFSET_WIDTH;
 
   // Map the second page using the bank register.
@@ -97,11 +97,12 @@ module ChronoCube(
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
   assign mpu_data_out = (_mpu_rd | _mpu_en) ? {`MPU_DATA_WIDTH {1'b0}} :
-                        (palette_select  ? pal_data_out :
-                        (map_select      ? map_data_out :
-                        (main_reg_select ? reg_data_out :
-                        (vram_select     ? vram_data_in :
-                        {`MPU_DATA_WIDTH {1'b0}}))));
+                        (palette_select      ? pal_data_out :
+                        (map_select          ? map_data_out :
+                        (main_reg_select     ? reg_data_out :
+                        (vram_select         ? vram_data_in :
+                        (tile_regs_select    ? tile_data_out :
+                        {`MPU_DATA_WIDTH {1'b0}})))));
 
   // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
@@ -252,11 +253,13 @@ module ChronoCube(
                        .h_visible_pos(reg_array_in[`SCAN_X]),
                        .v_visible_pos(reg_array_in[`SCAN_Y]));
 
+  // Main registers.
   wire main_reg_select = (mpu_addr >= `MAIN_REG_ADDR_BASE) &
                          (mpu_addr < `MAIN_REG_ADDR_BASE + `NUM_MAIN_REGS);
   Registers #(.DATA_WIDTH(`REG_DATA_WIDTH),
               .ADDR_WIDTH(`MAIN_REG_ADDR_WIDTH),
-              .NUM_REGS(`NUM_MAIN_REGS))
+              .NUM_REGS(`NUM_MAIN_REGS),
+              .IS_GENERIC(1))
       registers(.reset(~_reset),
                 .en(main_reg_select),
                 .rd(~_mpu_rd),
@@ -267,5 +270,56 @@ module ChronoCube(
                 .data_out(reg_data_out),
                 .values_in(reg_values_in),
                 .values_out(reg_values_out));
+
+  // Tile layer registers.
+  wire tile_regs_select =
+      (mpu_addr >= `TILE_REG_ADDR_BASE) &
+      (mpu_addr < `TILE_REG_ADDR_BASE + `TILE_REG_ADDR_STEP * `NUM_TILE_LAYERS);
+  wire [`NUM_TILE_LAYERS-1:0] tile_layer_reg_select;
+
+  wire [`REG_DATA_WIDTH-1:0] tile_data_out_array[`NUM_TILE_LAYERS-1:0];
+  wire [`REG_DATA_WIDTH * `NUM_TILE_REGISTERS-1:0]
+      tile_values_out_array[`NUM_TILE_LAYERS-1:0];
+
+  reg [`REG_DATA_WIDTH-1:0] tile_data_out;
+  wire [1:0] tile_index =
+      mpu_addr[`TILE_BLOCK_ADDR_WIDTH+1:`TILE_BLOCK_ADDR_WIDTH];
+  wire [`TILE_BLOCK_ADDR_WIDTH-1:0] tile_reg_addr =
+      mpu_addr[`TILE_BLOCK_ADDR_WIDTH-1:0];
+  always @ (tile_data_out_array or tile_regs_select or mpu_addr) begin
+    if (~tile_regs_select) begin
+      tile_data_out <= 'bx;
+    end else begin
+      if (tile_index < `NUM_TILE_REGISTERS)
+        tile_data_out <= tile_data_out_array[tile_index];
+      else
+        tile_data_out <= 0;
+    end
+  end
+
+  generate
+    for (i = 0; i < `NUM_TILE_LAYERS; i = i + 1) begin: TILE_REG_SELECT
+      assign tile_layer_reg_select[i] =
+          tile_regs_select &
+          (mpu_addr >= `TILE_REG_ADDR_BASE + i * `TILE_REG_ADDR_STEP) &
+          (mpu_addr < `TILE_REG_ADDR_BASE +
+                      i * `TILE_REG_ADDR_STEP +
+                      `NUM_TILE_REGISTERS);
+      Registers #(.DATA_WIDTH(`REG_DATA_WIDTH),
+                  .ADDR_WIDTH(`TILE_REG_ADDR_WIDTH),
+                  .NUM_REGS(`NUM_TILE_REGISTERS),
+                  .IS_GENERIC(0))
+          tile_registers(.reset(~_reset),
+                         .en(tile_layer_reg_select[i]),
+                         .rd(~_mpu_rd),
+                         .wr(~_mpu_wr),
+                         .be(~_mpu_be),
+                         .addr(mpu_addr[`TILE_REG_ADDR_WIDTH-1:0]),
+                         .data_in(mpu_data_in[`REG_DATA_WIDTH-1:0]),
+                         .data_out(tile_data_out_array[i]),
+                         .values_in(0),
+                         .values_out(tile_values_out_array[i]));
+    end
+  endgenerate
 
 endmodule

@@ -20,6 +20,9 @@
 
 `timescale 10 ns / 1 ns
 
+`include "registers.vh"
+`include "tile_registers.vh"
+
 module Main_Test;
 
   parameter ADDR_WIDTH=16;
@@ -103,20 +106,33 @@ module Main_Test;
     #5 stage = 5;
     #1 read_test();
 
-    // Test some palette writes
+    // Test some tile reg writes
     #5 stage = 6;
+    for (i = 0; i < `TILE_REG_ADDR_STEP * `NUM_TILE_LAYERS; i = i + 1)
+    begin
+      #1 write16((`TILE_REG_ADDR_BASE + i) * 2, ~i);
+    end
+
+    #5 stage = 7;
+    for (i = 0; i < `TILE_REG_ADDR_STEP * `NUM_TILE_LAYERS; i = i + 1)
+    begin
+      #1 read8((`TILE_REG_ADDR_BASE + i) * 2);
+      #1 read8((`TILE_REG_ADDR_BASE + i) * 2 + 1);
+    end
+
+    // Test some palette writes
+    #5 stage = 8;
     for (i = 0; i < 16; i = i + 1)
     begin
       #1 write16('h1000 + i * 2, ~i);
     end
 
-    #5 stage = 7;
+    #5 stage = 9;
     for (i = 0; i < 32; i = i + 1)
     begin
       #1 read8('h1000 + i);
     end
   end
-
 
   // Task to write a byte.
   task write8;
