@@ -21,8 +21,10 @@
 
 `include "memory_map.vh"
 `include "registers.vh"
+`include "tile_registers.vh"
 
 `define LINE_BUF_ADDR_WIDTH 10
+`define NUM_SPRITES 128
 
 module Renderer(clk, reset, reg_values,
                 h_pos, v_pos, h_sync, v_sync,
@@ -123,13 +125,19 @@ module Renderer(clk, reset, reg_values,
   assign vram_clk = clk;
 
   // The logic for drawing to the line buffer.
-  `define STATE_IDLE     0
-  `define STATE_DRAW     1
+  `define STATE_IDLE           0
+  `define STATE_DECIDE         1
+  `define STATE_DRAW_LAYER     2
+  `define STATE_DRAW_SPRITES   3
   reg [3:0] render_state;
   reg [`LINE_BUF_ADDR_WIDTH-2:0] render_x;
   // Handle y-scrolling.
   wire [`LINE_BUF_ADDR_WIDTH-2:0] render_y = screen_y + reg_array[`SCROLL_Y];
 
+  // For keeping track of what's been rendered.
+  reg [31:0] num_layers_drawn;
+  reg [31:0] num_sprites_drawn;
+  reg [31:0] num_texels_drawn;
   always @ (posedge clk or posedge reset) begin
     if (reset)
       render_state <= `STATE_IDLE;
@@ -139,24 +147,56 @@ module Renderer(clk, reset, reg_values,
         begin
           // Start drawing at the start of an even numbered on-screen scanline.
           if (h_pos == 0 && v_blank == 0 && v_visible[0] == 0) begin
-            render_state <= `STATE_DRAW;
-            render_x <= 0;
+            render_state <= `STATE_DECIDE;
+            num_layers_drawn <= 0;
+            num_sprites_drawn <= 0;
+            num_texels_drawn <= 0;
           end
         end
-      `STATE_DRAW:
+      `STATE_DECIDE:
+        begin
+          // TODO: eventually this state will need to be removed for maximum
+          // efficiency.  Deciding what to draw next should be immediate,
+          // without having to go through an intermediate step.
+
+          // Draw first two layers.
+          if (num_layers_drawn < 2)
+            render_state <= `STATE_DRAW_LAYER;
+          // Draw sprites.
+          else if (num_layers_drawn == 2 && num_sprites_drawn <= 0)
+            render_state <= `STATE_DRAW_SPRITES;
+          // Draw final two layers.
+          else if (num_layers_drawn < `NUM_TILE_LAYERS && num_sprites_drawn > 0)
+            render_state <= `STATE_DRAW_LAYER;
+          // All done.
+          else
+            render_state <= `STATE_IDLE;
+
+          // Reset the render counter.
+          render_x <= 0;
+        end
+      `STATE_DRAW_LAYER:
         begin
           // Stop drawing at the end of an odd numbered on-screen scanline.
           // TODO: create define for '800', the max 640x480 horizontal count.
-          if (h_pos + 1 == 800 && v_visible[0] == 1)
+          if (h_pos + 1 == 800 && v_visible[0] == 1) begin
             render_state <= `STATE_IDLE;
-          // Stop drawing if the screen has been drawn.
-          // TODO: direct drawing based on tile coordinates rather than screen
-          // coordinates.
-          // TODO: create define for '320', the horizontal image resolution.
-          else if (render_x + 1 == 320)
-            render_state <= `STATE_IDLE;
-          else
+          end else if (render_x + 1 == 320) begin
+            // Stop drawing if the screen has been drawn.
+            // TODO: direct drawing based on tile coordinates rather than screen
+            // coordinates.
+            // TODO: create define for '320', the horizontal image resolution.
+            render_state <= `STATE_DECIDE;
+            num_layers_drawn <= num_layers_drawn + 1;
+          end else begin
             render_x <= render_x + 1;
+          end
+        end
+      `STATE_DRAW_SPRITES:
+        begin
+          // TODO: implement sprite drawing.
+          num_sprites_drawn <= `NUM_SPRITES;
+          render_state <= `STATE_DECIDE;
         end
       endcase
     end
@@ -214,7 +254,7 @@ module Renderer(clk, reset, reg_values,
   CC_Delay #(.WIDTH(1), .DELAY(`RENDER_DELAY))
       buf_wr_delay(.clk(clk),
                    .reset(reset),
-                   .d((render_state == `STATE_DRAW)),
+                   .d((render_state == `STATE_DRAW_LAYER)),
                    .q(buf_wr));
 
   // The Palette memory module happens to be good for a line drawing buffer,
