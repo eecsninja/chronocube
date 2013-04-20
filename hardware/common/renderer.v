@@ -26,7 +26,7 @@
 `define LINE_BUF_ADDR_WIDTH 10
 `define NUM_SPRITES 128
 
-module Renderer(clk, reset, reg_values,
+module Renderer(clk, reset, reg_values, tile_reg_values,
                 h_pos, v_pos, h_sync, v_sync,
                 pal_clk, pal_addr, pal_data,
                 map_clk, map_addr, map_data,
@@ -44,6 +44,7 @@ module Renderer(clk, reset, reg_values,
 
   // Main register values
   input [`REG_DATA_WIDTH * `NUM_MAIN_REGS - 1 : 0] reg_values;
+  input [`NUM_TOTAL_TILE_REG_BITS-1:0] tile_reg_values;
 
   input [SCREEN_X_WIDTH-1:0] h_pos;   // Current screen refresh coordinates
   input [SCREEN_Y_WIDTH-1:0] v_pos;
@@ -112,6 +113,15 @@ module Renderer(clk, reset, reg_values,
     end
   endgenerate
 
+  // Tile register logic.
+  wire [`REG_DATA_WIDTH-1:0] tile_ctrl0;
+  wire [`REG_DATA_WIDTH-1:0] tile_ctrl1;
+  TileRegDecoder tile_reg_decoder(
+      .current_layer(current_tile_layer),
+      .tile_reg_values(tile_reg_values),
+      .tile_ctrl0(tile_ctrl0),
+      .tile_ctrl1(tile_ctrl1));
+
   // TODO: complete the rendering pipeline.
   // For now, this setup uses contents of the tilemap RAM to look up palette
   // colors.  The palette color goes straight to the output.
@@ -138,6 +148,7 @@ module Renderer(clk, reset, reg_values,
   reg [31:0] num_layers_drawn;
   reg [31:0] num_sprites_drawn;
   reg [31:0] num_texels_drawn;
+  wire [31:0] current_tile_layer = num_layers_drawn;
   always @ (posedge clk or posedge reset) begin
     if (reset)
       render_state <= `STATE_IDLE;
@@ -159,15 +170,19 @@ module Renderer(clk, reset, reg_values,
           // efficiency.  Deciding what to draw next should be immediate,
           // without having to go through an intermediate step.
 
-          // Draw first two layers.
-          if (num_layers_drawn < 2)
-            render_state <= `STATE_DRAW_LAYER;
+          // Draw layers.
+          if (num_layers_drawn < 2 ||
+              (num_layers_drawn < `NUM_TILE_LAYERS && num_sprites_drawn > 0))
+          begin
+            if (tile_ctrl0[`TILE_LAYER_ENABLED])
+              render_state <= `STATE_DRAW_LAYER;
+            // Skip to the next layer if the current one is disabled.
+            else
+              num_layers_drawn <= num_layers_drawn + 1;
+          end
           // Draw sprites.
           else if (num_layers_drawn == 2 && num_sprites_drawn <= 0)
             render_state <= `STATE_DRAW_SPRITES;
-          // Draw final two layers.
-          else if (num_layers_drawn < `NUM_TILE_LAYERS && num_sprites_drawn > 0)
-            render_state <= `STATE_DRAW_LAYER;
           // All done.
           else
             render_state <= `STATE_IDLE;
