@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
   while ((n = fread(buf, 1, sizeof(buf), fp)) != 0) {
     printf("\t");
     for (int i = 0; i < (n + 3) / 4; ++i)
-      printf("0x%04x,", buf32[i]);
+      printf("0x%08x,", buf32[i]);
     printf("\n");
     total += n;
     memset(buf, 0, sizeof(buf));
