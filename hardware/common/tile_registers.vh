@@ -27,6 +27,13 @@
 // Number of tile registers for each layer.
 `define NUM_TILE_REGISTERS         16
 
+// Number of tile register bits per layer.
+`define NUM_REG_BITS_PER_TILE_LAYER  (`NUM_TILE_REGISTERS * `REG_DATA_WIDTH)
+
+// Total number of bits in all the tile layer registers.
+`define NUM_TOTAL_TILE_REG_BITS \
+    (`NUM_TILE_LAYERS * `NUM_REG_BITS_PER_TILE_LAYER)
+
 // Register offsets within each register block.
 `define TILE_CTRL0               'h00
 `define TILE_CTRL1               'h01

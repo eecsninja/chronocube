@@ -278,8 +278,17 @@ module ChronoCube(
   wire [`NUM_TILE_LAYERS-1:0] tile_layer_reg_select;
 
   wire [`REG_DATA_WIDTH-1:0] tile_data_out_array[`NUM_TILE_LAYERS-1:0];
-  wire [`REG_DATA_WIDTH * `NUM_TILE_REGISTERS-1:0]
+  wire [`NUM_REG_BITS_PER_TILE_LAYER-1:0]
       tile_values_out_array[`NUM_TILE_LAYERS-1:0];
+
+  wire [`NUM_TOTAL_TILE_REG_BITS-1:0] tile_reg_values;
+  generate
+    for (i = 0; i < `NUM_TILE_LAYERS; i = i + 1) begin: TILE_REG_VALUES
+      assign tile_reg_values[(i + 1) * `NUM_REG_BITS_PER_TILE_LAYER - 1:
+                             i * `NUM_REG_BITS_PER_TILE_LAYER]
+          = tile_values_out_array[i];
+    end
+  endgenerate
 
   reg [`REG_DATA_WIDTH-1:0] tile_data_out;
   wire [1:0] tile_index =
