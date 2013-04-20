@@ -57,7 +57,7 @@ module ChronoCube(
   output vram_rd;           // Read enable (active low)
   output vram_wr;           // Write enable (active low)
   output [1:0] vram_be;     // Byte enable (active low)
-  output [`VRAM_ADDR_WIDTH-1:0] vram_addr;        // Address bus
+  output reg  [`VRAM_ADDR_WIDTH-1:0] vram_addr;   // Address bus
   input [`VRAM_DATA_WIDTH-1:0] vram_data_in;      // Data input bus
   output [`VRAM_DATA_WIDTH-1:0] vram_data_out;    // Data output bus
 
@@ -181,8 +181,8 @@ module ChronoCube(
   wire vram_wr = vram_uses_mpu ? ~_mpu_wr : ren_vram_wr;
   wire vram_rd = vram_uses_mpu ? ~_mpu_rd : ren_vram_rd;
   wire [1:0] vram_be = vram_uses_mpu ? ~_mpu_be : ren_vram_be;
-  wire [`VRAM_ADDR_WIDTH-1:0] vram_addr =
-      vram_uses_mpu ? (mpu_addr - `VRAM_ADDR_BASE) : ren_vram_addr;
+  always @ (posedge clk)
+    vram_addr <= vram_uses_mpu ? (mpu_addr - `VRAM_ADDR_BASE) : ren_vram_addr;
   wire [`VRAM_DATA_WIDTH-1:0] vram_data_out =
       vram_uses_mpu ? mpu_data_in : {`VRAM_DATA_WIDTH {1'b0}};
 
@@ -191,7 +191,9 @@ module ChronoCube(
   wire ren_vram_wr;
   wire [1:0] ren_vram_be;
   wire [`VRAM_ADDR_WIDTH-1:0] ren_vram_addr;
-  wire [`VRAM_DATA_WIDTH-1:0] ren_vram_data = vram_uses_mpu ? 0 : vram_data_in;
+  reg [`VRAM_DATA_WIDTH-1:0] ren_vram_data;
+  always @ (posedge clk)
+    ren_vram_data <= vram_uses_mpu ? 0 : vram_data_in;
 
   // Renderer
   Renderer renderer(.clk(clk),

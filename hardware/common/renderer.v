@@ -242,7 +242,12 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // Map data -> VRAM address
   // TODO: unpack map entry fields.
   assign vram_addr = {map_data, tile_y_reg, tile_x_reg[3:1]};
-  wire vram_byte_select = tile_x_reg[0];
+  wire vram_byte_select;
+  CC_Delay #(.WIDTH(1), .DELAY(2))
+      vram_byte_select_delay(.clk(clk),
+                             .reset(reset),
+                             .d(tile_x_reg[0]),
+                             .q(vram_byte_select));
 
   // VRAM data -> palette address
   assign pal_addr = (vram_byte_select == 0) ? vram_data[7:0] : vram_data[15:8];
@@ -257,13 +262,17 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // to pass through the rendering pipeline.
   // The five-clock delay is broken down as follows:
   // - Tile map RAM access
-  // - VRAM to Palette
-  //     TODO: VRAM is currently asynchronous on both address and data ports.
-  //     This is cutting it close and might require one or both ports to be
+  // - Registered VRAM address
+  // - Registered VRAM data
+  //     TODO: In my current setup, VRAM requires its ports to be registered.
+  //     My setup has 10cm wires between the FPGA and VRAM.  In a production
+  //     system, there should be board traces instead of wires, and the traces
+  //     should be shorter.  That might eliminate the need for VRAM ports to be
   //     registered.
+  // - Palette access.
   // - Something else in the pipeline that I can't account for.  But it works if
   //   I use a delay of 3.
-  `define RENDER_DELAY 3
+  `define RENDER_DELAY 5
   CC_Delay #(.WIDTH(`LINE_BUF_ADDR_WIDTH), .DELAY(`RENDER_DELAY))
       buf_addr_delay(.clk(clk),
                      .reset(reset),
@@ -301,7 +310,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                        .reset(reset),
                        .d(map_data),
                        .q(tile_value_delayed));
-  CC_Delay #(.WIDTH(8), .DELAY(`RENDER_DELAY-1))
+  CC_Delay #(.WIDTH(8), .DELAY(2))
       pixel_value_delay(.clk(clk),
                         .reset(reset),
                         .d(pal_addr[7:0]),
