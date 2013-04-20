@@ -116,11 +116,13 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`REG_DATA_WIDTH-1:0] tile_ctrl1;
   wire [`REG_DATA_WIDTH-1:0] tile_nop_value;
   wire [`REG_DATA_WIDTH-1:0] tile_color_key;
+  wire [`REG_DATA_WIDTH-1:0] tile_data_offset;
   TileRegDecoder tile_reg_decoder(
       .current_layer(current_tile_layer),
       .reg_values(tile_reg_values),
       .ctrl0(tile_ctrl0),
       .ctrl1(tile_ctrl1),
+      .data_offset(tile_data_offset),
       .nop_value(tile_nop_value),
       .color_key(tile_color_key));
 
@@ -261,7 +263,11 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   end
 
   // Map data -> VRAM address
-  assign vram_addr = {tile_value, tile_y_flipped, tile_x_flipped[3:1]};
+  reg [VRAM_ADDR_BUS_WIDTH-1:0] vram_offset;
+  always @ (posedge clk)
+    vram_offset <= tile_data_offset / 2;
+  assign vram_addr =
+      {tile_value, tile_y_flipped, tile_x_flipped[3:1]} + vram_offset;
   wire vram_byte_select;
   CC_Delay #(.WIDTH(1), .DELAY(2))
       vram_byte_select_delay(.clk(clk),
