@@ -116,11 +116,13 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // Tile register logic.
   wire [`REG_DATA_WIDTH-1:0] tile_ctrl0;
   wire [`REG_DATA_WIDTH-1:0] tile_ctrl1;
+  wire [`REG_DATA_WIDTH-1:0] tile_nop_value;
   TileRegDecoder tile_reg_decoder(
       .current_layer(current_tile_layer),
       .tile_reg_values(tile_reg_values),
       .tile_ctrl0(tile_ctrl0),
-      .tile_ctrl1(tile_ctrl1));
+      .tile_ctrl1(tile_ctrl1),
+      .tile_nop_value(tile_nop_value));
 
   // TODO: complete the rendering pipeline.
   // For now, this setup uses contents of the tilemap RAM to look up palette
@@ -226,7 +228,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [3:0] tile_x = render_x_world[3:0];
   wire [3:0] tile_y = render_y[3:0];
   // Screen location -> map address
-  assign map_addr = {map_y, map_x};
+  assign map_addr = {current_tile_layer, map_y, map_x};
 
   reg [3:0] tile_x_reg;
   reg [3:0] tile_y_reg;
@@ -247,7 +249,6 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // Palette data -> Line buffer
 
   // Interface A: writing to the line buffer.
-  wire buf_wr;
   wire [`LINE_BUF_ADDR_WIDTH-1:0] buf_addr;
 
   // Delay the line buffer write address by five cycles due to the need for data
@@ -266,11 +267,35 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                      .reset(reset),
                      .d({screen_y[0], render_x}),
                      .q(buf_addr));
-  CC_Delay #(.WIDTH(1), .DELAY(`RENDER_DELAY))
-      buf_wr_delay(.clk(clk),
-                   .reset(reset),
-                   .d((render_state == `STATE_DRAW_LAYER)),
-                   .q(buf_wr));
+
+  wire [3:0] render_state_delayed;
+  wire [`TILEMAP_DATA_WIDTH-1:0] tile_value_delayed;
+  wire [`REG_DATA_WIDTH-1:0] tile_ctrl0_delayed;
+  wire [`REG_DATA_WIDTH-1:0] tile_nop_value_delayed;
+  CC_Delay #(.WIDTH(3), .DELAY(`RENDER_DELAY))
+      render_state_delay(.clk(clk),
+                         .reset(reset),
+                         .d(render_state),
+                         .q(render_state_delayed));
+  CC_Delay #(.WIDTH(`REG_DATA_WIDTH), .DELAY(`RENDER_DELAY))
+      tile_enable_nop_delay(.clk(clk),
+                            .reset(reset),
+                            .d(tile_ctrl0),
+                            .q(tile_ctrl0_delayed));
+  CC_Delay #(.WIDTH(`REG_DATA_WIDTH), .DELAY(`RENDER_DELAY))
+      tile_nop_value_delay(.clk(clk),
+                           .reset(reset),
+                           .d(tile_nop_value[`TILEMAP_DATA_WIDTH-1:0]),
+                           .q(tile_nop_value_delayed));
+  CC_Delay #(.WIDTH(`TILEMAP_DATA_WIDTH), .DELAY(`RENDER_DELAY-1))
+      tile_value_delay(.clk(clk),
+                       .reset(reset),
+                       .d(map_data),
+                       .q(tile_value_delayed));
+
+  wire buf_wr = (render_state_delayed == `STATE_DRAW_LAYER) &&
+                !(tile_value_delayed == tile_nop_value_delayed &&
+                  tile_ctrl0_delayed[`TILE_ENABLE_NOP]);
 
   // The Palette memory module happens to be good for a line drawing buffer,
   // since its contents are of the same color format.
