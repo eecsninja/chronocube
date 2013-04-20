@@ -232,6 +232,15 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // Screen location -> map address
   assign map_addr = {current_tile_layer, map_y, map_x};
 
+  // Handle tile flip bits, if flipping is enabled.
+  // If not, all bits of the tile map data are used for the tile value.
+  wire tile_enable_flip = tile_ctrl0[`TILE_ENABLE_FLIP];
+  wire tile_flip_x = tile_enable_flip & map_data[`TILE_FLIP_X_BIT];
+  wire tile_flip_y = tile_enable_flip & map_data[`TILE_FLIP_Y_BIT];
+  wire tile_flip_xy = tile_enable_flip & map_data[`TILE_FLIP_XY_BIT];
+  wire [`TILEMAP_DATA_WIDTH-1:0] tile_value =
+      tile_enable_flip ? (~`TILE_FLIP_BITS_MASK & map_data) : map_data;
+
   reg [3:0] tile_x_reg;
   reg [3:0] tile_y_reg;
   always @ (posedge clk) begin
@@ -239,14 +248,27 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
     tile_y_reg <= tile_y;
   end
 
+  reg [3:0] tile_x_flipped;
+  reg [3:0] tile_y_flipped;
+  always @ (tile_flip_x or tile_flip_y or tile_flip_xy or
+            tile_x_reg or tile_y_reg)
+  begin
+    if (tile_flip_xy) begin
+      tile_x_flipped <= tile_flip_y ? ~tile_y_reg : tile_y_reg;
+      tile_y_flipped <= tile_flip_x ? ~tile_x_reg : tile_x_reg;
+    end else begin
+      tile_x_flipped <= tile_flip_x ? ~tile_x_reg : tile_x_reg;
+      tile_y_flipped <= tile_flip_y ? ~tile_y_reg : tile_y_reg;
+    end
+  end
+
   // Map data -> VRAM address
-  // TODO: unpack map entry fields.
-  assign vram_addr = {map_data, tile_y_reg, tile_x_reg[3:1]};
+  assign vram_addr = {tile_value, tile_y_flipped, tile_x_flipped[3:1]};
   wire vram_byte_select;
   CC_Delay #(.WIDTH(1), .DELAY(2))
       vram_byte_select_delay(.clk(clk),
                              .reset(reset),
-                             .d(tile_x_reg[0]),
+                             .d(tile_x_flipped[0]),
                              .q(vram_byte_select));
 
   // VRAM data -> palette address

@@ -97,4 +97,12 @@
 `define TILE_REG_ADDR_WIDTH         4
 `define TILE_BLOCK_ADDR_WIDTH       6
 
+// Tile flip bits in a tilemap value.
+`define TILE_FLIP_X_BIT             13
+`define TILE_FLIP_Y_BIT             14
+`define TILE_FLIP_XY_BIT            15
+`define TILE_FLIP_BITS_MASK   ((1 << `TILE_FLIP_X_BIT) | \
+                               (1 << `TILE_FLIP_Y_BIT) | \
+                               (1 << `TILE_FLIP_XY_BIT))
+
 `endif  // _TILE_REGISTERS_VH_
