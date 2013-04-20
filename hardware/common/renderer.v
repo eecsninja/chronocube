@@ -119,10 +119,10 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`REG_DATA_WIDTH-1:0] tile_nop_value;
   TileRegDecoder tile_reg_decoder(
       .current_layer(current_tile_layer),
-      .tile_reg_values(tile_reg_values),
-      .tile_ctrl0(tile_ctrl0),
-      .tile_ctrl1(tile_ctrl1),
-      .tile_nop_value(tile_nop_value));
+      .reg_values(tile_reg_values),
+      .ctrl0(tile_ctrl0),
+      .ctrl1(tile_ctrl1),
+      .nop_value(tile_nop_value));
 
   // TODO: complete the rendering pipeline.
   // For now, this setup uses contents of the tilemap RAM to look up palette
