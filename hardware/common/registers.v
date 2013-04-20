@@ -113,7 +113,6 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
     begin
       case (address)
         `TILE_CTRL0:          begin   tile_reg_type = `REG_RW;  end
-        `TILE_PALETTE:        begin   tile_reg_type = `REG_RW;  end
         `TILE_DATA_OFFSET:    begin   tile_reg_type = `REG_RW;  end
 
         `TILE_NOP_VALUE:      begin   tile_reg_type = `REG_RW;  end
