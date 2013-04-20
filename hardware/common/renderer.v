@@ -288,7 +288,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   //     registered.
   // - Palette access.
   // - Something else in the pipeline that I can't account for.  But it works if
-  //   I use a delay of 3.
+  //   I use an extra delay.
   `define RENDER_DELAY 5
 
   // VRAM data -> palette address
