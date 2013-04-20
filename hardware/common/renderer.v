@@ -16,8 +16,6 @@
 // along with ChronoCube.  If not, see <http://www.gnu.org/licenses/>.
 
 // Chronocube graphics engine
-// TODO: implement scrolling.
-// TODO: implement tilemaps.
 
 `include "memory_map.vh"
 `include "registers.vh"
