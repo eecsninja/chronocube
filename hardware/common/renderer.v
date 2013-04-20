@@ -117,12 +117,14 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`REG_DATA_WIDTH-1:0] tile_ctrl0;
   wire [`REG_DATA_WIDTH-1:0] tile_ctrl1;
   wire [`REG_DATA_WIDTH-1:0] tile_nop_value;
+  wire [`REG_DATA_WIDTH-1:0] tile_color_key;
   TileRegDecoder tile_reg_decoder(
       .current_layer(current_tile_layer),
       .reg_values(tile_reg_values),
       .ctrl0(tile_ctrl0),
       .ctrl1(tile_ctrl1),
-      .nop_value(tile_nop_value));
+      .nop_value(tile_nop_value),
+      .color_key(tile_color_key));
 
   // TODO: complete the rendering pipeline.
   // For now, this setup uses contents of the tilemap RAM to look up palette
@@ -243,7 +245,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire vram_byte_select = tile_x_reg[0];
 
   // VRAM data -> palette address
-  assign pal_addr= (vram_byte_select == 0) ? vram_data[7:0] : vram_data[15:8];
+  assign pal_addr = (vram_byte_select == 0) ? vram_data[7:0] : vram_data[15:8];
   reg [RGB_COLOR_DEPTH-1:0] rgb_out;
 
   // Palette data -> Line buffer
@@ -272,6 +274,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`TILEMAP_DATA_WIDTH-1:0] tile_value_delayed;
   wire [`REG_DATA_WIDTH-1:0] tile_ctrl0_delayed;
   wire [`REG_DATA_WIDTH-1:0] tile_nop_value_delayed;
+  wire [`REG_DATA_WIDTH-1:0] tile_color_key_delayed;
+  wire [7:0] pixel_value_delayed;
   CC_Delay #(.WIDTH(3), .DELAY(`RENDER_DELAY))
       render_state_delay(.clk(clk),
                          .reset(reset),
@@ -287,15 +291,27 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                            .reset(reset),
                            .d(tile_nop_value[`TILEMAP_DATA_WIDTH-1:0]),
                            .q(tile_nop_value_delayed));
+  CC_Delay #(.WIDTH(`REG_DATA_WIDTH), .DELAY(`RENDER_DELAY))
+      tile_color_key_delay(.clk(clk),
+                           .reset(reset),
+                           .d(tile_color_key),
+                           .q(tile_color_key_delayed));
   CC_Delay #(.WIDTH(`TILEMAP_DATA_WIDTH), .DELAY(`RENDER_DELAY-1))
       tile_value_delay(.clk(clk),
                        .reset(reset),
                        .d(map_data),
                        .q(tile_value_delayed));
+  CC_Delay #(.WIDTH(8), .DELAY(`RENDER_DELAY-1))
+      pixel_value_delay(.clk(clk),
+                        .reset(reset),
+                        .d(pal_addr[7:0]),
+                        .q(pixel_value_delayed));
 
   wire buf_wr = (render_state_delayed == `STATE_DRAW_LAYER) &&
                 !(tile_value_delayed == tile_nop_value_delayed &&
-                  tile_ctrl0_delayed[`TILE_ENABLE_NOP]);
+                  tile_ctrl0_delayed[`TILE_ENABLE_NOP]) &&
+                !(pixel_value_delayed == tile_color_key_delayed &&
+                  tile_ctrl0_delayed[`TILE_ENABLE_TRANSP]);
 
   // The Palette memory module happens to be good for a line drawing buffer,
   // since its contents are of the same color format.
