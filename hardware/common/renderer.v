@@ -275,15 +275,6 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                              .d(tile_x_flipped[0]),
                              .q(vram_byte_select));
 
-  // VRAM data -> palette address
-  assign pal_addr = (vram_byte_select == 0) ? vram_data[7:0] : vram_data[15:8];
-  reg [RGB_COLOR_DEPTH-1:0] rgb_out;
-
-  // Palette data -> Line buffer
-
-  // Interface A: writing to the line buffer.
-  wire [`LINE_BUF_ADDR_WIDTH-1:0] buf_addr;
-
   // Delay the line buffer write address by five cycles due to the need for data
   // to pass through the rendering pipeline.
   // The five-clock delay is broken down as follows:
@@ -299,6 +290,25 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // - Something else in the pipeline that I can't account for.  But it works if
   //   I use a delay of 3.
   `define RENDER_DELAY 5
+
+  // VRAM data -> palette address
+  wire [`TILE_PALETTE_WIDTH-1:0] pal_index_delayed;
+  CC_Delay #(.WIDTH(`TILE_PALETTE_WIDTH), .DELAY(`RENDER_DELAY-1))
+      pal_index_delay(.clk(clk),
+                      .reset(reset),
+                      .d(tile_ctrl0[`TILE_PALETTE_END:`TILE_PALETTE_START]),
+                      .q(pal_index_delayed));
+  // Prepend the palette index to the palette address.
+  assign pal_addr =
+      { pal_index_delayed,
+        (vram_byte_select == 0) ? vram_data[7:0] : vram_data[15:8] };
+  reg [RGB_COLOR_DEPTH-1:0] rgb_out;
+
+  // Palette data -> Line buffer
+
+  // Interface A: writing to the line buffer.
+  wire [`LINE_BUF_ADDR_WIDTH-1:0] buf_addr;
+
   CC_Delay #(.WIDTH(`LINE_BUF_ADDR_WIDTH), .DELAY(`RENDER_DELAY))
       buf_addr_delay(.clk(clk),
                      .reset(reset),

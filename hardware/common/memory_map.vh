@@ -42,8 +42,8 @@
 `define PAGE_OFFSET_WIDTH          13  // 8 KB x 16-bits = 16 KB
 
 // Palette memory
-`define PAL_ADDR_BASE          'h0800
-`define PAL_ADDR_LENGTH           512
+`define PAL_ADDR_BASE          'h0800  // Palette starts at 4 KB, spans 4 KB.
+`define PAL_ADDR_LENGTH        'h0800  // Four palettes, each spanning 1 KB.
 
 `define PAL_ADDR_WIDTH             10
 `define NUM_PAL_CHANNELS            3
