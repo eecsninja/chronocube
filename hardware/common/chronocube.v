@@ -102,7 +102,8 @@ module ChronoCube(
                         (main_reg_select     ? reg_data_out :
                         (vram_select         ? vram_data_in :
                         (tile_regs_select    ? tile_data_out :
-                        {`MPU_DATA_WIDTH {1'b0}})))));
+                        (sprite_select       ? sprite_data_out :
+                        {`MPU_DATA_WIDTH {1'b0}}))))));
 
   // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
@@ -140,6 +141,28 @@ module ChronoCube(
       .data_in_b(0),
       .data_out_b(ren_pal_data)
       );
+
+  // Sprite RAM
+  wire sprite_select = (mpu_addr >= `SPRITE_ADDR_BASE) &
+                       (mpu_addr < `SPRITE_ADDR_BASE + `SPRITE_ADDR_LENGTH);
+  wire ren_spr_clk;
+  wire [`SPRITE_ADDR_WIDTH-1:0] ren_spr_addr;
+  wire [`SPRITE_DATA_WIDTH-1:0] ren_spr_data;
+  wire [`SPRITE_DATA_WIDTH-1:0] ren_spr_data_out;
+  wire [`MPU_DATA_WIDTH-1:0] sprite_data_out;
+  sprite_ram_2Kx16 sprite_ram(
+      .clock_a(clk),
+      .address_a(mpu_addr),
+      .byteena_a(~_mpu_be),
+      .wren_a(sprite_select & ~_mpu_wr & _mpu_rd),
+      .data_a(mpu_data_in),
+      .q_a(sprite_data_out),
+
+      .clock_b(ren_spr_clk),
+      .address_b(ren_spr_addr),
+      .data_b('bx),
+      .wren_b(0),
+      .q_b(ren_spr_data));
 
   // Tile map
   wire map_select = (mpu_addr >= `TILEMAP_ADDR_BASE) &
@@ -215,6 +238,10 @@ module ChronoCube(
                     .map_clk(ren_map_clk),
                     .map_addr(ren_map_addr),
                     .map_data(ren_map_data),
+
+                    .spr_clk(ren_spr_clk),
+                    .spr_addr(ren_spr_addr),
+                    .spr_data(ren_spr_data),
 
                     .h_pos(h_pos),
                     .v_pos(v_pos),

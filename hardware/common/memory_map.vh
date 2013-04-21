@@ -49,6 +49,15 @@
 `define NUM_PAL_CHANNELS            3
 `define PAL_DATA_WIDTH     `NUM_PAL_CHANNELS * 8
 
+// Sprite memory
+`define NUM_SPRITES               128
+`define NUM_SPRITE_REGS            16
+`define SPRITE_ADDR_BASE       'h1000  // Start at 8 KB.
+`define SPRITE_ADDR_LENGTH     (`NUM_SPRITES * `NUM_SPRITE_REGS)
+
+`define SPRITE_ADDR_WIDTH           8
+`define SPRITE_DATA_WIDTH         128
+
 // Tile map memory
 `define TILEMAP_ADDR_BASE      'h2000
 `define TILEMAP_ADDR_LENGTH    'h1000

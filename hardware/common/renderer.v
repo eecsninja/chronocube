@@ -28,6 +28,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                 h_pos, v_pos, h_sync, v_sync,
                 pal_clk, pal_addr, pal_data,
                 map_clk, map_addr, map_data,
+                spr_clk, spr_addr, spr_data,
                 vram_en, vram_rd, vram_wr, vram_be,
                 vram_clk, vram_addr, vram_data,
                 rgb_out);
@@ -67,6 +68,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                         .v_pos(v_pos - 2),
                         .v_sync(v_sync),
                         .v_blank(v_blank_delayed));
+
   // Delay horizontal sync and blank by two clocks.  This is to to match the
   // scanout from the line buffer plus the registered RGB output.
   CC_Delay #(.WIDTH(2), .DELAY(2)) h_delay(.clk(clk),
@@ -83,6 +85,11 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   output map_clk;
   output [`TILEMAP_ADDR_WIDTH-1:0] map_addr;
   input [`TILEMAP_DATA_WIDTH-1:0] map_data;
+
+  // Sprite memory interface.
+  output spr_clk;
+  output [`SPRITE_ADDR_WIDTH-1:0] spr_addr;
+  input [`SPRITE_DATA_WIDTH-1:0] spr_data;
 
   // VRAM interface
   output wire vram_en;         // Chip enable (active low)
@@ -141,6 +148,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   assign pal_clk = clk;
   assign map_clk = clk;
   assign vram_clk = clk;
+  assign spr_clk = clk;
 
   // The logic for drawing to the line buffer.
   `define STATE_IDLE           0
