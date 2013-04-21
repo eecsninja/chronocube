@@ -20,6 +20,7 @@
 
 `include "memory_map.vh"
 `include "registers.vh"
+`include "sprite_registers.vh"
 `include "tile_registers.vh"
 
 `define MPU_ADDR_WIDTH 16
