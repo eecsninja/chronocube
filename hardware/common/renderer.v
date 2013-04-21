@@ -117,6 +117,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`REG_DATA_WIDTH-1:0] tile_nop_value;
   wire [`REG_DATA_WIDTH-1:0] tile_color_key;
   wire [`REG_DATA_WIDTH-1:0] tile_data_offset;
+  wire [`REG_DATA_WIDTH-1:0] tile_offset_x;
+  wire [`REG_DATA_WIDTH-1:0] tile_offset_y;
   TileRegDecoder tile_reg_decoder(
       .current_layer(current_tile_layer),
       .reg_values(tile_reg_values),
@@ -124,7 +126,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       .ctrl1(tile_ctrl1),
       .data_offset(tile_data_offset),
       .nop_value(tile_nop_value),
-      .color_key(tile_color_key));
+      .color_key(tile_color_key),
+      .offset_x(tile_offset_x),
+      .offset_y(tile_offset_y));
 
   // TODO: complete the rendering pipeline.
   // For now, this setup uses contents of the tilemap RAM to look up palette
@@ -146,7 +150,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   reg [3:0] render_state;
   reg [`LINE_BUF_ADDR_WIDTH-2:0] render_x;
   // Handle y-scrolling.
-  wire [`LINE_BUF_ADDR_WIDTH-2:0] render_y = screen_y + reg_array[`SCROLL_Y];
+  wire [`LINE_BUF_ADDR_WIDTH-2:0] render_y =
+      screen_y + reg_array[`SCROLL_Y] - tile_offset_y;
 
   // For keeping track of what's been rendered.
   reg [31:0] num_layers_drawn;
@@ -223,7 +228,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 
   // Handle x-scrolling.
   wire [`LINE_BUF_ADDR_WIDTH-2:0] render_x_world =
-      render_x + reg_array[`SCROLL_X];
+      render_x + reg_array[`SCROLL_X] - tile_offset_x;
 
   wire [4:0] map_x = render_x_world[8:4];
   wire [4:0] map_y = render_y[8:4];
