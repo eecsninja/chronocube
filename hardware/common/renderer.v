@@ -19,6 +19,7 @@
 
 `include "memory_map.vh"
 `include "registers.vh"
+`include "sprite_registers.vh"
 `include "tile_registers.vh"
 
 `define LINE_BUF_ADDR_WIDTH 10
@@ -148,13 +149,14 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   assign pal_clk = clk;
   assign map_clk = clk;
   assign vram_clk = clk;
-  assign spr_clk = clk;
+  assign spr_clk = ~clk;
 
   // The logic for drawing to the line buffer.
   `define STATE_IDLE           0
   `define STATE_DECIDE         1
   `define STATE_DRAW_LAYER     2
-  `define STATE_DRAW_SPRITES   3
+  `define STATE_READ_SPRITE    3
+  `define STATE_DRAW_SPRITE    4
   reg [3:0] render_state;
   reg [`LINE_BUF_ADDR_WIDTH-2:0] render_x;
   // Handle y-scrolling.
@@ -165,11 +167,25 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   reg [31:0] num_layers_drawn;
   reg [31:0] num_sprites_drawn;
   reg [31:0] num_texels_drawn;
+  reg [31:0] num_sprite_words_read;
   wire [31:0] current_tile_layer = num_layers_drawn;
+  wire [31:0] current_sprite = num_sprites_drawn;
+  assign spr_addr = {current_sprite, num_sprite_words_read[0]};
+
+  reg [`NUM_SPRITE_REGS * `REG_DATA_WIDTH - 1 : 0] current_sprite_reg_values;
+  wire [`REG_DATA_WIDTH-1:0] current_sprite_regs [`NUM_SPRITE_REGS-1:0];
+  generate
+    for (i = 0; i < `NUM_SPRITE_REGS; i = i + 1) begin : SPRITE_REGS
+      assign current_sprite_regs[i] =
+          current_sprite_reg_values[(i + 1) * `REG_DATA_WIDTH - 1:
+                                    i * `REG_DATA_WIDTH];
+    end
+  endgenerate
   always @ (posedge clk or posedge reset) begin
-    if (reset)
+    if (reset) begin
       render_state <= `STATE_IDLE;
-    else begin
+      current_sprite_reg_values <= 0;
+    end else begin
       case (render_state)
       `STATE_IDLE:
         begin
@@ -179,6 +195,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
             num_layers_drawn <= 0;
             num_sprites_drawn <= 0;
             num_texels_drawn <= 0;
+            num_sprite_words_read <= 0;
           end
         end
       `STATE_DECIDE:
@@ -191,21 +208,24 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
           if (num_layers_drawn < 2 ||
               (num_layers_drawn < `NUM_TILE_LAYERS && num_sprites_drawn > 0))
           begin
-            if (tile_ctrl0[`TILE_LAYER_ENABLED])
+            if (tile_ctrl0[`TILE_LAYER_ENABLED]) begin
               render_state <= `STATE_DRAW_LAYER;
+              render_x <= 0;
+            end
             // Skip to the next layer if the current one is disabled.
             else
               num_layers_drawn <= num_layers_drawn + 1;
           end
           // Draw sprites.
           else if (num_layers_drawn == 2 && num_sprites_drawn <= 0)
-            render_state <= `STATE_DRAW_SPRITES;
+          begin
+            render_state <= `STATE_READ_SPRITE;
+            num_sprite_words_read <= 0;
+          end
           // All done.
           else
             render_state <= `STATE_IDLE;
 
-          // Reset the render counter.
-          render_x <= 0;
         end
       `STATE_DRAW_LAYER:
         begin
@@ -224,19 +244,76 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
             render_x <= render_x + 1;
           end
         end
-      `STATE_DRAW_SPRITES:
+      `STATE_READ_SPRITE:
         begin
-          // TODO: implement sprite drawing.
-          num_sprites_drawn <= `NUM_SPRITES;
-          render_state <= `STATE_DECIDE;
+          if (num_sprites_drawn >= `NUM_SPRITES) begin
+            render_state <= `STATE_DECIDE;
+          end else if (num_sprite_words_read < 2) begin
+            if (num_sprite_words_read == 0)
+              current_sprite_reg_values[`SPRITE_DATA_WIDTH-1:0] <= spr_data;
+            else if (num_sprite_words_read == 1)
+              current_sprite_reg_values[`SPRITE_DATA_WIDTH*2-1:
+                                        `SPRITE_DATA_WIDTH] <= spr_data;
+            num_sprite_words_read <= num_sprite_words_read + 1;
+          end else begin
+            // Skip sprite if it is:
+            // - not enabled
+            // - not on the current line
+            // TODO: Variable sprite height.
+            if (!current_sprite_regs[`SPRITE_CTRL0][`SPRITE_ENABLED] ||
+                screen_y < current_sprite_regs[`SPRITE_OFFSET_Y] ||
+                screen_y >= current_sprite_regs[`SPRITE_OFFSET_Y] + 16) begin
+              num_sprite_words_read <= 0;
+              num_sprites_drawn <= num_sprites_drawn + 1;
+            end else begin
+              render_state <= `STATE_DRAW_SPRITE;
+              render_x <= 0;
+            end
+          end
+        end
+      `STATE_DRAW_SPRITE:
+        begin
+          // TODO: Variable sprite width.
+          if (render_x + 1 == 16) begin
+            render_state <= `STATE_READ_SPRITE;
+            num_sprites_drawn <= num_sprites_drawn + 1;
+            num_sprite_words_read <= 0;
+          end else begin
+            render_x <= render_x + 1;
+          end
         end
       endcase
     end
   end
 
+  reg render_tiles;
+  reg render_sprite;
+  always @ (posedge clk) begin
+    render_tiles <= (render_state == `STATE_DRAW_LAYER);
+    render_sprite <= (render_state == `STATE_DRAW_SPRITE);
+  end
+
+  wire [`LINE_BUF_ADDR_WIDTH-2:0] tile_render_x = render_x;
+  wire [`LINE_BUF_ADDR_WIDTH-2:0] sprite_render_x =
+      render_x + current_sprite_regs[`SPRITE_OFFSET_X];
+
+  // Sprite rendering pipeline.
+  reg [3:0] sprite_x;
+  reg [3:0] sprite_y;
+  reg [`REG_DATA_WIDTH-1:0] sprite_vram_offset;
+  // Delay by one clock to match the timing of the tile pipeline.  There is
+  // no tilemap to read.
+  always @ (posedge clk) begin
+    sprite_x <= render_x;
+    sprite_y <= screen_y - current_sprite_regs[`SPRITE_OFFSET_Y];
+    sprite_vram_offset <= current_sprite_regs[`SPRITE_DATA_OFFSET] / 2;
+  end
+
+  // Tile rendering pipeline.
+
   // Handle x-scrolling.
   wire [`LINE_BUF_ADDR_WIDTH-2:0] render_x_world =
-      render_x + reg_array[`SCROLL_X] - tile_offset_x;
+      tile_render_x + reg_array[`SCROLL_X] - tile_offset_x;
 
   wire [4:0] map_x = render_x_world[8:4];
   wire [4:0] map_y = render_y[8:4];
@@ -276,16 +353,20 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   end
 
   // Map data -> VRAM address
-  reg [VRAM_ADDR_BUS_WIDTH-1:0] vram_offset;
+  reg [VRAM_ADDR_BUS_WIDTH-1:0] tile_vram_offset;
   always @ (posedge clk)
-    vram_offset <= tile_data_offset / 2;
-  assign vram_addr =
-      {tile_value, tile_y_flipped, tile_x_flipped[3:1]} + vram_offset;
+    tile_vram_offset <= tile_data_offset / 2;
+  wire [`VRAM_ADDR_WIDTH-1:0] tile_vram_addr =
+      {tile_value, tile_y_flipped, tile_x_flipped[3:1]} + tile_vram_offset;
+  wire [`VRAM_ADDR_WIDTH-1:0] sprite_vram_addr =
+      {sprite_y, sprite_x[3:1]} + sprite_vram_offset;
+  assign vram_addr = render_tiles ? tile_vram_addr : sprite_vram_addr;
+
   wire vram_byte_select;
   CC_Delay #(.WIDTH(1), .DELAY(2))
       vram_byte_select_delay(.clk(clk),
                              .reset(reset),
-                             .d(tile_x_flipped[0]),
+                             .d(render_tiles ? tile_x_flipped[0] : sprite_x[0]),
                              .q(vram_byte_select));
 
   // Delay the line buffer write address by five cycles due to the need for data
@@ -323,10 +404,11 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`LINE_BUF_ADDR_WIDTH-1:0] buf_addr;
 
   CC_Delay #(.WIDTH(`LINE_BUF_ADDR_WIDTH), .DELAY(`RENDER_DELAY))
-      buf_addr_delay(.clk(clk),
-                     .reset(reset),
-                     .d({screen_y[0], render_x}),
-                     .q(buf_addr));
+      buf_addr_delay(
+          .clk(clk),
+          .reset(reset),
+          .d({screen_y[0], render_tiles ? tile_render_x : sprite_render_x}),
+          .q(buf_addr));
 
   wire [3:0] render_state_delayed;
   wire [`TILEMAP_DATA_WIDTH-1:0] tile_value_delayed;
@@ -365,17 +447,18 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                         .d(pal_addr[7:0]),
                         .q(pixel_value_delayed));
 
-  wire buf_wr = (render_state_delayed == `STATE_DRAW_LAYER) &&
-                !(tile_value_delayed == tile_nop_value_delayed &&
-                  tile_ctrl0_delayed[`TILE_ENABLE_NOP]) &&
-                !(pixel_value_delayed == tile_color_key_delayed &&
-                  tile_ctrl0_delayed[`TILE_ENABLE_TRANSP]);
+  wire tile_buf_wr = (render_state_delayed == `STATE_DRAW_LAYER) &&
+                     !(tile_value_delayed == tile_nop_value_delayed &&
+                       tile_ctrl0_delayed[`TILE_ENABLE_NOP]) &&
+                     !(pixel_value_delayed == tile_color_key_delayed &&
+                       tile_ctrl0_delayed[`TILE_ENABLE_TRANSP]);
+  wire sprite_buf_wr = (render_state_delayed == `STATE_DRAW_SPRITE);
 
   // The Palette memory module happens to be good for a line drawing buffer,
   // since its contents are of the same color format.
   Palette #(.NUM_CHANNELS(`NUM_PAL_CHANNELS)) line_buffer(
       .clk_a(clk),
-      .wr_a(buf_wr),
+      .wr_a(tile_buf_wr | sprite_buf_wr),
       .rd_a(0),
       .addr_a(buf_addr),
       .data_in_a(pal_data),
