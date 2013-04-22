@@ -63,23 +63,43 @@ module TileRegDecoder(current_layer,
     end
   endgenerate
 
-  output layer_enabled    = regs[`TILE_CTRL0][`TILE_LAYER_ENABLED];
-  output enable_8bit      = regs[`TILE_CTRL0][`TILE_ENABLE_8_BIT];
-  output enable_nop       = regs[`TILE_CTRL0][`TILE_ENABLE_NOP];
-  output enable_scroll    = regs[`TILE_CTRL0][`TILE_ENABLE_SCROLL];
-  output enable_transp    = regs[`TILE_CTRL0][`TILE_ENABLE_TRANSP];
-  output enable_alpha     = regs[`TILE_CTRL0][`TILE_ENABLE_ALPHA];
-  output enable_color     = regs[`TILE_CTRL0][`TILE_ENABLE_COLOR];
-  output enable_wrap_x    = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_X];
-  output enable_wrap_y    = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_Y];
-  output enable_flip      = regs[`TILE_CTRL0][`TILE_ENABLE_FLIP];
+  output layer_enabled ;
+  output enable_8bit   ;
+  output enable_nop    ;
+  output enable_scroll ;
+  output enable_transp ;
+  output enable_alpha  ;
+  output enable_color  ;
+  output enable_wrap_x ;
+  output enable_wrap_y ;
+  output enable_flip   ;
 
-  output [`REG_DATA_WIDTH-1:0] ctrl0 = regs[`TILE_CTRL0];
-  output [`REG_DATA_WIDTH-1:0] ctrl1 = regs[`TILE_CTRL1];
-  output [`REG_DATA_WIDTH-1:0] data_offset = regs[`TILE_DATA_OFFSET];
-  output [`REG_DATA_WIDTH-1:0] nop_value = regs[`TILE_NOP_VALUE];
-  output [`REG_DATA_WIDTH-1:0] color_key = regs[`TILE_COLOR_KEY];
-  output [`REG_DATA_WIDTH-1:0] offset_x = regs[`TILE_OFFSET_X];
-  output [`REG_DATA_WIDTH-1:0] offset_y = regs[`TILE_OFFSET_Y];
+  output [`REG_DATA_WIDTH-1:0] ctrl0       ;
+  output [`REG_DATA_WIDTH-1:0] ctrl1       ;
+  output [`REG_DATA_WIDTH-1:0] data_offset ;
+  output [`REG_DATA_WIDTH-1:0] nop_value   ;
+  output [`REG_DATA_WIDTH-1:0] color_key   ;
+  output [`REG_DATA_WIDTH-1:0] offset_x    ;
+  output [`REG_DATA_WIDTH-1:0] offset_y    ;
+  
+
+  assign layer_enabled    = regs[`TILE_CTRL0][`TILE_LAYER_ENABLED];
+  assign enable_8bit      = regs[`TILE_CTRL0][`TILE_ENABLE_8_BIT];
+  assign enable_nop       = regs[`TILE_CTRL0][`TILE_ENABLE_NOP];
+  assign enable_scroll    = regs[`TILE_CTRL0][`TILE_ENABLE_SCROLL];
+  assign enable_transp    = regs[`TILE_CTRL0][`TILE_ENABLE_TRANSP];
+  assign enable_alpha     = regs[`TILE_CTRL0][`TILE_ENABLE_ALPHA];
+  assign enable_color     = regs[`TILE_CTRL0][`TILE_ENABLE_COLOR];
+  assign enable_wrap_x    = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_X];
+  assign enable_wrap_y    = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_Y];
+  assign enable_flip      = regs[`TILE_CTRL0][`TILE_ENABLE_FLIP];
+
+  assign ctrl0 = regs[`TILE_CTRL0];
+  assign ctrl1 = regs[`TILE_CTRL1];
+  assign data_offset = regs[`TILE_DATA_OFFSET];
+  assign nop_value = regs[`TILE_NOP_VALUE];
+  assign color_key = regs[`TILE_COLOR_KEY];
+  assign offset_x = regs[`TILE_OFFSET_X];
+  assign offset_y = regs[`TILE_OFFSET_Y];
   
 endmodule
