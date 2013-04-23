@@ -386,11 +386,16 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   `define RENDER_DELAY 5
 
   // VRAM data -> palette address
+  wire [`TILE_PALETTE_WIDTH-1:0] tile_pal_index =
+      tile_ctrl0[`TILE_PALETTE_END:`TILE_PALETTE_START];
+  wire [`SPRITE_PALETTE_WIDTH-1:0] sprite_pal_index =
+      current_sprite_regs[`SPRITE_CTRL0][`SPRITE_PALETTE_END:
+                                         `SPRITE_PALETTE_START];
   wire [`TILE_PALETTE_WIDTH-1:0] pal_index_delayed;
   CC_Delay #(.WIDTH(`TILE_PALETTE_WIDTH), .DELAY(`RENDER_DELAY-1))
       pal_index_delay(.clk(clk),
                       .reset(reset),
-                      .d(tile_ctrl0[`TILE_PALETTE_END:`TILE_PALETTE_START]),
+                      .d(render_tiles ? tile_pal_index : sprite_pal_index),
                       .q(pal_index_delayed));
   // Prepend the palette index to the palette address.
   assign pal_addr =
