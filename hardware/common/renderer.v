@@ -415,16 +415,17 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
           .q(buf_addr));
 
   wire [3:0] render_state_delayed;
-  wire [`TILEMAP_DATA_WIDTH-1:0] tile_value_delayed;
-  wire [`REG_DATA_WIDTH-1:0] tile_ctrl0_delayed;
-  wire [`REG_DATA_WIDTH-1:0] tile_nop_value_delayed;
-  wire [`REG_DATA_WIDTH-1:0] tile_color_key_delayed;
-  wire [7:0] pixel_value_delayed;
   CC_Delay #(.WIDTH(3), .DELAY(`RENDER_DELAY))
       render_state_delay(.clk(clk),
                          .reset(reset),
                          .d(render_state),
                          .q(render_state_delayed));
+
+  // Delayed tile values.
+  wire [`TILEMAP_DATA_WIDTH-1:0] tile_value_delayed;
+  wire [`REG_DATA_WIDTH-1:0] tile_ctrl0_delayed;
+  wire [`REG_DATA_WIDTH-1:0] tile_nop_value_delayed;
+  wire [`REG_DATA_WIDTH-1:0] tile_color_key_delayed;
   CC_Delay #(.WIDTH(`REG_DATA_WIDTH), .DELAY(`RENDER_DELAY))
       tile_enable_nop_delay(.clk(clk),
                             .reset(reset),
@@ -445,6 +446,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                        .reset(reset),
                        .d(map_data),
                        .q(tile_value_delayed));
+
+  // Delayed VRAM output.
+  wire [7:0] pixel_value_delayed;
   CC_Delay #(.WIDTH(8), .DELAY(2))
       pixel_value_delay(.clk(clk),
                         .reset(reset),
