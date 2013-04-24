@@ -173,10 +173,10 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   assign spr_addr = {current_sprite, num_sprite_words_read[0]};
 
   reg [`NUM_SPRITE_REGS * `REG_DATA_WIDTH - 1 : 0] current_sprite_reg_values;
-  wire [`REG_DATA_WIDTH-1:0] current_sprite_regs [`NUM_SPRITE_REGS-1:0];
+  wire [`REG_DATA_WIDTH-1:0] sprite_regs[`NUM_SPRITE_REGS-1:0];
   generate
     for (i = 0; i < `NUM_SPRITE_REGS; i = i + 1) begin : SPRITE_REGS
-      assign current_sprite_regs[i] =
+      assign sprite_regs[i] =
           current_sprite_reg_values[(i + 1) * `REG_DATA_WIDTH - 1:
                                     i * `REG_DATA_WIDTH];
     end
@@ -260,9 +260,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
             // - not enabled
             // - not on the current line
             // TODO: Variable sprite height.
-            if (!current_sprite_regs[`SPRITE_CTRL0][`SPRITE_ENABLED] ||
-                screen_y < current_sprite_regs[`SPRITE_OFFSET_Y] ||
-                screen_y >= current_sprite_regs[`SPRITE_OFFSET_Y] + 16) begin
+            if (!sprite_regs[`SPRITE_CTRL0][`SPRITE_ENABLED] ||
+                screen_y < sprite_regs[`SPRITE_OFFSET_Y] ||
+                screen_y >= sprite_regs[`SPRITE_OFFSET_Y] + 16) begin
               num_sprite_words_read <= 0;
               num_sprites_drawn <= num_sprites_drawn + 1;
             end else begin
@@ -295,7 +295,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 
   wire [`LINE_BUF_ADDR_WIDTH-2:0] tile_render_x = render_x;
   wire [`LINE_BUF_ADDR_WIDTH-2:0] sprite_render_x =
-      render_x + current_sprite_regs[`SPRITE_OFFSET_X];
+      render_x + sprite_regs[`SPRITE_OFFSET_X];
 
   // Sprite rendering pipeline.
   reg [3:0] sprite_x;
@@ -305,8 +305,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // no tilemap to read.
   always @ (posedge clk) begin
     sprite_x <= render_x;
-    sprite_y <= screen_y - current_sprite_regs[`SPRITE_OFFSET_Y];
-    sprite_vram_offset <= current_sprite_regs[`SPRITE_DATA_OFFSET] / 2;
+    sprite_y <= screen_y - sprite_regs[`SPRITE_OFFSET_Y];
+    sprite_vram_offset <= sprite_regs[`SPRITE_DATA_OFFSET] / 2;
   end
 
   // Tile rendering pipeline.
@@ -389,8 +389,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`TILE_PALETTE_WIDTH-1:0] tile_pal_index =
       tile_ctrl0[`TILE_PALETTE_END:`TILE_PALETTE_START];
   wire [`SPRITE_PALETTE_WIDTH-1:0] sprite_pal_index =
-      current_sprite_regs[`SPRITE_CTRL0][`SPRITE_PALETTE_END:
-                                         `SPRITE_PALETTE_START];
+      sprite_regs[`SPRITE_CTRL0][`SPRITE_PALETTE_END:`SPRITE_PALETTE_START];
   wire [`TILE_PALETTE_WIDTH-1:0] pal_index_delayed;
   CC_Delay #(.WIDTH(`TILE_PALETTE_WIDTH), .DELAY(`RENDER_DELAY-1))
       pal_index_delay(.clk(clk),
