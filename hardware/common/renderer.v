@@ -421,6 +421,20 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                          .d(render_state),
                          .q(render_state_delayed));
 
+  // Delayed sprite values.
+  wire [`REG_DATA_WIDTH-1:0] sprite_ctrl0_delayed;
+  wire [`REG_DATA_WIDTH-1:0] sprite_color_key_delayed;
+  CC_Delay #(.WIDTH(`REG_DATA_WIDTH), .DELAY(`RENDER_DELAY))
+      sprite_ctrl0_delay(.clk(clk),
+                         .reset(reset),
+                         .d(sprite_regs[`SPRITE_CTRL0]),
+                         .q(sprite_ctrl0_delayed));
+  CC_Delay #(.WIDTH(`REG_DATA_WIDTH), .DELAY(`RENDER_DELAY))
+      sprite_color_key_delay(.clk(clk),
+                             .reset(reset),
+                             .d(sprite_regs[`SPRITE_COLOR_KEY]),
+                             .q(sprite_color_key_delayed));
+
   // Delayed tile values.
   wire [`TILEMAP_DATA_WIDTH-1:0] tile_value_delayed;
   wire [`REG_DATA_WIDTH-1:0] tile_ctrl0_delayed;
@@ -460,7 +474,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                        tile_ctrl0_delayed[`TILE_ENABLE_NOP]) &&
                      !(pixel_value_delayed == tile_color_key_delayed &&
                        tile_ctrl0_delayed[`TILE_ENABLE_TRANSP]);
-  wire sprite_buf_wr = (render_state_delayed == `STATE_DRAW_SPRITE);
+  wire sprite_buf_wr = (render_state_delayed == `STATE_DRAW_SPRITE) &&
+                       !(pixel_value_delayed == sprite_color_key_delayed &&
+                         sprite_ctrl0_delayed[`SPRITE_ENABLE_TRANSP]);
 
   // The Palette memory module happens to be good for a line drawing buffer,
   // since its contents are of the same color format.
