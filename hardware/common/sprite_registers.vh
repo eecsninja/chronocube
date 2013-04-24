@@ -28,7 +28,7 @@
 `define NUM_SPRITE_REGS             16
 
 // Number of register bits per sprite.
-`define NUM_REG_BITS_PER_SPRITE_LAYER  (`NUM_SPRITE_REGS * `REG_DATA_WIDTH)
+`define NUM_REG_BITS_PER_SPRITE (`NUM_SPRITE_REGS * `REG_DATA_WIDTH)
 
 // Register offsets within each register block.
 `define SPRITE_CTRL0               'h00
@@ -65,14 +65,15 @@
 `define SPRITE_PALETTE_WIDTH  (`SPRITE_PALETTE_END - `SPRITE_PALETTE_START + 1)
 
 // SPRITE_CTRL1
-`define SPRITE_HSIZE_0             0
-`define SPRITE_HSIZE_1             1
-`define SPRITE_VSIZE_0             2
-`define SPRITE_VSIZE_1             3
+`define SPRITE_HSIZE_START         0
+`define SPRITE_HSIZE_END           1
+`define SPRITE_VSIZE_START         2
+`define SPRITE_VSIZE_END           3
 `define SPRITE_LAYER_HSIZE_0       4
 `define SPRITE_LAYER_HSIZE_1       5
 `define SPRITE_LAYER_VSIZE_0       6
 `define SPRITE_LAYER_VSIZE_1       7
+
 
 // SPRITE_REF_XY
 `define SPRITE_REF_XY_X_START      0
