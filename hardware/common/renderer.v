@@ -286,11 +286,13 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
     end
   end
 
-  reg render_tiles;
-  reg render_sprite;
+  wire render_tiles = (render_state == `STATE_DRAW_LAYER);
+  wire render_sprite = (render_state == `STATE_DRAW_SPRITE);
+  reg render_tiles_delayed;
+  reg render_sprite_delayed;
   always @ (posedge clk) begin
-    render_tiles <= (render_state == `STATE_DRAW_LAYER);
-    render_sprite <= (render_state == `STATE_DRAW_SPRITE);
+    render_tiles_delayed <= render_tiles;
+    render_sprite_delayed <= render_sprite;
   end
 
   wire [`LINE_BUF_ADDR_WIDTH-2:0] tile_render_x = render_x;
@@ -360,14 +362,15 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       {tile_value, tile_y_flipped, tile_x_flipped[3:1]} + tile_vram_offset;
   wire [`VRAM_ADDR_WIDTH-1:0] sprite_vram_addr =
       {sprite_y, sprite_x[3:1]} + sprite_vram_offset;
-  assign vram_addr = render_tiles ? tile_vram_addr : sprite_vram_addr;
+  assign vram_addr = render_tiles_delayed ? tile_vram_addr : sprite_vram_addr;
 
   wire vram_byte_select;
   CC_Delay #(.WIDTH(1), .DELAY(2))
-      vram_byte_select_delay(.clk(clk),
-                             .reset(reset),
-                             .d(render_tiles ? tile_x_flipped[0] : sprite_x[0]),
-                             .q(vram_byte_select));
+      vram_byte_select_delay(
+          .clk(clk),
+          .reset(reset),
+          .d(render_tiles_delayed ? tile_x_flipped[0] : sprite_x[0]),
+          .q(vram_byte_select));
 
   // Delay the line buffer write address by five cycles due to the need for data
   // to pass through the rendering pipeline.
@@ -391,7 +394,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`SPRITE_PALETTE_WIDTH-1:0] sprite_pal_index =
       sprite_regs[`SPRITE_CTRL0][`SPRITE_PALETTE_END:`SPRITE_PALETTE_START];
   wire [`TILE_PALETTE_WIDTH-1:0] pal_index_delayed;
-  CC_Delay #(.WIDTH(`TILE_PALETTE_WIDTH), .DELAY(`RENDER_DELAY-1))
+  CC_Delay #(.WIDTH(`TILE_PALETTE_WIDTH), .DELAY(`RENDER_DELAY-2))
       pal_index_delay(.clk(clk),
                       .reset(reset),
                       .d(render_tiles ? tile_pal_index : sprite_pal_index),
@@ -411,7 +414,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       buf_addr_delay(
           .clk(clk),
           .reset(reset),
-          .d({screen_y[0], render_tiles ? tile_render_x : sprite_render_x}),
+          .d({screen_y[0],
+              render_tiles_delayed ? tile_render_x : sprite_render_x}),
           .q(buf_addr));
 
   wire [3:0] render_state_delayed;
