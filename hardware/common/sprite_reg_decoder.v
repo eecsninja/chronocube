@@ -91,11 +91,13 @@ module SpriteRegDecoder(reg_values,
   assign flip_xy       = ctrl0[`SPRITE_FLIP_XY];
   assign palette       = ctrl0[`SPRITE_PALETTE_END:`SPRITE_PALETTE_START];
 
-  wire [31:0] width_shift  = ctrl1[`SPRITE_HSIZE_END:`SPRITE_HSIZE_START];
-  wire [31:0] height_shift = ctrl1[`SPRITE_VSIZE_END:`SPRITE_VSIZE_START];
+  // The dimensions of the sprite are computed as (SPRITE_MIN_SIZE << SHIFT).
+  wire [1:0] width_shift  = ctrl1[`SPRITE_HSIZE_END:`SPRITE_HSIZE_START];
+  wire [1:0] height_shift = ctrl1[`SPRITE_VSIZE_END:`SPRITE_VSIZE_START];
   assign width         = (`SPRITE_MIN_SIZE << width_shift);
   assign height        = (`SPRITE_MIN_SIZE << height_shift);
 
+  // Also output entire registers.
   assign ctrl0         = regs[`SPRITE_CTRL0];
   assign ctrl1         = regs[`SPRITE_CTRL1];
   assign data_offset   = regs[`SPRITE_DATA_OFFSET];

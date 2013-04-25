@@ -292,10 +292,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
             // Skip sprite if it is:
             // - not enabled
             // - not on the current line
-            // TODO: Variable sprite height.
             if (!sprite_enabled ||
                 screen_y < sprite_offset_y ||
-                screen_y >= sprite_offset_y + 16) begin
+                screen_y >= sprite_offset_y + sprite_height) begin
               num_sprite_words_read <= 0;
               num_sprites_drawn <= num_sprites_drawn + 1;
             end else begin
@@ -306,8 +305,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
         end
       `STATE_DRAW_SPRITE:
         begin
-          // TODO: Variable sprite width.
-          if (render_x + 1 == 16) begin
+          if (render_x + 1 == sprite_width) begin
             render_state <= `STATE_READ_SPRITE;
             num_sprites_drawn <= num_sprites_drawn + 1;
             num_sprite_words_read <= 0;
@@ -332,8 +330,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`LINE_BUF_ADDR_WIDTH-2:0] sprite_render_x = render_x + sprite_offset_x;
 
   // Sprite rendering pipeline.
-  reg [3:0] sprite_x;
-  reg [3:0] sprite_y;
+  reg [15:0] sprite_x;
+  reg [15:0] sprite_y;
   reg [`REG_DATA_WIDTH-1:0] sprite_vram_offset;
   // Delay by one clock to match the timing of the tile pipeline.  There is
   // no tilemap to read.
@@ -342,6 +340,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
     sprite_y <= screen_y - sprite_offset_y;
     sprite_vram_offset <= sprite_data_offset / 2;
   end
+  // This assumes that the sprite data is not aligned to any power of two.
+  wire [31:0] sprite_pixel_offset = sprite_y * sprite_width + sprite_x;
 
   // Tile rendering pipeline.
 
@@ -393,7 +393,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`VRAM_ADDR_WIDTH-1:0] tile_vram_addr =
       {tile_value, tile_y_flipped, tile_x_flipped[3:1]} + tile_vram_offset;
   wire [`VRAM_ADDR_WIDTH-1:0] sprite_vram_addr =
-      {sprite_y, sprite_x[3:1]} + sprite_vram_offset;
+      sprite_pixel_offset[31:1] + sprite_vram_offset;
   assign vram_addr = render_tiles_delayed ? tile_vram_addr : sprite_vram_addr;
 
   wire vram_byte_select;
@@ -401,7 +401,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       vram_byte_select_delay(
           .clk(clk),
           .reset(reset),
-          .d(render_tiles_delayed ? tile_x_flipped[0] : sprite_x[0]),
+          .d(render_tiles_delayed ? tile_x_flipped[0] : sprite_pixel_offset[0]),
           .q(vram_byte_select));
 
   // Delay the line buffer write address by five cycles due to the need for data
