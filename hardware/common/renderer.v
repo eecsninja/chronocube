@@ -178,6 +178,13 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       .offset_x(sprite_offset_x),
       .offset_y(sprite_offset_y));
 
+  // The dimensions of the sprite as it is shown on the screen.  Takes diagonal
+  // flipping into account.
+  wire [31:0] sprite_render_width = sprite_flip_xy ? sprite_height
+                                                   : sprite_width;
+  wire [31:0] sprite_render_height = sprite_flip_xy ? sprite_width
+                                                    : sprite_height;
+
   // TODO: complete the rendering pipeline.
   // For now, this setup uses contents of the tilemap RAM to look up palette
   // colors.  The palette color goes straight to the output.
@@ -199,9 +206,6 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   `define STATE_DRAW_SPRITE    4
   reg [3:0] render_state;
   reg [`LINE_BUF_ADDR_WIDTH-2:0] render_x;
-  // Handle y-scrolling.
-  wire [`LINE_BUF_ADDR_WIDTH-2:0] render_y =
-      screen_y + reg_array[`SCROLL_Y] - tile_offset_y;
 
   // For keeping track of what's been rendered.
   reg [31:0] num_layers_drawn;
@@ -294,7 +298,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
             // - not on the current line
             if (!sprite_enabled ||
                 screen_y < sprite_offset_y ||
-                screen_y >= sprite_offset_y + sprite_height) begin
+                screen_y >= sprite_offset_y + sprite_render_height) begin
               num_sprite_words_read <= 0;
               num_sprites_drawn <= num_sprites_drawn + 1;
             end else begin
@@ -305,7 +309,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
         end
       `STATE_DRAW_SPRITE:
         begin
-          if (render_x + 1 == sprite_width) begin
+          if (render_x + 1 == sprite_render_width) begin
             render_state <= `STATE_READ_SPRITE;
             num_sprites_drawn <= num_sprites_drawn + 1;
             num_sprite_words_read <= 0;
@@ -327,17 +331,34 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   end
 
   wire [`LINE_BUF_ADDR_WIDTH-2:0] tile_render_x = render_x;
+  wire [`LINE_BUF_ADDR_WIDTH-2:0] tile_render_y =
+      screen_y + reg_array[`SCROLL_Y] - tile_offset_y;
   wire [`LINE_BUF_ADDR_WIDTH-2:0] sprite_render_x = render_x + sprite_offset_x;
 
   // Sprite rendering pipeline.
+
+  // Location within the sprite to render from.
   reg [15:0] sprite_x;
   reg [15:0] sprite_y;
+
+  // Location within the on-screen sprite currently being drawn.
+  wire [15:0] sprite_render_y = screen_y - sprite_offset_y;
+  wire [15:0] sprite_flipped_x = sprite_render_width - render_x - 1;
+  wire [15:0] sprite_flipped_y = sprite_render_height - sprite_render_y - 1;
+
+  // Start location of sprite data in VRAM.
   reg [`REG_DATA_WIDTH-1:0] sprite_vram_offset;
   // Delay by one clock to match the timing of the tile pipeline.  There is
   // no tilemap to read.
   always @ (posedge clk) begin
-    sprite_x <= render_x;
-    sprite_y <= screen_y - sprite_offset_y;
+    if (~sprite_flip_xy) begin
+      sprite_x <= sprite_flip_x ? sprite_flipped_x : render_x;
+      sprite_y <= sprite_flip_y ? sprite_flipped_y : sprite_render_y;
+    end else begin
+      sprite_x <= sprite_flip_x ? sprite_flipped_y : sprite_render_y;
+      sprite_y <= sprite_flip_y ? sprite_flipped_x : render_x;
+    end
+
     sprite_vram_offset <= sprite_data_offset / 2;
   end
   // This assumes that the sprite data is not aligned to any power of two.
@@ -350,9 +371,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       tile_render_x + reg_array[`SCROLL_X] - tile_offset_x;
 
   wire [4:0] map_x = render_x_world[8:4];
-  wire [4:0] map_y = render_y[8:4];
+  wire [4:0] map_y = tile_render_y[8:4];
   wire [3:0] tile_x = render_x_world[3:0];
-  wire [3:0] tile_y = render_y[3:0];
+  wire [3:0] tile_y = tile_render_y[3:0];
   // Screen location -> map address
   assign map_addr = {current_tile_layer, map_y, map_x};
 
