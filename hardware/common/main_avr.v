@@ -123,7 +123,7 @@ module MainAVR(clk, _reset,
   assign vram_data_in = vram_data;
 
   ChronoCube chronocube(.clk(clk),
-                        ._reset(_reset),
+                        .reset(~_reset),
                         ._mpu_rd(_mpu_rd),
                         ._mpu_wr(_mpu_wr),
                         ._mpu_en(~cc_enable),

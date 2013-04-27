@@ -34,14 +34,14 @@
 `define DISPLAY_VCOUNT_WIDTH 10
 
 module ChronoCube(
-    clk, _reset, _int,
+    clk, reset, _int,
     _mpu_rd, _mpu_wr, _mpu_en, _mpu_be, mpu_addr_in, mpu_data_in, mpu_data_out,
     vram_en, vram_rd, vram_wr, vram_be, vram_addr, vram_data_in, vram_data_out,
     vga_vsync, vga_hsync, vga_rgb);
 
   input clk;                // System clock
+  input reset;              // System reset
 
-  input _reset;             // Reset (active low)
   input _int;               // Interrupt (active low)
 
   // MPU-side interface
@@ -88,7 +88,7 @@ module ChronoCube(
   DisplayController #(.HCOUNT_WIDTH(`DISPLAY_HCOUNT_WIDTH),
                       .VCOUNT_WIDTH(`DISPLAY_VCOUNT_WIDTH))
       display(.clk(clk),
-              .reset(~_reset),
+              .reset(reset),
               .v_pos(v_pos),
               .h_pos(h_pos));
 
@@ -221,7 +221,7 @@ module ChronoCube(
 
   // Renderer
   Renderer renderer(.clk(clk),
-                    .reset(~_reset),
+                    .reset(reset),
                     .reg_values(reg_values_out),
                     .tile_reg_values(tile_reg_values),
 
@@ -291,7 +291,7 @@ module ChronoCube(
               .ADDR_WIDTH(`MAIN_REG_ADDR_WIDTH),
               .NUM_REGS(`NUM_MAIN_REGS),
               .IS_GENERIC(1))
-      registers(.reset(~_reset),
+      registers(.reset(reset),
                 .en(main_reg_select),
                 .rd(~_mpu_rd),
                 .wr(~_mpu_wr),
@@ -349,7 +349,7 @@ module ChronoCube(
                   .ADDR_WIDTH(`TILE_REG_ADDR_WIDTH),
                   .NUM_REGS(`NUM_TILE_REGISTERS),
                   .IS_GENERIC(0))
-          tile_registers(.reset(~_reset),
+          tile_registers(.reset(reset),
                          .en(tile_layer_reg_select[i]),
                          .rd(~_mpu_rd),
                          .wr(~_mpu_wr),
