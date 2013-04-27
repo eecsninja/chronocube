@@ -544,7 +544,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       .byte_en_a(3'b111),
 
       .clk_b(clk),
-      .wr_b(0),
+      .wr_b(h_visible[0] & v_visible[0]),  // Clear the old data for a new line.
       .rd_b(~(h_blank | v_blank_delayed)),
       .addr_b(buf_scanout_addr),
       .data_in_b(0),
@@ -555,18 +555,29 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 
   // Interface B: reading from the line buffer
   wire [`LINE_BUF_ADDR_WIDTH-1:0] buf_scanout_addr;
-  wire [`PAL_DATA_WIDTH-1:0] buf_scanout_data;
   // Make sure to scan out from the part of the buffer that was rendered to
   // the previous line.
   assign buf_scanout_addr = {~screen_y[0], screen_x};
 
-  wire [7:0] buf_scanout_red = buf_scanout_data[7:0];
-  wire [7:0] buf_scanout_green = buf_scanout_data[15:8];
-  wire [7:0] buf_scanout_blue = buf_scanout_data[23:16];
-  always @ (posedge clk) begin
+  wire [`PAL_DATA_WIDTH-1:0] buf_scanout_data;
+  reg [7:0] buf_scanout_red;
+  reg [7:0] buf_scanout_green;
+  reg [7:0] buf_scanout_blue;
+  // Latch the line buffer output.  This is needed to preserve the line buffer
+  // output after it gets cleared for a new line.
+  // TODO: I got this to work properly after a bit of trial and error.  In the
+  // future, this may need to be revisited to get a better understanding of how
+  // it works.
+  always @ (negedge clk) begin
+    buf_scanout_red = buf_scanout_data[7:0];
+    buf_scanout_green = buf_scanout_data[15:8];
+    buf_scanout_blue = buf_scanout_data[23:16];
+  end
+
+  always @ (negedge clk) begin
     if (h_blank_delayed | v_blank_delayed) begin
       rgb_out <= {RGB_COLOR_DEPTH {1'b0}};
-    end else begin
+    end else if (~h_visible[0]) begin
       rgb_out <= {buf_scanout_blue[7:2],
                   buf_scanout_green[7:2],
                   buf_scanout_red[7:2]};
