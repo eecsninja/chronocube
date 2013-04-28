@@ -25,6 +25,14 @@
 `define LINE_BUF_ADDR_WIDTH 10
 `define NUM_SPRITES 128
 
+`define SCREEN_WIDTH               640
+`define SCREEN_HEIGHT              480
+`define SCREEN_IMAGE_WIDTH         (`SCREEN_WIDTH / 2)
+`define SCREEN_IMAGE_HEIGHT        (`SCREEN_HEIGHT / 2)
+
+`define WORLD_WIDTH                512
+`define WORLD_HEIGHT               512
+
 module Renderer(clk, reset, reg_values, tile_reg_values,
                 h_pos, v_pos, h_sync, v_sync,
                 pal_clk, pal_addr, pal_data,
@@ -270,11 +278,10 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
           // TODO: create define for '800', the max 640x480 horizontal count.
           if (h_pos + 1 == 800 && v_visible[0] == 1) begin
             render_state <= `STATE_IDLE;
-          end else if (render_x + 1 == 320) begin
+          end else if (render_x + 1 == `SCREEN_IMAGE_WIDTH) begin
             // Stop drawing if the screen has been drawn.
             // TODO: direct drawing based on tile coordinates rather than screen
             // coordinates.
-            // TODO: create define for '320', the horizontal image resolution.
             render_state <= `STATE_DECIDE;
             num_layers_drawn <= num_layers_drawn + 1;
           end else begin
