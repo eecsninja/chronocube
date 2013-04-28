@@ -193,6 +193,22 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [31:0] sprite_render_height = sprite_flip_xy ? sprite_width
                                                     : sprite_height;
 
+  // Compute the offset of the sprite on the screen.
+  // If sprite scrolling is enabled, then the world scroll offset is taken into
+  // account; the sprite's offset is considered to be in world coordinates.
+  // if sprite scrolling is disabled, then the sprite's offset is considered to
+  // be in screen coordinates.
+  wire [SCREEN_X_WIDTH-1:0] sprite_screen_offset_x =
+      sprite_enable_scroll ? sprite_offset_x - reg_array[`SCROLL_X]
+                           : sprite_offset_x;
+  wire [SCREEN_Y_WIDTH-1:0] sprite_screen_offset_y =
+      sprite_enable_scroll ? sprite_offset_y - reg_array[`SCROLL_Y]
+                           : sprite_offset_y;
+
+  wire [SCREEN_Y_WIDTH-2:0] sprite_top = sprite_screen_offset_y;
+  wire [SCREEN_Y_WIDTH-2:0] sprite_bottom =
+      sprite_screen_offset_y + sprite_render_height;
+
   // TODO: complete the rendering pipeline.
   // For now, this setup uses contents of the tilemap RAM to look up palette
   // colors.  The palette color goes straight to the output.
@@ -200,6 +216,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // from VGA counter values.
   wire [SCREEN_X_WIDTH-2:0] screen_x = h_visible / 2;
   wire [SCREEN_Y_WIDTH-2:0] screen_y = v_visible / 2;
+
+  // The y-coordinate in world space of the line currently being rendered.
+  wire [SCREEN_Y_WIDTH-2:0] world_y = screen_y + reg_array[`SCROLL_Y];
 
   assign pal_clk = clk;
   assign map_clk = clk;
@@ -301,11 +320,16 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
             num_sprite_words_read <= num_sprite_words_read + 1;
           end else begin
             // Skip sprite if it is:
-            // - not enabled
-            // - not on the current line
-            if (!sprite_enabled ||
-                screen_y < sprite_offset_y ||
-                screen_y >= sprite_offset_y + sprite_render_height) begin
+            // 1. not enabled
+            // 2. not on the current line (two cases):
+            //    a. sprite does not cross y-boundary of the world
+            //    b. sprite wraps around y-boundary of the world
+            if (!sprite_enabled ||    // Condition #1
+                (sprite_top <= sprite_bottom &&   // Condition #2a
+                 (screen_y < sprite_top || screen_y >= sprite_bottom)) ||
+                (sprite_top >= sprite_bottom &&   // Condition #2b
+                 (screen_y >= sprite_bottom && screen_y < sprite_top))
+                ) begin
               num_sprite_words_read <= 0;
               num_sprites_drawn <= num_sprites_drawn + 1;
             end else begin
@@ -340,7 +364,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`LINE_BUF_ADDR_WIDTH-2:0] tile_render_x = render_x;
   wire [`LINE_BUF_ADDR_WIDTH-2:0] tile_render_y =
       screen_y + reg_array[`SCROLL_Y] - tile_offset_y;
-  wire [`LINE_BUF_ADDR_WIDTH-2:0] sprite_render_x = render_x + sprite_offset_x;
+  wire [`LINE_BUF_ADDR_WIDTH-2:0] sprite_render_x =
+      (render_x + sprite_screen_offset_x) % `WORLD_WIDTH;
 
   // Sprite rendering pipeline.
 
@@ -349,7 +374,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   reg [15:0] sprite_y;
 
   // Location within the on-screen sprite currently being drawn.
-  wire [15:0] sprite_render_y = screen_y - sprite_offset_y;
+  // Be sure to handle wraparound when |screen_y| < |sprite_screen_offset_y|.
+  wire [15:0] sprite_render_y =
+      (screen_y - sprite_screen_offset_y) % `WORLD_HEIGHT;
   wire [15:0] sprite_flipped_x = sprite_render_width - render_x - 1;
   wire [15:0] sprite_flipped_y = sprite_render_height - sprite_render_y - 1;
 
