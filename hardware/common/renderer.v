@@ -278,7 +278,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
           // TODO: create define for '800', the max 640x480 horizontal count.
           if (h_pos + 1 == 800 && v_visible[0] == 1) begin
             render_state <= `STATE_IDLE;
-          end else if (render_x + 1 == `SCREEN_IMAGE_WIDTH) begin
+          end else if (render_x + 1 >= `SCREEN_IMAGE_WIDTH) begin
             // Stop drawing if the screen has been drawn.
             // TODO: direct drawing based on tile coordinates rather than screen
             // coordinates.
@@ -316,7 +316,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
         end
       `STATE_DRAW_SPRITE:
         begin
-          if (render_x + 1 == sprite_render_width) begin
+          if (render_x + 1 >= sprite_render_width) begin
             render_state <= `STATE_READ_SPRITE;
             num_sprites_drawn <= num_sprites_drawn + 1;
             num_sprite_words_read <= 0;
