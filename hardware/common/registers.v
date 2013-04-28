@@ -90,20 +90,20 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
     input [31:0] address;
     begin
       case (address)
-        `ID:            begin   register_type = `REG_RO;  end
-        `OUTPUT_STATUS: begin   register_type = `REG_RO;  end
-        `SCAN_X:        begin   register_type = `REG_RO;  end
-        `SCAN_Y:        begin   register_type = `REG_RO;  end
+        `ID:            register_type = `REG_RO;
+        `OUTPUT_STATUS: register_type = `REG_RO;
+        `SCAN_X:        register_type = `REG_RO;
+        `SCAN_Y:        register_type = `REG_RO;
 
-        `MODE_CTRL:     begin   register_type = `REG_RW;  end
-        `MEM_CTRL:      begin   register_type = `REG_RW;  end
-        `OUTPUT_CTRL:   begin   register_type = `REG_RW;  end
-        `SPRITE_Z:      begin   register_type = `REG_RW;  end
+        `MODE_CTRL:     register_type = `REG_RW;
+        `MEM_CTRL:      register_type = `REG_RW;
+        `OUTPUT_CTRL:   register_type = `REG_RW;
+        `SPRITE_Z:      register_type = `REG_RW;
 
-        `SCROLL_X:      begin   register_type = `REG_RW;  end
-        `SCROLL_Y:      begin   register_type = `REG_RW;  end
+        `SCROLL_X:      register_type = `REG_RW;
+        `SCROLL_Y:      register_type = `REG_RW;
 
-        default:        begin   register_type = `REG_RO;  end
+        default:        register_type = `REG_RO;
       endcase
     end
 
@@ -113,17 +113,17 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
     input [31:0] address;
     begin
       case (address)
-        `TILE_CTRL0:          begin   tile_reg_type = `REG_RW;  end
-        `TILE_DATA_OFFSET:    begin   tile_reg_type = `REG_RW;  end
+        `TILE_CTRL0:          tile_reg_type = `REG_RW;
+        `TILE_DATA_OFFSET:    tile_reg_type = `REG_RW;
 
-        `TILE_NOP_VALUE:      begin   tile_reg_type = `REG_RW;  end
+        `TILE_NOP_VALUE:      tile_reg_type = `REG_RW;
 
-        `TILE_COLOR_KEY:      begin   tile_reg_type = `REG_RW;  end
+        `TILE_COLOR_KEY:      tile_reg_type = `REG_RW;
 
-        `TILE_OFFSET_X:       begin   tile_reg_type = `REG_RW;  end
-        `TILE_OFFSET_Y:       begin   tile_reg_type = `REG_RW;  end
+        `TILE_OFFSET_X:       tile_reg_type = `REG_RW;
+        `TILE_OFFSET_Y:       tile_reg_type = `REG_RW;
 
-        default:              begin   tile_reg_type = `REG_RO;  end
+        default:              tile_reg_type = `REG_RO;
       endcase
     end
 
