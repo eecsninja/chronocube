@@ -329,10 +329,13 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                  (screen_y < sprite_top || screen_y >= sprite_bottom)) ||
                 (sprite_top >= sprite_bottom &&   // Condition #2b
                  (screen_y >= sprite_bottom && screen_y < sprite_top))
+                // TODO: Handle horizontal boundary checking as well.
                 ) begin
               num_sprite_words_read <= 0;
               num_sprites_drawn <= num_sprites_drawn + 1;
             end else begin
+              // TODO: do not render parts of sprite that are not visible
+              // (either to the left or to the right of the visible area).
               render_state <= `STATE_DRAW_SPRITE;
               render_x <= 0;
             end
