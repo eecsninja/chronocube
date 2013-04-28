@@ -268,8 +268,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
           // efficiency.  Deciding what to draw next should be immediate,
           // without having to go through an intermediate step.
 
-          // Draw layers.
-          if (num_layers_drawn < 2 ||
+          // Draw all layers.  The sprite layer's order relative to the tile
+          // layers is determined by the SPRITE_Z register.
+          if (num_layers_drawn < reg_array[`SPRITE_Z] ||
               (num_layers_drawn < `NUM_TILE_LAYERS && num_sprites_drawn > 0))
           begin
             if (tile_ctrl0[`TILE_LAYER_ENABLED]) begin
@@ -280,8 +281,11 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
             else
               num_layers_drawn <= num_layers_drawn + 1;
           end
-          // Draw sprites.
-          else if (num_layers_drawn == 2 && num_sprites_drawn <= 0)
+          // Draw sprites if all layers below it (as determined by SPRITE_Z reg)
+          // have been drawn.
+          else if ((num_layers_drawn == reg_array[`SPRITE_Z] ||
+                    num_layers_drawn == `NUM_TILE_LAYERS) &&
+                   num_sprites_drawn <= 0)
           begin
             render_state <= `STATE_READ_SPRITE;
             num_sprite_words_read <= 0;

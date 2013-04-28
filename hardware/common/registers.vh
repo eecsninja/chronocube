@@ -30,6 +30,7 @@
 `define MODE_CTRL            'h04
 `define MEM_CTRL             'h05
 `define OUTPUT_CTRL          'h06
+`define SPRITE_Z             'h07
 
 `define SCROLL_X             'h0e
 `define SCROLL_Y             'h0f
