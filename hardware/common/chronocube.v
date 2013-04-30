@@ -151,7 +151,7 @@ module ChronoCube(
   wire [`SPRITE_DATA_WIDTH-1:0] ren_spr_data;
   wire [`SPRITE_DATA_WIDTH-1:0] ren_spr_data_out;
   wire [`MPU_DATA_WIDTH-1:0] sprite_data_out;
-  sprite_ram_2Kx16 sprite_ram(
+  sprite_ram_4Kx16 sprite_ram(
       .clock_a(clk),
       .address_a(mpu_addr),
       .byteena_a(~_mpu_be),
