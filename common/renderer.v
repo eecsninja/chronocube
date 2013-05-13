@@ -135,6 +135,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`REG_DATA_WIDTH-1:0] tile_data_offset;
   wire [`REG_DATA_WIDTH-1:0] tile_offset_x;
   wire [`REG_DATA_WIDTH-1:0] tile_offset_y;
+
   TileRegDecoder tile_reg_decoder(
       .current_layer(current_tile_layer),
       .reg_values(tile_reg_values),
@@ -411,16 +412,33 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`LINE_BUF_ADDR_WIDTH-2:0] render_x_world =
       tile_render_x + reg_array[`SCROLL_X] - tile_offset_x;
 
-  wire [4:0] map_x = render_x_world[8:4];
-  wire [4:0] map_y = tile_render_y[8:4];
-  wire [3:0] tile_x = render_x_world[3:0];
-  wire [3:0] tile_y = tile_render_y[3:0];
+  wire tile_enable_8x8 = tile_ctrl0[`TILE_ENABLE_8x8];
+
+  reg [4:0] map_x;
+  reg [4:0] map_y;
+  reg [3:0] tile_x;
+  reg [3:0] tile_y;
+
+  always @ (render_x_world or tile_render_y or tile_enable_8x8) begin
+    if (tile_enable_8x8) begin
+      map_x <= render_x_world[8:3];
+      map_y <= tile_render_y[8:3];
+      tile_x <= render_x_world[2:0];
+      tile_y <= tile_render_y[2:0];
+    end else begin
+      map_x <= render_x_world[8:4];
+      map_y <= tile_render_y[8:4];
+      tile_x <= render_x_world[3:0];
+      tile_y <= tile_render_y[3:0];
+    end
+  end
+
   // Screen location -> map address
   assign map_addr = {current_tile_layer, map_y, map_x};
 
   // Handle tile flip bits, if flipping is enabled.
   // If not, all bits of the tile map data are used for the tile value.
-  wire tile_enable_flip = tile_ctrl0[`TILE_ENABLE_FLIP];
+  wire tile_enable_flip = tile_ctrl0[`TILE_ENABLE_FLIP] & ~tile_enable_8x8;
   wire tile_flip_x = tile_enable_flip & map_data[`TILE_FLIP_X_BIT];
   wire tile_flip_y = tile_enable_flip & map_data[`TILE_FLIP_Y_BIT];
   wire tile_flip_xy = tile_enable_flip & map_data[`TILE_FLIP_XY_BIT];
@@ -453,7 +471,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   always @ (posedge clk)
     tile_vram_offset <= tile_data_offset / 2;
   wire [`VRAM_ADDR_WIDTH-1:0] tile_vram_addr =
-      {tile_value, tile_y_flipped, tile_x_flipped[3:1]} + tile_vram_offset;
+      tile_enable_8x8 ? {tile_value, tile_y_flipped[2:0], tile_x_flipped[2:1]}
+                      : {tile_value, tile_y_flipped[3:0], tile_x_flipped[3:1]} +
+      tile_vram_offset;
   wire [`VRAM_ADDR_WIDTH-1:0] sprite_vram_addr =
       sprite_pixel_offset[31:1] + sprite_vram_offset;
   assign vram_addr = render_tiles_delayed ? tile_vram_addr : sprite_vram_addr;
