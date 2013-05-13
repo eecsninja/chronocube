@@ -415,14 +415,20 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire tile_enable_8_bit = tile_ctrl0[`TILE_ENABLE_8_BIT];
 
   reg [4:0] map_x;
-  reg [4:0] map_y;
+  reg [5:0] map_y;
   reg [3:0] tile_x;
   reg [3:0] tile_y;
 
   always @ (render_x_world or tile_render_y or tile_enable_8x8) begin
     if (tile_enable_8x8) begin
-      map_x <= render_x_world[8:3];
-      map_y <= tile_render_y[8:3];
+      if (tile_enable_8_bit) begin
+        // If reading tile map as 8-bits, the tile map is twice as wide.
+        map_x <= render_x_world[7:3];
+        map_y <= {tile_render_y[8:3], render_x_world[8]};
+      end else begin
+        map_x <= render_x_world[8:3];
+        map_y <= tile_render_y[8:3];
+      end
       tile_x <= render_x_world[2:0];
       tile_y <= tile_render_y[2:0];
     end else begin
@@ -435,8 +441,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 
   // Screen location -> map address
   assign map_addr =
-        tile_enable_8_bit ? {current_tile_layer, 1'b0, map_y, map_x[4:1]}
-                          : {current_tile_layer, map_y, map_x};
+        tile_enable_8_bit ? {current_tile_layer, map_y[5:0], map_x[4:1]}
+                          : {current_tile_layer, map_y[4:0], map_x[4:0]};
   reg map_data_byte_select;
   always @ (posedge clk)
     map_data_byte_select <= map_x[0];
