@@ -1,0 +1,32 @@
+Release history
+===============
+
+0.1.0
+    Initial release version.  Has the following features:
+
+    - 320x240 video mode, 8 bits per pixel.
+    - Four 256 color palettes.
+    - Read-only registers to get ID and video output status.
+    - 16-bit address bus multiplex with 8-bit address bus.
+        = First 16-KB block is regular memory space.
+        = Second 16-KB block is bank switchable to extended internal address
+          space.
+        = Third and fourth 16-KB blocks are undefined.
+    - Universal camera scrolling relative to world coordinates.
+    - Four tile layers in fixed Z-order.
+        = Each layer shares one palette.
+        = Each tile layer is 32x32 tiles.
+        = Each tile is 16x16 pixels.
+        = Each entry of the tilemap is 16 bits.
+        = Tiles can be flipped horizontally, vertically, and diagonally.
+        = Tiles support color key-based transparency.
+        = Tiles are scrollable in world coordinates.
+    - One sprite layer containing all sprites.  Z-order is adjustable relative
+      to tile layers.
+        = Maximum of 128 sprites.
+        = Each sprite can have dimensions of 8, 16, 32, and 64 pixels.
+        = Each sprite uses one of the four palettes.
+        = Sprites can be flipped horizontally, vertically, and diagonally.
+        = Sprites support color key-based transparency.
+        = Sprites are scrollable in either world or screen coordinates.
+    - Supports up to 64 KB of VRAM for image data.
