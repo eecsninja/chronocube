@@ -33,6 +33,9 @@ module TileRegDecoder(current_layer,
                       enable_wrap_y,
                       enable_flip,
 
+                      tile_hsize_enum,
+                      tile_vsize_enum,
+
                       ctrl0,
                       ctrl1,
                       data_offset,
@@ -74,6 +77,9 @@ module TileRegDecoder(current_layer,
   output enable_wrap_y ;
   output enable_flip   ;
 
+  output [`TILE_HSIZE_WIDTH-1:0] tile_hsize_enum;
+  output [`TILE_VSIZE_WIDTH-1:0] tile_vsize_enum;
+
   output [`REG_DATA_WIDTH-1:0] ctrl0       ;
   output [`REG_DATA_WIDTH-1:0] ctrl1       ;
   output [`REG_DATA_WIDTH-1:0] data_offset ;
@@ -81,7 +87,6 @@ module TileRegDecoder(current_layer,
   output [`REG_DATA_WIDTH-1:0] color_key   ;
   output [`REG_DATA_WIDTH-1:0] offset_x    ;
   output [`REG_DATA_WIDTH-1:0] offset_y    ;
-  
 
   assign layer_enabled    = regs[`TILE_CTRL0][`TILE_LAYER_ENABLED];
   assign enable_8bit      = regs[`TILE_CTRL0][`TILE_ENABLE_8_BIT];
@@ -93,6 +98,9 @@ module TileRegDecoder(current_layer,
   assign enable_wrap_x    = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_X];
   assign enable_wrap_y    = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_Y];
   assign enable_flip      = regs[`TILE_CTRL0][`TILE_ENABLE_FLIP];
+
+  assign tile_width_enum    = regs[`TILE_CTRL1][`TILE_HSIZE_1:`TILE_HSIZE_0];
+  assign tile_height_enum   = regs[`TILE_CTRL1][`TILE_VSIZE_1:`TILE_VSIZE_0];
 
   assign ctrl0 = regs[`TILE_CTRL0];
   assign ctrl1 = regs[`TILE_CTRL1];

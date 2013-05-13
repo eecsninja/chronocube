@@ -75,6 +75,9 @@
 `define TILE_HSIZE_1             1
 `define TILE_VSIZE_0             2
 `define TILE_VSIZE_1             3
+`define TILE_HSIZE_WIDTH         (`TILE_HSIZE_1 - `TILE_HSIZE_0 + 1)
+`define TILE_VSIZE_WIDTH         (`TILE_VSIZE_1 - `TILE_VSIZE_0 + 1)
+
 `define TILE_LAYER_HSIZE_0       4
 `define TILE_LAYER_HSIZE_1       5
 `define TILE_LAYER_VSIZE_0       6
