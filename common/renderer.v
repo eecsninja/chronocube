@@ -23,7 +23,6 @@
 `include "tile_registers.vh"
 
 `define LINE_BUF_ADDR_WIDTH 10
-`define NUM_SPRITES 128
 
 `define SCREEN_WIDTH               640
 `define SCREEN_HEIGHT              480
