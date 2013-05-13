@@ -412,6 +412,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       tile_render_x + reg_array[`SCROLL_X] - tile_offset_x;
 
   wire tile_enable_8x8 = tile_ctrl0[`TILE_ENABLE_8x8];
+  wire tile_enable_8_bit = tile_ctrl0[`TILE_ENABLE_8_BIT];
 
   reg [4:0] map_x;
   reg [4:0] map_y;
@@ -433,16 +434,27 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   end
 
   // Screen location -> map address
-  assign map_addr = {current_tile_layer, map_y, map_x};
+  assign map_addr =
+        tile_enable_8_bit ? {current_tile_layer, 1'b0, map_y, map_x[4:1]}
+                          : {current_tile_layer, map_y, map_x};
+  reg map_data_byte_select;
+  always @ (posedge clk)
+    map_data_byte_select <= map_x[0];
 
   // Handle tile flip bits, if flipping is enabled.
   // If not, all bits of the tile map data are used for the tile value.
-  wire tile_enable_flip = tile_ctrl0[`TILE_ENABLE_FLIP] & ~tile_enable_8x8;
+  wire tile_enable_flip =
+      tile_ctrl0[`TILE_ENABLE_FLIP] & ~tile_enable_8x8 & ~tile_enable_8_bit;
   wire tile_flip_x = tile_enable_flip & map_data[`TILE_FLIP_X_BIT];
   wire tile_flip_y = tile_enable_flip & map_data[`TILE_FLIP_Y_BIT];
   wire tile_flip_xy = tile_enable_flip & map_data[`TILE_FLIP_XY_BIT];
   wire [`TILEMAP_DATA_WIDTH-1:0] tile_value =
-      tile_enable_flip ? (~`TILE_FLIP_BITS_MASK & map_data) : map_data;
+      tile_enable_8_bit
+            ? (map_data_byte_select
+                    ? map_data[`TILEMAP_DATA_WIDTH-1:`TILEMAP_DATA_WIDTH/2]
+                    : map_data[`TILEMAP_DATA_WIDTH/2-1:0])
+            : (tile_enable_flip ? (~`TILE_FLIP_BITS_MASK & map_data)
+                                : map_data);
 
   reg [3:0] tile_x_reg;
   reg [3:0] tile_y_reg;
