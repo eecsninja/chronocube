@@ -39,5 +39,23 @@
 `define MCU_OP_READ_STATUS        2
 `define MCU_OP_ACCESS_RAM         3
 
+// Coprocessor states
+`define COP_STATE_OPCODE          0
+`define COP_STATE_READ_COMMAND    1
+`define COP_STATE_WRITE_STATUS    2
+`define COP_STATE_ACCESS_RAM      3
+`define COP_STATE_ACCESS_SDCARD   4
+`define COP_STATE_ACCESS_USB      5
+
+`define COP_STATE_WIDTH           2
+
+// Coprocessor opcodes
+`define COP_OP_RESET              0   // Relinquish control of the RAM SPI bus.
+`define COP_OP_READ_COMMAND       1
+`define COP_OP_WRITE_STATUS       2
+`define COP_OP_ACCESS_RAM         3
+`define COP_OP_ACCESS_SDCARD      4
+`define COP_OP_ACCESS_USB         5
+
 `define BYTE_WIDTH                8   // Number of bits per byte.
 `define BYTE_COUNTER_WIDTH        3   // Number of bits to count bits per byte.

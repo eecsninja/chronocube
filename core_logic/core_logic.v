@@ -31,7 +31,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   output reg mcu_miso;
 
   input cop_nss, cop_sck, cop_mosi;
-  output cop_miso;
+  output reg cop_miso;
 
   // Serial RAM interface, CPLD = master.
   output reg ram_nss, ram_sck, ram_mosi;
@@ -83,13 +83,41 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
     end
   end
 
+  // SPI reset and increment logic for Coprocessor.
+  always @ (posedge cop_nss or negedge cop_sck) begin
+    // Reset logic.
+    if (cop_nss) begin
+      // Reset the state when nSS goes low.
+      cop_state <= `COP_STATE_OPCODE;
+      cop_counter <= 0;
+    end else begin
+      // Falling edge of SCK means increment to next bit.
+      if (cop_counter == `BYTE_WIDTH - 1) begin
+        case (cop_state)
+        `COP_STATE_OPCODE:
+          cop_state <= cop_data;  // The byte that was just read is the opcode
+          // TODO: Should it ignore or truncate larger values of |cop_data|?
+        `COP_STATE_WRITE_STATUS:
+          cop_status <= cop_data;
+        endcase
+      end
+      // Update the counter.  It should wrap around on its own.
+      cop_counter <= cop_counter + 1;
+    end
+  end
   // MCU SPI bus shift register.
   always @ (posedge mcu_sck)
     if (~mcu_nss)
       mcu_data <= {mcu_mosi, mcu_data[`BYTE_WIDTH-1:1]};
 
-  wire ram_enable = (bus_mode == `BUS_MODE_MCU) &
-                    (mcu_state == `MCU_STATE_ACCESS_RAM);
+  // Coprocessor SPI bus shift register.
+  always @ (posedge cop_sck)
+    if (~cop_nss)
+      cop_data <= {cop_mosi, cop_data[`BYTE_WIDTH-1:1]};
+
+  wire ram_enable =
+    ((bus_mode == `BUS_MODE_MCU) & (mcu_state == `MCU_STATE_ACCESS_RAM)) |
+    ((bus_mode == `BUS_MODE_COP) & (cop_state == `COP_STATE_ACCESS_RAM));
 
   wire [2:0] mcu_spi = {mcu_nss, mcu_sck, mcu_mosi};
   wire [2:0] cop_spi = {cop_nss, cop_sck, cop_mosi};
@@ -129,6 +157,33 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
         mcu_miso <= cop_status[mcu_counter];
       default:
         mcu_miso <= 'bx;
+      endcase
+    end
+  end
+
+  // State machine logic for Coprocessor bus.
+  always @ (bus_mode or cop_state or cop_miso or cop_data or cop_counter or
+            mcu_command) begin
+    if (bus_mode == `BUS_MODE_COP) begin
+      case (cop_state)
+      `COP_STATE_READ_COMMAND:
+        cop_miso <= mcu_command[cop_counter];
+      `COP_STATE_ACCESS_RAM:
+        cop_miso <= ram_miso;
+      // TODO: implement SD card and USB interface.
+      `COP_STATE_ACCESS_SDCARD:
+        cop_miso <= 'hx;
+      `COP_STATE_ACCESS_USB:
+        cop_miso <= 'hx;
+      default:
+        cop_miso <= cop_data[0];
+      endcase
+    end else begin  // RAM SPI bus is in MCU mode.
+      case (cop_state)
+      `COP_STATE_READ_COMMAND:
+        cop_miso <= mcu_command[cop_counter];
+      default:
+        cop_miso <= 'bx;
       endcase
     end
   end
