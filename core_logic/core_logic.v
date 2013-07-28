@@ -39,10 +39,20 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   reg bus_mode;
 
+  // SPI access state machine counters.
   reg [`MCU_STATE_WIDTH-1:0] mcu_state;
-  reg [`BYTE_COUNTER_WIDTH:0] mcu_counter;
+  reg [`COP_STATE_WIDTH-1:0] cop_state;
 
+  // SPI bit counters.
+  reg [`BYTE_COUNTER_WIDTH-1:0] mcu_counter;
+  reg [`BYTE_COUNTER_WIDTH-1:0] cop_counter;
+
+  // SPI data registers.
   reg [`BYTE_WIDTH-1:0] mcu_data;
+  reg [`BYTE_WIDTH-1:0] cop_data;
+
+  // These store command and status values.
+  reg [`BYTE_WIDTH-1:0] mcu_command;
   reg [`BYTE_WIDTH-1:0] cop_status;
 
   always @ (posedge mcu_nss)
@@ -50,6 +60,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
       bus_mode <= `BUS_MODE_MCU;
     end
 
+  // SPI reset and increment logic for MCU.
   always @ (posedge mcu_nss or negedge mcu_sck) begin
     // Reset logic.
     if (mcu_nss) begin
@@ -58,13 +69,17 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
       mcu_counter <= 0;
     end else begin
       // Falling edge of SCK means increment to next bit.
-      if (mcu_counter == `BYTE_WIDTH - 1 & mcu_state == `MCU_STATE_OPCODE) begin
-        mcu_state <= mcu_data;  // The byte that was just read is the opcode.
-        // TODO: Should it ignore or truncate larger values of |mcu_data|?
-        mcu_counter <= 0;
-      end else begin
-        mcu_counter <= mcu_counter + 1;
+      if (mcu_counter == `BYTE_WIDTH - 1) begin
+        case (mcu_state)
+        `MCU_STATE_OPCODE:
+          mcu_state <= mcu_data;  // The byte that was just read is the opcode.
+          // TODO: Should it ignore or truncate larger values of |mcu_data|?
+        `MCU_STATE_WRITE_COMMAND:
+          mcu_command <= mcu_data;
+        endcase
       end
+      // Update the counter.  It should wrap around on its own.
+      mcu_counter <= mcu_counter + 1;
     end
   end
 
@@ -79,6 +94,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   wire [2:0] mcu_spi = {mcu_nss, mcu_sck, mcu_mosi};
   wire [2:0] cop_spi = {cop_nss, cop_sck, cop_mosi};
 
+  // Shared RAM bus interface.
   always @ (bus_mode or ram_enable or mcu_spi or cop_spi) begin
     if (ram_enable) begin
       // If RAM is active, map either the MCU or Coprocessor SPI bus to it.
@@ -95,6 +111,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
     end
   end
 
+  // State machine logic for MCU bus.
   always @ (bus_mode or mcu_state or ram_miso or mcu_data or mcu_counter or
             cop_status) begin
     if (bus_mode == `BUS_MODE_MCU) begin
@@ -106,7 +123,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
       default:
         mcu_miso <= mcu_data[0];
       endcase
-    end else begin  // Bus is in Coprocessor mode.
+    end else begin  // RAM SPI bus is in Coprocessor mode.
       case (mcu_state)
       `MCU_STATE_READ_STATUS:
         mcu_miso <= cop_status[mcu_counter];

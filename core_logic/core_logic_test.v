@@ -74,6 +74,14 @@ module CoreLogicTest;
     spi_transmit(50);
     mcu_nss = 1;
 
+    #10   // Test command write.
+    mcu_nss = 0;
+    spi_transmit(`MCU_STATE_WRITE_COMMAND);
+    spi_transmit(145);
+    spi_transmit(105);
+    spi_transmit(219);
+    mcu_nss = 1;
+
   end
 
   // Task to send a byte over SPI.
