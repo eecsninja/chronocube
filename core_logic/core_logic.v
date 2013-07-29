@@ -25,7 +25,8 @@
 
 module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                  cop_nss, cop_sck, cop_mosi, cop_miso,
-                 ram_nss, ram_sck, ram_mosi, ram_miso);
+                 ram_nss, ram_sck, ram_mosi, ram_miso, ram_nhold,
+                 );
   // MCU and Coprocessor interfaces, CPLD = slave.
   input mcu_nss, mcu_sck, mcu_mosi;
   output reg mcu_miso;
@@ -36,6 +37,9 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   // Serial RAM interface, CPLD = master.
   output reg ram_nss, ram_sck, ram_mosi;
   input ram_miso;
+
+  // TODO: disable nHOLD for now, but consider supporting it eventually.
+  output ram_nhold = 1;
 
   reg bus_mode;
 
