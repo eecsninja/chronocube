@@ -47,6 +47,7 @@
 `define COP_STATE_ACCESS_SDCARD   4
 `define COP_STATE_ACCESS_USB      5
 `define COP_STATE_ACCESS_FPGA     6
+`define COP_STATE_ACCESS_FLASH    7
 
 `define COP_STATE_WIDTH           2
 
@@ -58,6 +59,7 @@
 `define COP_OP_ACCESS_SDCARD      4
 `define COP_OP_ACCESS_USB         5
 `define COP_OP_ACCESS_FPGA        6
+`define COP_OP_ACCESS_FLASH       7
 
 `define BYTE_WIDTH                8   // Number of bits per byte.
 `define BYTE_COUNTER_WIDTH        3   // Number of bits to count bits per byte.

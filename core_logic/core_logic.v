@@ -28,6 +28,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                  ram_nss, ram_sck, ram_mosi, ram_miso, ram_nhold,
                  dev_sck, dev_mosi, dev_miso,
                  usb_nss, sdc_nss, fpga_nss,
+                 flash_nss, flash_sck, flash_mosi,
                  );
   // MCU and Coprocessor interfaces, CPLD = slave.
   input mcu_nss, mcu_sck, mcu_mosi;
@@ -46,6 +47,10 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   // SPI chip selects for peripheral devices.
   output usb_nss, sdc_nss, fpga_nss;
+
+  // Flash memory interface.
+  // TODO: Add MISO interface?
+  output flash_nss, flash_sck, flash_mosi;
 
   // TODO: disable nHOLD for now, but consider supporting it eventually.
   output ram_nhold = 1;
@@ -212,5 +217,11 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   assign sdc_nss = (cop_state == `COP_STATE_ACCESS_SDCARD);
   assign usb_nss = (cop_state == `COP_STATE_ACCESS_USB);
   assign fpga_nss = (cop_state == `COP_STATE_ACCESS_FPGA);
+
+  // Coprocessor-to-flash SPI bus interface.
+  wire flash_enable = (cop_state == `COP_STATE_ACCESS_FLASH);
+  assign flash_sck = flash_enable ? cop_sck : 'bz;
+  assign flash_mosi = flash_enable ? cop_mosi : 'bz;
+  assign flash_nss = flash_enable;
 
 endmodule
