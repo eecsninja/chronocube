@@ -26,6 +26,8 @@
 module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                  cop_nss, cop_sck, cop_mosi, cop_miso,
                  ram_nss, ram_sck, ram_mosi, ram_miso, ram_nhold,
+                 dev_sck, dev_mosi, dev_miso,
+                 usb_nss, sdc_nss,
                  );
   // MCU and Coprocessor interfaces, CPLD = slave.
   input mcu_nss, mcu_sck, mcu_mosi;
@@ -37,6 +39,13 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   // Serial RAM interface, CPLD = master.
   output reg ram_nss, ram_sck, ram_mosi;
   input ram_miso;
+
+  // SPI interface for peripheral devices.
+  output dev_sck, dev_mosi;
+  input dev_miso;
+
+  // SPI chip selects for peripheral devices.
+  output usb_nss, sdc_nss;
 
   // TODO: disable nHOLD for now, but consider supporting it eventually.
   output ram_nhold = 1;
@@ -174,11 +183,10 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
         cop_miso <= mcu_command[cop_counter];
       `COP_STATE_ACCESS_RAM:
         cop_miso <= ram_miso;
-      // TODO: implement SD card and USB interface.
       `COP_STATE_ACCESS_SDCARD:
-        cop_miso <= 'hx;
+        cop_miso <= dev_miso;
       `COP_STATE_ACCESS_USB:
-        cop_miso <= 'hx;
+        cop_miso <= dev_miso;
       default:
         cop_miso <= cop_data[0];
       endcase
@@ -191,5 +199,14 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
       endcase
     end
   end
+
+  // Coprocessor-to-device SPI bus interface.
+  wire dev_enable = (cop_state == `COP_STATE_ACCESS_SDCARD) |
+                    (cop_state == `COP_STATE_ACCESS_USB);
+  assign dev_sck = dev_enable & cop_sck;
+  assign dev_mosi = dev_enable & cop_mosi;
+
+  assign sdc_nss = (cop_state == `COP_STATE_ACCESS_SDCARD);
+  assign usb_nss = (cop_state == `COP_STATE_ACCESS_USB);
 
 endmodule
