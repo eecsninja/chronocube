@@ -25,7 +25,7 @@
 
 module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                  cop_nss, cop_sck, cop_mosi, cop_miso,
-                 ram_nss, ram_sck, ram_mosi, ram_miso, ram_nhold,
+                 ram_nss, ram_sck, ram_mosi, ram_miso,
                  dev_sck, dev_mosi, dev_miso,
                  usb_nss, sdc_nss, fpga_nss,
                  flash_nss, flash_sck, flash_mosi,
@@ -51,9 +51,6 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   // Flash memory interface.
   // TODO: Add MISO interface?
   output flash_nss, flash_sck, flash_mosi;
-
-  // TODO: disable nHOLD for now, but consider supporting it eventually.
-  output ram_nhold = 1;
 
   reg bus_mode;
 
