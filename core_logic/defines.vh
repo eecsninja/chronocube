@@ -44,10 +44,6 @@
 `define COP_STATE_READ_COMMAND    1
 `define COP_STATE_WRITE_STATUS    2
 `define COP_STATE_ACCESS_RAM      3
-`define COP_STATE_ACCESS_SDCARD   4
-`define COP_STATE_ACCESS_USB      5
-`define COP_STATE_ACCESS_FPGA     6
-`define COP_STATE_ACCESS_FLASH    7
 
 `define COP_STATE_WIDTH           2
 
@@ -56,10 +52,15 @@
 `define COP_OP_READ_COMMAND       1
 `define COP_OP_WRITE_STATUS       2
 `define COP_OP_ACCESS_RAM         3
-`define COP_OP_ACCESS_SDCARD      4
-`define COP_OP_ACCESS_USB         5
-`define COP_OP_ACCESS_FPGA        6
-`define COP_OP_ACCESS_FLASH       7
 
 `define BYTE_WIDTH                8   // Number of bits per byte.
 `define BYTE_COUNTER_WIDTH        3   // Number of bits to count bits per byte.
+
+// For selecting peripheral devices.
+`define DEV_SELECT_NONE           0
+`define DEV_SELECT_SDCARD         1
+`define DEV_SELECT_USB            2
+`define DEV_SELECT_FPGA           3
+`define DEV_SELECT_FLASH          4
+
+`define DEV_SELECT_WIDTH          3

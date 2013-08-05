@@ -26,9 +26,9 @@
 module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                  cop_nss, cop_sck, cop_mosi, cop_miso,
                  ram_nss, ram_sck, ram_mosi, ram_miso,
-                 dev_sck, dev_mosi, dev_miso,
+                 dev_select, dev_sck, dev_mosi, dev_miso,
                  usb_nss, sdc_nss, fpga_nss,
-                 flash_nss, flash_sck, flash_mosi,
+                 flash_nss, flash_sck, flash_mosi, flash_miso,
                  );
   // MCU and Coprocessor interfaces, CPLD = slave.
   input mcu_nss, mcu_sck, mcu_mosi;
@@ -42,6 +42,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   input ram_miso;
 
   // SPI interface for peripheral devices.
+  input [`DEV_SELECT_WIDTH-1:0] dev_select;
   output dev_sck, dev_mosi;
   input dev_miso;
 
@@ -49,8 +50,8 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   output usb_nss, sdc_nss, fpga_nss;
 
   // Flash memory interface.
-  // TODO: Add MISO interface?
   output flash_nss, flash_sck, flash_mosi;
+  input flash_miso;
 
   reg bus_mode;
 
@@ -132,7 +133,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   wire ram_enable =
     ((bus_mode == `BUS_MODE_MCU) & (mcu_state == `MCU_STATE_ACCESS_RAM)) |
-    ((bus_mode == `BUS_MODE_COP) & (cop_state == `COP_STATE_ACCESS_RAM));
+    ((bus_mode == `BUS_MODE_COP) & (dev_select == `COP_STATE_ACCESS_RAM));
 
   wire [2:0] mcu_spi = {mcu_nss, mcu_sck, mcu_mosi};
   wire [2:0] cop_spi = {cop_nss, cop_sck, cop_mosi};
@@ -178,19 +179,20 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   // State machine logic for Coprocessor bus.
   always @ (bus_mode or cop_state or cop_miso or cop_data or cop_counter or
-            mcu_command) begin
-    if (bus_mode == `BUS_MODE_COP) begin
+            mcu_command or dev_select) begin
+    if (dev_select != `DEV_SELECT_NONE) begin
+      case (dev_select)
+      `DEV_SELECT_FLASH:
+        cop_miso <= flash_miso;
+      default:
+        cop_miso <= dev_miso;
+      endcase
+    end else if (bus_mode == `BUS_MODE_COP) begin
       case (cop_state)
       `COP_STATE_READ_COMMAND:
         cop_miso <= mcu_command[cop_counter];
       `COP_STATE_ACCESS_RAM:
         cop_miso <= ram_miso;
-      `COP_STATE_ACCESS_SDCARD:
-        cop_miso <= dev_miso;
-      `COP_STATE_ACCESS_USB:
-        cop_miso <= dev_miso;
-      `COP_STATE_ACCESS_FPGA:
-        cop_miso <= dev_miso;
       default:
         cop_miso <= cop_data[0];
       endcase
@@ -205,20 +207,20 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   end
 
   // Coprocessor-to-device SPI bus interface.
-  wire dev_enable = (cop_state == `COP_STATE_ACCESS_SDCARD) |
-                    (cop_state == `COP_STATE_ACCESS_FPGA) |
-                    (cop_state == `COP_STATE_ACCESS_USB);
+  wire dev_enable = (dev_select == `DEV_SELECT_SDCARD) |
+                    (dev_select == `DEV_SELECT_FPGA) |
+                    (dev_select == `DEV_SELECT_USB);
   assign dev_sck = dev_enable & cop_sck;
   assign dev_mosi = dev_enable & cop_mosi;
 
-  assign sdc_nss = (cop_state == `COP_STATE_ACCESS_SDCARD);
-  assign usb_nss = (cop_state == `COP_STATE_ACCESS_USB);
-  assign fpga_nss = (cop_state == `COP_STATE_ACCESS_FPGA);
+  assign sdc_nss = (dev_select == `DEV_SELECT_SDCARD);
+  assign usb_nss = (dev_select == `DEV_SELECT_USB);
+  assign fpga_nss = (dev_select == `DEV_SELECT_FPGA);
 
   // Coprocessor-to-flash SPI bus interface.
-  wire flash_enable = (cop_state == `COP_STATE_ACCESS_FLASH);
+  wire flash_enable = (dev_select == `DEV_SELECT_FLASH);
   assign flash_sck = flash_enable ? cop_sck : 'bz;
   assign flash_mosi = flash_enable ? cop_mosi : 'bz;
-  assign flash_nss = flash_enable;
+  assign flash_nss = flash_enable ? 0 : 'bz;
 
 endmodule
