@@ -29,6 +29,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                  dev_select, dev_sck, dev_mosi, dev_miso,
                  usb_nss, sdc_nss, fpga_nss,
                  flash_nss, flash_sck, flash_mosi, flash_miso,
+                 usb_int_in, usb_int_out, usb_gpx_in, usb_gpx_out,
                  );
   // MCU and Coprocessor interfaces, CPLD = slave.
   input mcu_nss, mcu_sck, mcu_mosi;
@@ -52,6 +53,11 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   // Flash memory interface.
   output flash_nss, flash_sck, flash_mosi;
   input flash_miso;
+
+  // Pass these USB host signals through to the coprocessor.
+  input usb_int_in, usb_gpx_in;
+  output usb_int_out = usb_int_in;
+  output usb_gpx_out = usb_gpx_in;
 
   reg bus_mode;
 
