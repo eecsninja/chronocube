@@ -31,9 +31,9 @@ module SPIMemoryTest;
   wire miso;
 
   // Memory interface.
-  wire [`MEM_ADDR_WIDTH-1:0] addr;
-  wire [`MEM_DATA_WIDTH-1:0] data_in;
-  wire [`MEM_DATA_WIDTH-1:0] data_out;
+  wire [`SPI_MEM_ADDR_WIDTH-1:0] addr;
+  wire [`SPI_MEM_DATA_WIDTH-1:0] data_in;
+  wire [`SPI_MEM_DATA_WIDTH-1:0] data_out;
   wire rd, wr;
 
   // Instantiate the Unit Under Test (UUT).
@@ -44,7 +44,7 @@ module SPIMemoryTest;
 
   // Don't have actual memory, so just use the lower byte of memory as the data
   // read from memory.
-  assign data_in = addr[`MEM_DATA_WIDTH-1:0];
+  assign data_in = addr[`SPI_MEM_DATA_WIDTH-1:0];
 
   initial begin
     _select = 0;

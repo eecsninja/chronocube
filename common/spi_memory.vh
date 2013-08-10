@@ -36,5 +36,5 @@
 `define SPI_STATE_DATA_READ       3  // Clocking out byte that was read.
 
 // Memory address and data bus sizes.
-`define MEM_ADDR_WIDTH        (2 * `BYTE_WIDTH)
-`define MEM_DATA_WIDTH        (`BYTE_WIDTH)
+`define SPI_MEM_ADDR_WIDTH        (2 * `BYTE_WIDTH)
+`define SPI_MEM_DATA_WIDTH        (`BYTE_WIDTH)

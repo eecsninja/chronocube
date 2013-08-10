@@ -35,9 +35,9 @@ module SPIMemory(_select, sck, mosi, miso,
   output miso;
 
   // Memory interface.
-  output [`MEM_ADDR_WIDTH-1:0] addr;
-  input [`MEM_DATA_WIDTH-1:0] data_in;
-  output [`MEM_DATA_WIDTH-1:0] data_out;
+  output [`SPI_MEM_ADDR_WIDTH-1:0] addr;
+  input [`SPI_MEM_DATA_WIDTH-1:0] data_in;
+  output [`SPI_MEM_DATA_WIDTH-1:0] data_out;
   output rd, wr;
 
   reg [`BYTE_COUNTER_WIDTH-1:0] spi_counter;
@@ -64,7 +64,7 @@ module SPIMemory(_select, sck, mosi, miso,
   assign data_out = spi_data;
 
   // Register for reading data in.
-  reg [`MEM_DATA_WIDTH-1:0] read_data;
+  reg [`SPI_MEM_DATA_WIDTH-1:0] read_data;
   always @ (negedge rd)  // Store the data on at the end (falling edge) of |rd|.
     read_data <= data_in;
 
