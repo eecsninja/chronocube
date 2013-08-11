@@ -89,7 +89,7 @@ module MainArduinoUno(
                   : cc_data_out[`BYTE_WIDTH-1:0];
 
   // Determine byte enable based on whether the incoming address is odd or even.
-  wire [1:0] _cc_be = spi_addr[0] ? 2'b01 : 2'b10;
+  wire [1:0] cc_byte_enable = spi_addr[0] ? 2'b10 : 2'b01;
 
   // Enable bus if either read or write is enabled.
   wire cc_enable = (spi_rd ^ spi_wr);
@@ -120,7 +120,7 @@ module MainArduinoUno(
                         ._mpu_rd(~spi_rd),
                         ._mpu_wr(~spi_wr),
                         ._mpu_en(~cc_enable),
-                        ._mpu_be(_cc_be),
+                        ._mpu_be(~cc_byte_enable),
                         .mpu_addr_in(cc_addr),
                         .mpu_data_in(cc_data_in),
                         .mpu_data_out(cc_data_out),
