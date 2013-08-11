@@ -55,9 +55,11 @@ module SPIMemory(_select, sck, mosi, miso,
   // Access memory after a byte of data has been fully clocked.
   wire access_mem = spi_counter == (`BYTE_WIDTH-1);
 
-  // Read/write signals to memory.
-  assign rd = access_mem & (spi_state == `SPI_STATE_DATA_READ);
-  assign wr = access_mem & (spi_state == `SPI_STATE_DATA_WRITE);
+  // Read at the start of a byte, before the rising edge of SCK.
+  assign rd = (spi_counter == 0) & (spi_state == `SPI_STATE_DATA_READ);
+  // Write at the end of a byte.
+  assign wr = (spi_counter == `BYTE_WIDTH-1) &
+              (spi_state == `SPI_STATE_DATA_WRITE);
 
   // Connect memory address and data buses.
   assign addr = {spi_addr_1, spi_addr_0};
@@ -69,7 +71,7 @@ module SPIMemory(_select, sck, mosi, miso,
     read_data <= data_in;
 
   // Clock out data to MISO.
-  assign miso = read_data[spi_counter];
+  assign miso = (spi_counter == 0) ? data_in[0] : read_data[spi_counter];
 
   // SPI memory interface state machine.
   reg [`SPI_STATE_WIDTH-1:0] spi_state;
