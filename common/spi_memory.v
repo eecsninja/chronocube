@@ -52,9 +52,6 @@ module SPIMemory(_select, sck, mosi, miso,
     if (~_select)
       spi_data <= {mosi, spi_data[`BYTE_WIDTH-1:1]};
 
-  // Access memory after a byte of data has been fully clocked.
-  wire access_mem = spi_counter == (`BYTE_WIDTH-1);
-
   // Read at the start of a byte, before the rising edge of SCK.
   assign rd = (spi_counter == 0) & (spi_state == `SPI_STATE_DATA_READ);
   // Write at the end of a byte.
@@ -101,7 +98,7 @@ module SPIMemory(_select, sck, mosi, miso,
             // Mask out the highest bit, which indicates a read or write access.
             spi_addr_1 <= {1'b0, spi_data[`BYTE_WIDTH-2:0]};
           end
-        default:
+        `SPI_STATE_DATA_READ:
           begin
             // Increment the address after writing a byte.  Be sure to mask out
             // the highest bit.
@@ -113,6 +110,12 @@ module SPIMemory(_select, sck, mosi, miso,
 
         // Save the previous state.
         spi_prev_state <= spi_state;
+      end else if (spi_counter == 0 & spi_state == `SPI_STATE_DATA_WRITE) begin
+        // Increment the address after writing a byte.  Be sure to mask out
+        // the highest bit.
+        spi_addr_0 <= spi_addr_0 + 1'b1;
+        if (spi_addr_0 == {`BYTE_WIDTH{1'b1}})
+          spi_addr_1 <= (spi_addr_1 + 1'b1) & {(`BYTE_WIDTH-1){1'b1}};
       end
       // Update the counter.  It should wrap around on its own.
       spi_counter <= spi_counter + 1'b1;
