@@ -111,7 +111,8 @@ module SPIMemory(_select, sck, mosi, miso,
 
         // Save the previous state.
         spi_prev_state <= spi_state;
-      end else if (spi_counter == 0 & spi_state == `SPI_STATE_DATA_WRITE) begin
+      end else if (spi_counter == 0 & spi_state == `SPI_STATE_DATA_WRITE &
+                   spi_prev_state == spi_state) begin
         // Increment the address after writing a byte.  Be sure to mask out
         // the highest bit.
         spi_addr_0 <= spi_addr_0 + 1'b1;
