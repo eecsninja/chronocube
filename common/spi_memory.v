@@ -64,8 +64,9 @@ module SPIMemory(_select, sck, mosi, miso,
 
   // Register for reading data in.
   reg [`SPI_MEM_DATA_WIDTH-1:0] read_data;
-  always @ (negedge rd)  // Store the data on at the end (falling edge) of |rd|.
-    read_data <= data_in;
+  always @ (posedge sck)  // Store the old data at the start of a new byte.
+    if (spi_counter == 0)
+      read_data <= data_in;
 
   // Clock out data to MISO.
   assign miso = (spi_counter == 0) ? data_in[0] : read_data[spi_counter];
