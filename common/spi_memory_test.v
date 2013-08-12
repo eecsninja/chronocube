@@ -44,7 +44,7 @@ module SPIMemoryTest;
 
   // Don't have actual memory, so just use the lower byte of memory as the data
   // read from memory.
-  assign data_in = addr[`SPI_MEM_DATA_WIDTH-1:0];
+  assign data_in = rd ? addr[`SPI_MEM_DATA_WIDTH-1:0] : 'bx;
 
   initial begin
     _select = 0;
