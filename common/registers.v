@@ -95,10 +95,10 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
         `SCAN_X:        register_type = `REG_RO;
         `SCAN_Y:        register_type = `REG_RO;
 
-        `MODE_CTRL:     register_type = `REG_RW;
-        `MEM_CTRL:      register_type = `REG_RW;
+        `SYS_CTRL:      register_type = `REG_RW;
+        `MEM_BANK:      register_type = `REG_RW;
         `OUTPUT_CTRL:   register_type = `REG_RW;
-        `SPRITE_Z:      register_type = `REG_RW;
+        `MODE_CTRL:     register_type = `REG_RW;
 
         `SCROLL_X:      register_type = `REG_RW;
         `SCROLL_Y:      register_type = `REG_RW;

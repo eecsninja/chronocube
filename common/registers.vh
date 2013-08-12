@@ -27,10 +27,10 @@
 `define SCAN_X               'h02
 `define SCAN_Y               'h03
 
-`define MODE_CTRL            'h04
-`define MEM_CTRL             'h05
+`define SYS_CTRL             'h04
+`define MEM_BANK             'h05
 `define OUTPUT_CTRL          'h06
-`define SPRITE_Z             'h07
+`define MODE_CTRL            'h07
 
 `define SCROLL_X             'h0e
 `define SCROLL_Y             'h0f
@@ -43,5 +43,8 @@
 `define REG_RO                  1   // Read-only register.
 
 `define ID_REG_VALUE       'h4343   // "CC" in ASCII, used to identify system.
+
+// SYS_CTRL register bits.
+`define SYS_CTRL_VRAM_ACCESS    0   // Enable MPU access to VRAM.
 
 `endif  // _REGISTERS_VH_

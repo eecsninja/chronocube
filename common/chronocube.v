@@ -78,7 +78,7 @@ module ChronoCube(
 
   // Map the second page using the bank register.
   wire [`INT_ADDR_WIDTH-1:0] mpu_addr;
-  wire [7:0] bank_value = reg_array_out[`MEM_CTRL][15:8];
+  wire [7:0] bank_value = reg_array_out[`MEM_BANK];
   assign mpu_addr = { ((page_index == 0) ? {16'b0} : bank_value), page_offset };
 
   // VGA signal generator
@@ -198,9 +198,8 @@ module ChronoCube(
   // VRAM interface logic
   wire vram_select = (mpu_addr >= `VRAM_ADDR_BASE) &
                      (mpu_addr < `VRAM_ADDR_BASE + `VRAM_ADDR_LENGTH);
-  // Allow MPU access to VRAM only when the first bit of the MEM_CTRL register
-  // is set.
-  wire vram_uses_mpu = reg_array_out[`MEM_CTRL][0];
+  // Allow MPU access to VRAM only when the SYS_CTRL_VRAM_ACCESS bit is set.
+  wire vram_uses_mpu = reg_array_out[`SYS_CTRL][`SYS_CTRL_VRAM_ACCESS];
   wire vram_en = vram_uses_mpu ? vram_uses_mpu : ren_vram_en;
   wire vram_wr = vram_uses_mpu ? ~_mpu_wr : ren_vram_wr;
   wire vram_rd = vram_uses_mpu ? ~_mpu_rd : ren_vram_rd;

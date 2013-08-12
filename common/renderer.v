@@ -32,6 +32,8 @@
 `define WORLD_WIDTH                512
 `define WORLD_HEIGHT               512
 
+`define SPRITE_LAYER_LEVEL           3  // TODO: use registers to specify level.
+
 module Renderer(clk, reset, reg_values, tile_reg_values,
                 h_pos, v_pos, h_sync, v_sync,
                 pal_clk, pal_addr, pal_data,
@@ -269,8 +271,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
           // without having to go through an intermediate step.
 
           // Draw all layers.  The sprite layer's order relative to the tile
-          // layers is determined by the SPRITE_Z register.
-          if (num_layers_drawn < reg_array[`SPRITE_Z] ||
+          // layers is hardcoded.
+          // TODO: Make sprite layer more dynamic.
+          if (num_layers_drawn < `SPRITE_LAYER_LEVEL ||
               (num_layers_drawn < `NUM_TILE_LAYERS && num_sprites_drawn > 0))
           begin
             if (tile_ctrl0[`TILE_LAYER_ENABLED]) begin
@@ -281,11 +284,10 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
             else
               num_layers_drawn <= num_layers_drawn + 1;
           end
-          // Draw sprites if all layers below it (as determined by SPRITE_Z reg)
-          // have been drawn.
-          else if ((num_layers_drawn == reg_array[`SPRITE_Z] ||
+          // Draw sprites if all layers below it.
+          else if ((num_layers_drawn == `SPRITE_LAYER_LEVEL ||
                     num_layers_drawn == `NUM_TILE_LAYERS) &&
-                   num_sprites_drawn <= 0)
+                   num_sprites_drawn < `NUM_SPRITES)
           begin
             render_state <= `STATE_READ_SPRITE;
             num_sprite_words_read <= 0;
