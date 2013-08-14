@@ -163,9 +163,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire sprite_flip_x;
   wire sprite_flip_y;
   wire sprite_flip_xy;
-  wire [31:0] sprite_pal_index;
-  wire [31:0] sprite_width;
-  wire [31:0] sprite_height;
+  wire [8:0] sprite_pal_index;
+  wire [8:0] sprite_width;
+  wire [8:0] sprite_height;
   SpriteRegDecoder sprite_reg_decoder(
       .reg_values(sprite_reg_values),
 
@@ -190,9 +190,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 
   // The dimensions of the sprite as it is shown on the screen.  Takes diagonal
   // flipping into account.
-  wire [31:0] sprite_render_width = sprite_flip_xy ? sprite_height
+  wire [8:0] sprite_render_width = sprite_flip_xy ? sprite_height
                                                    : sprite_width;
-  wire [31:0] sprite_render_height = sprite_flip_xy ? sprite_width
+  wire [8:0] sprite_render_height = sprite_flip_xy ? sprite_width
                                                     : sprite_height;
 
   // Compute the offset of the sprite on the screen.
@@ -237,12 +237,12 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   reg [`LINE_BUF_ADDR_WIDTH-2:0] render_x;
 
   // For keeping track of what's been rendered.
-  reg [31:0] num_layers_drawn;
-  reg [31:0] num_sprites_drawn;
-  reg [31:0] num_texels_drawn;
-  reg [31:0] num_sprite_words_read;
-  wire [31:0] current_tile_layer = num_layers_drawn;
-  wire [31:0] current_sprite = num_sprites_drawn;
+  reg [4:0] num_layers_drawn;
+  reg [8:0] num_sprites_drawn;
+  reg [15:0] num_texels_drawn;
+  reg [8:0] num_sprite_words_read;
+  wire [4:0] current_tile_layer = num_layers_drawn;
+  wire [8:0] current_sprite = num_sprites_drawn;
   assign spr_addr = {current_sprite, num_sprite_words_read[0]};
 
   reg [`NUM_SPRITE_REGS * `REG_DATA_WIDTH - 1 : 0] sprite_reg_values;
@@ -405,7 +405,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
     sprite_vram_offset <= sprite_data_offset / 2;
   end
   // This assumes that the sprite data is not aligned to any power of two.
-  wire [31:0] sprite_pixel_offset = sprite_y * sprite_width + sprite_x;
+  wire [15:0] sprite_pixel_offset = sprite_y * sprite_width + sprite_x;
 
   // Tile rendering pipeline.
 
@@ -494,7 +494,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                       : {tile_value, tile_y_flipped[3:0], tile_x_flipped[3:1]} +
       tile_vram_offset;
   wire [`VRAM_ADDR_WIDTH-1:0] sprite_vram_addr =
-      sprite_pixel_offset[31:1] + sprite_vram_offset;
+      sprite_pixel_offset[15:1] + sprite_vram_offset;
   assign vram_addr = render_tiles_delayed ? tile_vram_addr : sprite_vram_addr;
 
   wire vram_byte_select;
