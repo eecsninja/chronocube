@@ -33,6 +33,8 @@
 `define DISPLAY_HCOUNT_WIDTH 10
 `define DISPLAY_VCOUNT_WIDTH 10
 
+`define UNMAPPED_MEMORY_VALUE   'hdead
+
 module ChronoCube(
     clk, reset, _int,
     _mpu_rd, _mpu_wr, _mpu_en, _mpu_be, mpu_addr_in, mpu_data_in, mpu_data_out,
@@ -104,7 +106,7 @@ module ChronoCube(
                         (vram_select         ? vram_data_in :
                         (tile_regs_select    ? tile_data_out :
                         (sprite_select       ? sprite_data_out :
-                        {`MPU_DATA_WIDTH {1'b0}}))))));
+                        `UNMAPPED_MEMORY_VALUE))))));
 
   // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
