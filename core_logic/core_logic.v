@@ -26,40 +26,35 @@
 module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                  cop_nss, cop_sck, cop_mosi, cop_miso,
                  ram_nss, ram_sck, ram_mosi, ram_miso,
-                 dev_select, dev_sck, dev_mosi, dev_miso,
-                 usb_nss, sdc_nss, fpga_nss,
+                 usb_nss, sdc_nss, fpga_nss, sys_miso,
                  flash_nss, flash_sck, flash_mosi, flash_miso,
-                 usb_int_in, usb_int_out, usb_gpx_in, usb_gpx_out,
+                 fpga_nce, fpga_nconfig
                  );
   // MCU and Coprocessor interfaces, CPLD = slave.
   input mcu_nss, mcu_sck, mcu_mosi;
   output reg mcu_miso;
 
-  input cop_nss, cop_sck, cop_mosi;
+  input [`DEV_SELECT_WIDTH-1:0] cop_nss;
+  input cop_sck, cop_mosi;
   output reg cop_miso;
 
   // Serial RAM interface, CPLD = master.
   output reg ram_nss, ram_sck, ram_mosi;
   input ram_miso;
 
-  // SPI interface for peripheral devices.
-  input [`DEV_SELECT_WIDTH-1:0] dev_select;
-  output dev_sck, dev_mosi;
-  input dev_miso;
-
   // SPI chip selects for peripheral devices.
-  output usb_nss, sdc_nss, fpga_nss;
+  output usb_nss;
+  output sdc_nss;
+  output fpga_nss;
+  input sys_miso;
 
   // Flash memory interface.
   output flash_nss, flash_sck, flash_mosi;
   input flash_miso;
-
-  // Pass these USB host signals through to the coprocessor.
-  input usb_int_in, usb_gpx_in;
-  output usb_int_out = usb_int_in;
-  output usb_gpx_out = usb_gpx_in;
+  output fpga_nce, fpga_nconfig;
 
   reg bus_mode;
+  wire logic_nss = (cop_nss != `DEV_SELECT_LOGIC);
 
   // SPI access state machine counters.
   reg [`MCU_STATE_WIDTH-1:0] mcu_state;
@@ -79,6 +74,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   always @ (posedge mcu_nss)
     if (mcu_state == `MCU_STATE_OPCODE & mcu_data == `MCU_OP_RESET) begin
+      // TODO: add a mechanism for setting bus mode to coprocessor control.
       bus_mode <= `BUS_MODE_MCU;
     end
 
@@ -106,9 +102,9 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   end
 
   // SPI reset and increment logic for Coprocessor.
-  always @ (posedge cop_nss or negedge cop_sck) begin
+  always @ (posedge logic_nss or negedge cop_sck) begin
     // Reset logic.
-    if (cop_nss) begin
+    if (logic_nss) begin
       // Reset the state when nSS goes low.
       cop_state <= `COP_STATE_OPCODE;
       cop_counter <= 0;
@@ -134,18 +130,18 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   // Coprocessor SPI bus shift register.
   always @ (posedge cop_sck)
-    if (~cop_nss)
+    if (~logic_nss)
       cop_data <= {cop_mosi, cop_data[`BYTE_WIDTH-1:1]};
 
   wire ram_enable =
     ((bus_mode == `BUS_MODE_MCU) & (mcu_state == `MCU_STATE_ACCESS_RAM)) |
-    ((bus_mode == `BUS_MODE_COP) & (dev_select == `COP_STATE_ACCESS_RAM));
+    ((bus_mode == `BUS_MODE_COP) & (cop_nss == `COP_STATE_ACCESS_RAM));
 
   wire [2:0] mcu_spi = {mcu_nss, mcu_sck, mcu_mosi};
-  wire [2:0] cop_spi = {cop_nss, cop_sck, cop_mosi};
+  wire [2:0] cop_spi = {logic_nss, cop_sck, cop_mosi};
 
   // Shared RAM bus interface.
-  always @ (bus_mode or ram_enable or mcu_spi or cop_spi) begin
+  always @ (*) begin
     if (ram_enable) begin
       // If RAM is active, map either the MCU or Coprocessor SPI bus to it.
       if (bus_mode == `BUS_MODE_MCU) begin
@@ -162,8 +158,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   end
 
   // State machine logic for MCU bus.
-  always @ (bus_mode or mcu_state or ram_miso or mcu_data or mcu_counter or
-            cop_status) begin
+  always @ (*) begin
     if (bus_mode == `BUS_MODE_MCU) begin
       case (mcu_state)
       `MCU_STATE_READ_STATUS:
@@ -184,16 +179,9 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   end
 
   // State machine logic for Coprocessor bus.
-  always @ (bus_mode or cop_state or cop_miso or cop_data or cop_counter or
-            mcu_command or dev_select) begin
-    if (dev_select != `DEV_SELECT_NONE) begin
-      case (dev_select)
-      `DEV_SELECT_FLASH:
-        cop_miso <= flash_miso;
-      default:
-        cop_miso <= dev_miso;
-      endcase
-    end else if (bus_mode == `BUS_MODE_COP) begin
+  always @ (*) begin
+    case (cop_nss)
+    `DEV_SELECT_LOGIC:
       case (cop_state)
       `COP_STATE_READ_COMMAND:
         cop_miso <= mcu_command[cop_counter];
@@ -202,31 +190,34 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
       default:
         cop_miso <= cop_data[0];
       endcase
-    end else begin  // RAM SPI bus is in MCU mode.
-      case (cop_state)
-      `COP_STATE_READ_COMMAND:
-        cop_miso <= mcu_command[cop_counter];
-      default:
-        cop_miso <= 'bx;
-      endcase
-    end
+    `DEV_SELECT_SDCARD:
+      cop_miso <= sys_miso;
+    `DEV_SELECT_USB:
+      cop_miso <= sys_miso;
+    `DEV_SELECT_FPGA:
+      cop_miso <= sys_miso;
+    `DEV_SELECT_FLASH:
+      cop_miso <= flash_miso;
+    default:
+      cop_miso <= 'bz;
+    endcase
+
   end
 
-  // Coprocessor-to-device SPI bus interface.
-  wire dev_enable = (dev_select == `DEV_SELECT_SDCARD) |
-                    (dev_select == `DEV_SELECT_FPGA) |
-                    (dev_select == `DEV_SELECT_USB);
-  assign dev_sck = dev_enable & cop_sck;
-  assign dev_mosi = dev_enable & cop_mosi;
-
-  assign sdc_nss = (dev_select == `DEV_SELECT_SDCARD);
-  assign usb_nss = (dev_select == `DEV_SELECT_USB);
-  assign fpga_nss = (dev_select == `DEV_SELECT_FPGA);
-
   // Coprocessor-to-flash SPI bus interface.
-  wire flash_enable = (dev_select == `DEV_SELECT_FLASH);
+  wire flash_enable = (cop_nss == `DEV_SELECT_FLASH);
   assign flash_sck = flash_enable ? cop_sck : 'bz;
   assign flash_mosi = flash_enable ? cop_mosi : 'bz;
   assign flash_nss = flash_enable ? 0 : 'bz;
+
+  // Peripheral device selects.
+  assign usb_nss = (cop_nss != `DEV_SELECT_USB);
+  assign sdc_nss = (cop_nss != `DEV_SELECT_SDCARD);
+  assign fpga_nss = (cop_nss != `DEV_SELECT_FPGA);
+
+  // When writing to flash, set nCE high and nCONFIG low to tri-state the FPGA-
+  // flash serial bus.
+  assign fpga_nce = flash_enable ? 1 : 0;
+  assign fpga_nconfig = flash_enable ? 0 : 1;
 
 endmodule

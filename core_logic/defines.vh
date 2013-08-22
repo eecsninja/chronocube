@@ -58,9 +58,10 @@
 
 // For selecting peripheral devices.
 `define DEV_SELECT_NONE           0
-`define DEV_SELECT_SDCARD         1
-`define DEV_SELECT_USB            2
-`define DEV_SELECT_FPGA           3
-`define DEV_SELECT_FLASH          4
+`define DEV_SELECT_LOGIC          1
+`define DEV_SELECT_SDCARD         2
+`define DEV_SELECT_USB            3
+`define DEV_SELECT_FPGA           4
+`define DEV_SELECT_FLASH          5
 
 `define DEV_SELECT_WIDTH          3

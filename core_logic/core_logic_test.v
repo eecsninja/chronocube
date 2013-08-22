@@ -31,7 +31,8 @@ module CoreLogicTest;
   wire mcu_miso;
 
   // Coprocessor SPI interface
-  reg cop_nss, cop_sck, cop_mosi;
+  reg [`DEV_SELECT_WIDTH-1:0] cop_nss;
+  reg cop_sck, cop_mosi;
   wire cop_miso;
 
   // Serial RAM interface
@@ -52,7 +53,7 @@ module CoreLogicTest;
     mcu_mosi = 0;
     #1 mcu_nss = 1;
 
-    cop_nss = 1;
+    cop_nss = `DEV_SELECT_NONE;
     cop_sck = 0;
     cop_mosi = 0;
 
