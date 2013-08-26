@@ -33,7 +33,7 @@ module CoreLogicTest;
   // Coprocessor SPI interface
   reg [`DEV_SELECT_WIDTH-1:0] cop_nss;
   reg cop_sck, cop_mosi;
-  wire cop_miso;
+  wire cop_miso, cop_nreset;
 
   // Serial RAM interface
   wire ram_nss, ram_sck, ram_mosi;
@@ -42,6 +42,7 @@ module CoreLogicTest;
   // Instantiate the Unit Under Test (UUT).
   CoreLogic core_logic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                        cop_nss, cop_sck, cop_mosi, cop_miso,
+                       cop_nreset,
                        ram_nss, ram_sck, ram_mosi, ram_miso);
 
   // Simulate RAM data out by inverting the current RAM data in.
@@ -59,7 +60,11 @@ module CoreLogicTest;
 
     #10    // Reset the system with a 0.
     mcu_nss = 0;
-    spi_transmit(`MCU_STATE_OPCODE);
+    spi_transmit(`MCU_OP_RESET);
+    spi_transmit(`MCU_OP_RESET);
+    spi_transmit(`MCU_OP_RESET);
+    spi_transmit(0);  // Transmitting other values should not change the state.
+    spi_transmit(0);
     mcu_nss = 1;
 
     #10    // Test sending a dummy byte.
@@ -69,7 +74,7 @@ module CoreLogicTest;
 
     #10    // Test ram access.
     mcu_nss = 0;
-    spi_transmit(`MCU_STATE_ACCESS_RAM);
+    spi_transmit(`MCU_OP_ACCESS_RAM);
     spi_transmit(41);
     spi_transmit(42);
     spi_transmit(50);
@@ -77,7 +82,7 @@ module CoreLogicTest;
 
     #10   // Test command write.
     mcu_nss = 0;
-    spi_transmit(`MCU_STATE_WRITE_COMMAND);
+    spi_transmit(`MCU_OP_WRITE_COMMAND);
     spi_transmit(145);
     spi_transmit(105);
     spi_transmit(219);

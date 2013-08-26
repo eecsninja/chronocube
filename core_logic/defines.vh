@@ -30,14 +30,15 @@
 `define MCU_STATE_WRITE_COMMAND   1
 `define MCU_STATE_READ_STATUS     2
 `define MCU_STATE_ACCESS_RAM      3
+`define MCU_STATE_RESET           7
 
-`define MCU_STATE_WIDTH           2
+`define MCU_STATE_WIDTH           3
 
 // MCU opcodes
-`define MCU_OP_RESET              0
 `define MCU_OP_WRITE_COMMAND      1
 `define MCU_OP_READ_STATUS        2
 `define MCU_OP_ACCESS_RAM         3
+`define MCU_OP_RESET              7
 
 // Coprocessor states
 `define COP_STATE_OPCODE          0

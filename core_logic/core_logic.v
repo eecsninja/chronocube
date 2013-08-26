@@ -25,6 +25,7 @@
 
 module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                  cop_nss, cop_sck, cop_mosi, cop_miso,
+                 cop_nreset,
                  ram_nss, ram_sck, ram_mosi, ram_miso,
                  usb_nss, sdc_nss, fpga_nss, sys_miso,
                  flash_nss, flash_sck, flash_mosi, flash_miso,
@@ -37,6 +38,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   input [`DEV_SELECT_WIDTH-1:0] cop_nss;
   input cop_sck, cop_mosi;
   output reg cop_miso;
+  output cop_nreset;  // Reset signal to coprocessor.
 
   // Serial RAM interface, CPLD = master.
   output reg ram_nss, ram_sck, ram_mosi;
@@ -72,11 +74,17 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   reg [`BYTE_WIDTH-1:0] mcu_command;
   reg [`BYTE_WIDTH-1:0] cop_status;
 
-  always @ (posedge mcu_nss)
-    if (mcu_state == `MCU_STATE_OPCODE & mcu_data == `MCU_OP_RESET) begin
-      // TODO: add a mechanism for setting bus mode to coprocessor control.
-      bus_mode <= `BUS_MODE_MCU;
-    end
+  wire reset = (mcu_state == `MCU_STATE_RESET);
+
+  always @ (posedge reset) begin
+    // TODO: add a mechanism for setting bus mode to coprocessor control.
+    bus_mode <= `BUS_MODE_MCU;
+  end
+
+  // Coprocessor reset logic.
+  // Tri-state the reset signal when inactive because there could be other
+  // sources driving it low (e.g. a button or a programmer device).
+  assign cop_nreset = reset ? 0 : 'bz;
 
   // SPI reset and increment logic for MCU.
   always @ (posedge mcu_nss or negedge mcu_sck) begin
@@ -124,9 +132,12 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
     end
   end
   // MCU SPI bus shift register.
-  always @ (posedge mcu_sck)
-    if (~mcu_nss)
+  always @ (posedge mcu_sck or posedge reset) begin
+    if (reset)
+      mcu_data <= 0;
+    else if (~mcu_nss)
       mcu_data <= {mcu_mosi, mcu_data[`BYTE_WIDTH-1:1]};
+  end
 
   // Coprocessor SPI bus shift register.
   always @ (posedge cop_sck)
