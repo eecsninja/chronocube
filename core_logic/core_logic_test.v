@@ -35,6 +35,10 @@ module CoreLogicTest;
   reg cop_sck, cop_mosi;
   wire cop_miso, cop_nreset;
 
+  // For storing values read from SPI MISO.
+  reg [`BYTE_WIDTH-1:0] mcu_read_value;
+  reg [`BYTE_WIDTH-1:0] cop_read_value;
+
   // Serial RAM interface
   wire ram_nss, ram_sck, ram_mosi;
   wire ram_miso;
@@ -58,40 +62,64 @@ module CoreLogicTest;
     cop_sck = 0;
     cop_mosi = 0;
 
+    mcu_read_value = 0;
+    cop_read_value = 0;
+
     #10    // Reset the system with a 0.
     mcu_nss = 0;
-    spi_transmit(`MCU_OP_RESET);
-    spi_transmit(`MCU_OP_RESET);
-    spi_transmit(`MCU_OP_RESET);
-    spi_transmit(0);  // Transmitting other values should not change the state.
-    spi_transmit(0);
+    mcu_spi_transmit(`MCU_OP_RESET);
+    mcu_spi_transmit(`MCU_OP_RESET);
+    mcu_spi_transmit(`MCU_OP_RESET);
+    mcu_spi_transmit(0);  // Transmitting other values should not change the state.
+    mcu_spi_transmit(0);
     mcu_nss = 1;
 
     #10    // Test sending a dummy byte.
     mcu_nss = 0;
-    spi_transmit(65);
+    mcu_spi_transmit(65);
     mcu_nss = 1;
 
     #10    // Test ram access.
     mcu_nss = 0;
-    spi_transmit(`MCU_OP_ACCESS_RAM);
-    spi_transmit(41);
-    spi_transmit(42);
-    spi_transmit(50);
+    mcu_spi_transmit(`MCU_OP_ACCESS_RAM);
+    mcu_spi_transmit(41);
+    mcu_spi_transmit(42);
+    mcu_spi_transmit(50);
     mcu_nss = 1;
 
     #10   // Test command write.
     mcu_nss = 0;
-    spi_transmit(`MCU_OP_WRITE_COMMAND);
-    spi_transmit(145);
-    spi_transmit(105);
-    spi_transmit(219);
+    mcu_spi_transmit(`MCU_OP_WRITE_COMMAND);
+    mcu_spi_transmit(145);
+    mcu_spi_transmit(105);
+    mcu_spi_transmit(219);
+    mcu_nss = 1;
+
+    #10   // Test coprocessor read.
+    cop_nss = `DEV_SELECT_LOGIC;
+    cop_spi_transmit(`COP_OP_READ_COMMAND);
+    cop_spi_transmit(0);
+    cop_nss = `DEV_SELECT_NONE;
+
+    #10   // Test coprocessor write.
+    cop_nss = `DEV_SELECT_LOGIC;
+    cop_spi_transmit(`COP_OP_WRITE_STATUS);
+    cop_spi_transmit(31);
+    cop_spi_transmit(85);
+    cop_spi_transmit(131);
+    cop_spi_transmit(200);
+    cop_nss = `DEV_SELECT_NONE;
+
+    #10   // Test status read.
+    mcu_nss = 0;
+    mcu_spi_transmit(`MCU_OP_READ_STATUS);
+    mcu_spi_transmit(0);
     mcu_nss = 1;
 
   end
 
-  // Task to send a byte over SPI.
-  task spi_transmit;
+  // Task to send a byte over MCU SPI bus.
+  task mcu_spi_transmit;
     input [`BYTE_WIDTH-1:0] data;
     integer i;
     begin
@@ -102,11 +130,33 @@ module CoreLogicTest;
         mcu_mosi = data[i];
         #1
         mcu_sck = 1;
+        mcu_read_value[i] = mcu_miso;
         #1
         mcu_sck = 0;
       end
       #2
       mcu_sck = 0;
+    end
+  endtask
+
+  // Task to send a byte over Coprocessor SPI bus.
+  task cop_spi_transmit;
+    input [`BYTE_WIDTH-1:0] data;
+    integer i;
+    begin
+      cop_sck = 0;
+      #2
+      cop_sck = 0;
+      for (i = 0; i < `BYTE_WIDTH; i = i + 1) begin
+        cop_mosi = data[i];
+        #1
+        cop_sck = 1;
+        cop_read_value[i] = cop_miso;
+        #1
+        cop_sck = 0;
+      end
+      #2
+      cop_sck = 0;
     end
   endtask
 
