@@ -192,19 +192,14 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   // State machine logic for MCU bus.
   always @ (*) begin
-    if (bus_mode == `BUS_MODE_MCU) begin
+    if (~mcu_nss) begin
+      mcu_miso <= 'bz;
+    end else begin
       case (mcu_state)
       `MCU_STATE_READ_STATUS:
         mcu_miso <= cop_status[mcu_counter];
       `MCU_STATE_ACCESS_RAM:
         mcu_miso <= ram_miso;
-      default:
-        mcu_miso <= mcu_data[0];
-      endcase
-    end else begin  // RAM SPI bus is in Coprocessor mode.
-      case (mcu_state)
-      `MCU_STATE_READ_STATUS:
-        mcu_miso <= cop_status[mcu_counter];
       default:
         mcu_miso <= 'bx;
       endcase
