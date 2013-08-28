@@ -74,6 +74,21 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   reg [`BYTE_WIDTH-1:0] mcu_command;
   reg [`BYTE_WIDTH-1:0] cop_status;
 
+  // Initial register value is 0.
+  initial begin
+    mcu_state = 0;
+    mcu_counter = 0;
+    mcu_command = 0;
+    mcu_data = 0;
+
+    cop_state = 0;
+    cop_counter = 0;
+    cop_status = 0;
+    cop_data = 0;
+
+    bus_mode = 0;
+  end
+
   wire reset = (mcu_state == `MCU_STATE_RESET);
 
   always @ (posedge reset) begin
