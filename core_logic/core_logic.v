@@ -170,7 +170,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   wire ram_enable =
     ((bus_mode == `BUS_MODE_MCU) & (mcu_state == `MCU_STATE_ACCESS_RAM)) |
-    ((bus_mode == `BUS_MODE_COP) & (cop_nss == `COP_STATE_ACCESS_RAM));
+    ((bus_mode == `BUS_MODE_COP) & (cop_state == `COP_STATE_ACCESS_RAM));
 
   wire [2:0] mcu_spi = {mcu_nss, mcu_sck, mcu_mosi};
   wire [2:0] cop_spi = {logic_nss, cop_sck, cop_mosi};
