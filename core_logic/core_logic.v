@@ -38,7 +38,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   input [`DEV_SELECT_WIDTH-1:0] cop_nss;
   input cop_sck, cop_mosi;
   output reg cop_miso;
-  output cop_nreset;  // Reset signal to coprocessor.
+  inout cop_nreset;  // Reset signal to coprocessor.
 
   // Serial RAM interface, CPLD = master.
   output reg ram_nss, ram_sck, ram_mosi;
@@ -215,7 +215,10 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   // State machine logic for Coprocessor bus.
   always @ (*) begin
-    case (cop_nss)
+    // If there's an external reset going on, tri-state the MISO line.
+    if (reset == 0 & cop_nreset == 0)
+      cop_miso <= 'bz;
+    else case (cop_nss)
     `DEV_SELECT_LOGIC:
       case (cop_state)
       `COP_STATE_READ_COMMAND:
