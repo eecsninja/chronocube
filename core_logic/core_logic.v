@@ -91,9 +91,18 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   wire reset = (mcu_state == `MCU_STATE_RESET);
 
-  always @ (posedge reset) begin
-    // TODO: add a mechanism for setting bus mode to coprocessor control.
-    bus_mode <= `BUS_MODE_MCU;
+  // Hand RAM bus control over to coprocessor during an RPC operation.
+  always @ (*) begin
+    case (mcu_command)
+    `MCU_RPC_NONE:
+      bus_mode <= `BUS_MODE_MCU;
+    `MCU_RPC_ISSUED:
+      bus_mode <= `BUS_MODE_COP;
+    `MCU_RPC_WAITING:
+      bus_mode <= `BUS_MODE_COP;
+    default:
+      bus_mode <= `BUS_MODE_COP;
+    endcase
   end
 
   // Coprocessor reset logic.
