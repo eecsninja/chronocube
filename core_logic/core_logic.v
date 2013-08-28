@@ -85,8 +85,6 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
     cop_counter = 0;
     cop_status = 0;
     cop_data = 0;
-
-    bus_mode = 0;
   end
 
   wire reset = (mcu_state == `MCU_STATE_RESET);
@@ -101,7 +99,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
     `MCU_RPC_WAITING:
       bus_mode <= `BUS_MODE_COP;
     default:
-      bus_mode <= `BUS_MODE_COP;
+      bus_mode <= 'bx;
     endcase
   end
 
