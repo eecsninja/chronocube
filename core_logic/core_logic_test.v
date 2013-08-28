@@ -52,7 +52,12 @@ module CoreLogicTest;
   // Simulate RAM data out by inverting the current RAM data in.
   assign ram_miso = ~ram_mosi;
 
+  // Used to provide a visual code reference when looking at waveforms.
+  integer stage;
+
   initial begin
+    stage = 0;
+
     mcu_nss = 0;
     mcu_sck = 0;
     mcu_mosi = 0;
@@ -79,6 +84,8 @@ module CoreLogicTest;
     mcu_spi_transmit(65);
     mcu_nss = 1;
 
+    #10  stage = 1;
+
     #10    // Test ram access.
     mcu_nss = 0;
     mcu_spi_transmit(`MCU_OP_ACCESS_RAM);
@@ -95,6 +102,8 @@ module CoreLogicTest;
     mcu_spi_transmit(219);
     mcu_nss = 1;
 
+    #10  stage = 2;
+
     #10   // Test coprocessor read.
     cop_nss = `DEV_SELECT_LOGIC;
     cop_spi_transmit(`COP_OP_READ_COMMAND);
@@ -110,11 +119,57 @@ module CoreLogicTest;
     cop_spi_transmit(200);
     cop_nss = `DEV_SELECT_NONE;
 
+    #10  stage = 3;
+
     #10   // Test status read.
     mcu_nss = 0;
     mcu_spi_transmit(`MCU_OP_READ_STATUS);
     mcu_spi_transmit(0);
     mcu_nss = 1;
+
+    #10    // Test coprocessor RAM access when bus is in MCU mode.
+    cop_nss = `DEV_SELECT_LOGIC;
+    cop_spi_transmit(`COP_OP_ACCESS_RAM);
+    cop_spi_transmit(1);
+    cop_spi_transmit(2);
+    cop_spi_transmit(4);
+    cop_spi_transmit(8);
+    cop_nss = `DEV_SELECT_NONE;
+
+    #10  stage = 4;
+
+    #10    // Hand over RAM bus to coprocessor.
+    mcu_nss = 0;
+    mcu_spi_transmit(`MCU_OP_WRITE_COMMAND);
+    mcu_spi_transmit(`MCU_RPC_ISSUED);
+    mcu_nss = 1;
+
+    #10    // Test coprocessor RAM access when bus is in coprocessor mode.
+    cop_nss = `DEV_SELECT_LOGIC;
+    cop_spi_transmit(`COP_OP_ACCESS_RAM);
+    cop_spi_transmit(1);
+    cop_spi_transmit(2);
+    cop_spi_transmit(4);
+    cop_spi_transmit(8);
+    cop_nss = `DEV_SELECT_NONE;
+
+    #10  stage = 5;
+
+    #10    // Try coprocessor access with the MCU waiting mode.
+    mcu_nss = 0;
+    mcu_spi_transmit(`MCU_OP_WRITE_COMMAND);
+    mcu_spi_transmit(`MCU_RPC_WAITING);
+    mcu_nss = 1;
+    #10
+    cop_nss = `DEV_SELECT_LOGIC;
+    cop_spi_transmit(`COP_OP_ACCESS_RAM);
+    cop_spi_transmit(1);
+    cop_spi_transmit(2);
+    cop_spi_transmit(4);
+    cop_spi_transmit(8);
+    cop_nss = `DEV_SELECT_NONE;
+
+    #10  stage = 6;
 
   end
 
