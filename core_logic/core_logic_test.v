@@ -31,7 +31,7 @@ module CoreLogicTest;
   wire mcu_miso;
 
   // Coprocessor SPI interface
-  reg [`DEV_SELECT_WIDTH-1:0] cop_nss;
+  reg [`DEV_SELECT_WIDTH-1:0] cop_select;
   reg cop_sck, cop_mosi;
   wire cop_miso, cop_nreset;
 
@@ -45,7 +45,7 @@ module CoreLogicTest;
 
   // Instantiate the Unit Under Test (UUT).
   CoreLogic core_logic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
-                       cop_nss, cop_sck, cop_mosi, cop_miso,
+                       cop_select, cop_sck, cop_mosi, cop_miso,
                        cop_nreset,
                        ram_nss, ram_sck, ram_mosi, ram_miso);
 
@@ -63,7 +63,7 @@ module CoreLogicTest;
     mcu_mosi = 0;
     #1 mcu_nss = 1;
 
-    cop_nss = `DEV_SELECT_NONE;
+    cop_select = `DEV_SELECT_NONE;
     cop_sck = 0;
     cop_mosi = 0;
 
@@ -105,19 +105,19 @@ module CoreLogicTest;
     #10  stage = 2;
 
     #10   // Test coprocessor read.
-    cop_nss = `DEV_SELECT_LOGIC;
+    cop_select = `DEV_SELECT_LOGIC;
     cop_spi_transmit(`COP_OP_READ_COMMAND);
     cop_spi_transmit(0);
-    cop_nss = `DEV_SELECT_NONE;
+    cop_select = `DEV_SELECT_NONE;
 
     #10   // Test coprocessor write.
-    cop_nss = `DEV_SELECT_LOGIC;
+    cop_select = `DEV_SELECT_LOGIC;
     cop_spi_transmit(`COP_OP_WRITE_STATUS);
     cop_spi_transmit(31);
     cop_spi_transmit(85);
     cop_spi_transmit(131);
     cop_spi_transmit(200);
-    cop_nss = `DEV_SELECT_NONE;
+    cop_select = `DEV_SELECT_NONE;
 
     #10  stage = 3;
 
@@ -128,13 +128,13 @@ module CoreLogicTest;
     mcu_nss = 1;
 
     #10    // Test coprocessor RAM access when bus is in MCU mode.
-    cop_nss = `DEV_SELECT_LOGIC;
+    cop_select = `DEV_SELECT_LOGIC;
     cop_spi_transmit(`COP_OP_ACCESS_RAM);
     cop_spi_transmit(1);
     cop_spi_transmit(2);
     cop_spi_transmit(4);
     cop_spi_transmit(8);
-    cop_nss = `DEV_SELECT_NONE;
+    cop_select = `DEV_SELECT_NONE;
 
     #10  stage = 4;
 
@@ -144,37 +144,37 @@ module CoreLogicTest;
     mcu_spi_transmit(`RPC_CMD_NONE);
     mcu_nss = 1;
 
-    cop_nss = `DEV_SELECT_LOGIC;
+    cop_select = `DEV_SELECT_LOGIC;
     mcu_spi_transmit(`COP_OP_WRITE_STATUS);
     mcu_spi_transmit(`RPC_CMD_NONE + 1);
     mcu_nss = `DEV_SELECT_NONE;
 
     #10    // Test coprocessor RAM access when bus is in coprocessor mode.
-    cop_nss = `DEV_SELECT_LOGIC;
+    cop_select = `DEV_SELECT_LOGIC;
     cop_spi_transmit(`COP_OP_ACCESS_RAM);
     cop_spi_transmit(1);
     cop_spi_transmit(2);
     cop_spi_transmit(4);
     cop_spi_transmit(8);
-    cop_nss = `DEV_SELECT_NONE;
+    cop_select = `DEV_SELECT_NONE;
 
     #10  stage = 5;
 
     #10    // Try coprocessor RAM access with another command value.
     mcu_nss = 0;
-    cop_nss = `DEV_SELECT_LOGIC;
+    cop_select = `DEV_SELECT_LOGIC;
     mcu_spi_transmit(`COP_OP_WRITE_STATUS);
     mcu_spi_transmit(~`RPC_CMD_NONE);
     mcu_nss = `DEV_SELECT_NONE;
     mcu_nss = 1;
     #10
-    cop_nss = `DEV_SELECT_LOGIC;
+    cop_select = `DEV_SELECT_LOGIC;
     cop_spi_transmit(`COP_OP_ACCESS_RAM);
     cop_spi_transmit(1);
     cop_spi_transmit(2);
     cop_spi_transmit(4);
     cop_spi_transmit(8);
-    cop_nss = `DEV_SELECT_NONE;
+    cop_select = `DEV_SELECT_NONE;
 
     #10  stage = 6;
 

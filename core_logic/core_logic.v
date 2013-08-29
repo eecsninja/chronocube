@@ -24,7 +24,7 @@
 `include "defines.vh"
 
 module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
-                 cop_nss, cop_sck, cop_mosi, cop_miso,
+                 cop_select, cop_sck, cop_mosi, cop_miso,
                  cop_nreset,
                  ram_nss, ram_sck, ram_mosi, ram_miso,
                  usb_nss, sdc_nss, fpga_nss, sys_miso,
@@ -35,7 +35,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   input mcu_nss, mcu_sck, mcu_mosi;
   output reg mcu_miso;
 
-  input [`DEV_SELECT_WIDTH-1:0] cop_nss;
+  input [`DEV_SELECT_WIDTH-1:0] cop_select;
   input cop_sck, cop_mosi;
   output reg cop_miso;
   inout cop_nreset;  // Reset signal to coprocessor.
@@ -56,7 +56,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   output fpga_nce, fpga_nconfig;
 
   reg bus_mode;
-  wire logic_nss = (cop_nss != `DEV_SELECT_LOGIC);
+  wire logic_nss = (cop_select != `DEV_SELECT_LOGIC);
 
   // SPI access state machine counters.
   reg [`MCU_STATE_WIDTH-1:0] mcu_state;
@@ -205,7 +205,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
     // If there's an external reset going on, tri-state the MISO line.
     if (reset == 0 & cop_nreset == 0)
       cop_miso <= 'bz;
-    else case (cop_nss)
+    else case (cop_select)
     `DEV_SELECT_LOGIC:
       case (cop_state)
       `COP_STATE_READ_COMMAND:
@@ -230,15 +230,15 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   end
 
   // Coprocessor-to-flash SPI bus interface.
-  wire flash_enable = (cop_nss == `DEV_SELECT_FLASH);
+  wire flash_enable = (cop_select == `DEV_SELECT_FLASH);
   assign flash_sck = flash_enable ? cop_sck : 'bz;
   assign flash_mosi = flash_enable ? cop_mosi : 'bz;
   assign flash_nss = flash_enable ? 0 : 'bz;
 
   // Peripheral device selects.
-  assign usb_nss = (cop_nss != `DEV_SELECT_USB);
-  assign sdc_nss = (cop_nss != `DEV_SELECT_SDCARD);
-  assign fpga_nss = (cop_nss != `DEV_SELECT_FPGA);
+  assign usb_nss = (cop_select != `DEV_SELECT_USB);
+  assign sdc_nss = (cop_select != `DEV_SELECT_SDCARD);
+  assign fpga_nss = (cop_select != `DEV_SELECT_FPGA);
 
   // When writing to flash, set nCE high and nCONFIG low to tri-state the FPGA-
   // flash serial bus.
