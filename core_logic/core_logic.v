@@ -186,7 +186,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   // State machine logic for MCU bus.
   always @ (*) begin
-    if (~mcu_nss) begin
+    if (mcu_nss) begin
       mcu_miso <= 'bz;
     end else begin
       case (mcu_state)
