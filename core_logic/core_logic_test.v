@@ -43,11 +43,23 @@ module CoreLogicTest;
   wire ram_nss, ram_sck, ram_mosi;
   wire ram_miso;
 
+  // Device selects.
+  wire usb_nss, sdc_nss, fpga_nss;
+  // Serial data from devices.
+  wire dev_miso;
+
+  // FPGA reprogram signals.
+  wire fpga_nce, fpga_config;   // FPGA configuration controls.
+  wire flash_nss, flash_sck, flash_mosi, flash_miso;  // Config flash SPI bus.
+
   // Instantiate the Unit Under Test (UUT).
   CoreLogic core_logic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                        cop_select, cop_sck, cop_mosi, cop_miso,
                        cop_nreset,
-                       ram_nss, ram_sck, ram_mosi, ram_miso);
+                       ram_nss, ram_sck, ram_mosi, ram_miso,
+                       usb_nss, sdc_nss, fpga_nss, dev_miso,
+                       flash_nss, flash_sck, flash_mosi, flash_miso,
+                       fpga_nce, fpga_nconfig);
 
   // Simulate RAM data out by inverting the current RAM data in.
   assign ram_miso = ~ram_mosi;
@@ -177,6 +189,15 @@ module CoreLogicTest;
     cop_select = `DEV_SELECT_NONE;
 
     #10  stage = 6;
+
+    // Check SPI device select.
+    #10    cop_select = `DEV_SELECT_SDCARD;
+    #10    cop_select = `DEV_SELECT_USB;
+    #10    cop_select = `DEV_SELECT_FPGA;
+    #10    cop_select = `DEV_SELECT_FLASH;
+    #10    cop_select = `DEV_SELECT_NONE;
+
+    #10  stage = 7;
 
   end
 
