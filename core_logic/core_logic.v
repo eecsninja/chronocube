@@ -27,7 +27,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
                  cop_select, cop_sck, cop_mosi, cop_miso,
                  cop_nreset,
                  ram_nss, ram_sck, ram_mosi, ram_miso,
-                 usb_nss, sdc_nss, fpga_nss, sys_miso,
+                 usb_nss, sdc_nss, fpga_nss, dev_miso,
                  flash_nss, flash_sck, flash_mosi, flash_miso,
                  fpga_nce, fpga_nconfig
                  );
@@ -48,7 +48,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   output usb_nss;
   output sdc_nss;
   output fpga_nss;
-  input sys_miso;
+  input dev_miso;
 
   // Flash memory interface.
   output flash_nss, flash_sck, flash_mosi;
@@ -216,11 +216,11 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
         cop_miso <= cop_data[0];
       endcase
     `DEV_SELECT_SDCARD:
-      cop_miso <= sys_miso;
+      cop_miso <= dev_miso;
     `DEV_SELECT_USB:
-      cop_miso <= sys_miso;
+      cop_miso <= dev_miso;
     `DEV_SELECT_FPGA:
-      cop_miso <= sys_miso;
+      cop_miso <= dev_miso;
     `DEV_SELECT_FLASH:
       cop_miso <= flash_miso;
     default:
