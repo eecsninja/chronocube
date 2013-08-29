@@ -67,13 +67,4 @@
 
 `define DEV_SELECT_WIDTH          3
 
-// RPC status codes for MCU and coprocessor.
-
-`define MCU_RPC_NONE              0
-`define MCU_RPC_ISSUED            1
-`define MCU_RPC_WAITING           2
-
-`define COP_RPC_POWER_ON          0
-`define COP_RPC_READY             1
-`define COP_RPC_RECEIVED          2
-`define COP_RPC_DONE              3
+`define RPC_CMD_NONE              0   // Indicates no RPC command was issued.

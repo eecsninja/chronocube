@@ -141,8 +141,13 @@ module CoreLogicTest;
     #10    // Hand over RAM bus to coprocessor.
     mcu_nss = 0;
     mcu_spi_transmit(`MCU_OP_WRITE_COMMAND);
-    mcu_spi_transmit(`MCU_RPC_ISSUED);
+    mcu_spi_transmit(`RPC_CMD_NONE);
     mcu_nss = 1;
+
+    cop_nss = `DEV_SELECT_LOGIC;
+    mcu_spi_transmit(`COP_OP_WRITE_STATUS);
+    mcu_spi_transmit(`RPC_CMD_NONE + 1);
+    mcu_nss = `DEV_SELECT_NONE;
 
     #10    // Test coprocessor RAM access when bus is in coprocessor mode.
     cop_nss = `DEV_SELECT_LOGIC;
@@ -155,10 +160,12 @@ module CoreLogicTest;
 
     #10  stage = 5;
 
-    #10    // Try coprocessor access with the MCU waiting mode.
+    #10    // Try coprocessor RAM access with another command value.
     mcu_nss = 0;
-    mcu_spi_transmit(`MCU_OP_WRITE_COMMAND);
-    mcu_spi_transmit(`MCU_RPC_WAITING);
+    cop_nss = `DEV_SELECT_LOGIC;
+    mcu_spi_transmit(`COP_OP_WRITE_STATUS);
+    mcu_spi_transmit(~`RPC_CMD_NONE);
+    mcu_nss = `DEV_SELECT_NONE;
     mcu_nss = 1;
     #10
     cop_nss = `DEV_SELECT_LOGIC;

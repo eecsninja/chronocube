@@ -91,16 +91,10 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
 
   // Hand RAM bus control over to coprocessor during an RPC operation.
   always @ (*) begin
-    case (mcu_command)
-    `MCU_RPC_NONE:
+    if ((mcu_command == `RPC_CMD_NONE) & (cop_status != `RPC_CMD_NONE))
+      bus_mode <= `BUS_MODE_COP;
+    else
       bus_mode <= `BUS_MODE_MCU;
-    `MCU_RPC_ISSUED:
-      bus_mode <= `BUS_MODE_COP;
-    `MCU_RPC_WAITING:
-      bus_mode <= `BUS_MODE_COP;
-    default:
-      bus_mode <= 'bx;
-    endcase
   end
 
   // Coprocessor reset logic.
