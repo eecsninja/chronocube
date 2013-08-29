@@ -241,8 +241,11 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
   assign fpga_nss = (cop_select != `DEV_SELECT_FPGA);
 
   // When writing to flash, set nCE high and nCONFIG low to tri-state the FPGA-
-  // flash serial bus.
-  assign fpga_nce = flash_enable ? 1 : 0;
-  assign fpga_nconfig = flash_enable ? 0 : 1;
+  // flash serial bus. Otherwise, tri-state these signals to avoid interfering
+  // with the bus.
+  // TODO: Add an external switch to prevent spurious signals from modifying
+  // the FPGA configuration flash.
+  assign fpga_nce = flash_enable ? 1 : 'bz;
+  assign fpga_nconfig = flash_enable ? 0 : 'bz;
 
 endmodule
