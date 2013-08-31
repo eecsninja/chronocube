@@ -157,9 +157,9 @@ module CoreLogicTest;
     mcu_nss = 1;
 
     cop_select = `DEV_SELECT_LOGIC;
-    mcu_spi_transmit(`COP_OP_WRITE_STATUS);
-    mcu_spi_transmit(`RPC_CMD_NONE + 1);
-    mcu_nss = `DEV_SELECT_NONE;
+    cop_spi_transmit(`COP_OP_WRITE_STATUS);
+    cop_spi_transmit(`RPC_CMD_NONE + 1);
+    cop_select = `DEV_SELECT_NONE;
 
     #10    // Test coprocessor RAM access when bus is in coprocessor mode.
     cop_select = `DEV_SELECT_LOGIC;
@@ -210,10 +210,10 @@ module CoreLogicTest;
       #2
       mcu_sck = 0;
       for (i = 0; i < `BYTE_WIDTH; i = i + 1) begin
-        mcu_mosi = data[i];
+        mcu_mosi = data[`BYTE_WIDTH - 1 - i];
         #1
         mcu_sck = 1;
-        mcu_read_value[i] = mcu_miso;
+        mcu_read_value = { mcu_read_value[`BYTE_WIDTH-2:0], mcu_miso };
         #1
         mcu_sck = 0;
       end
@@ -231,10 +231,10 @@ module CoreLogicTest;
       #2
       cop_sck = 0;
       for (i = 0; i < `BYTE_WIDTH; i = i + 1) begin
-        cop_mosi = data[i];
+        cop_mosi = data[`BYTE_WIDTH - 1 - i];
         #1
         cop_sck = 1;
-        cop_read_value[i] = cop_miso;
+        cop_read_value = { cop_read_value[`BYTE_WIDTH-2:0], cop_miso };
         #1
         cop_sck = 0;
       end

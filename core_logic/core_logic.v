@@ -152,13 +152,13 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
     if (reset)
       mcu_data <= 0;
     else if (~mcu_nss)
-      mcu_data <= {mcu_mosi, mcu_data[`BYTE_WIDTH-1:1]};
+      mcu_data <= {mcu_data[`BYTE_WIDTH-2:0], mcu_mosi};
   end
 
   // Coprocessor SPI bus shift register.
   always @ (posedge cop_sck)
     if (~logic_nss)
-      cop_data <= {cop_mosi, cop_data[`BYTE_WIDTH-1:1]};
+      cop_data <= {cop_data[`BYTE_WIDTH-2:0], cop_mosi};
 
   wire ram_enable =
     ((bus_mode == `BUS_MODE_MCU) & (mcu_state == `MCU_STATE_ACCESS_RAM)) |
@@ -191,7 +191,7 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
     end else begin
       case (mcu_state)
       `MCU_STATE_READ_STATUS:
-        mcu_miso <= cop_status[mcu_counter];
+        mcu_miso <= cop_status[`BYTE_WIDTH - 1 - mcu_counter];
       `MCU_STATE_ACCESS_RAM:
         mcu_miso <= ram_miso;
       default:
@@ -209,11 +209,11 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
     `DEV_SELECT_LOGIC:
       case (cop_state)
       `COP_STATE_READ_COMMAND:
-        cop_miso <= mcu_command[cop_counter];
+        cop_miso <= mcu_command[`BYTE_WIDTH - 1 - cop_counter];
       `COP_STATE_ACCESS_RAM:
         cop_miso <= ram_miso;
       default:
-        cop_miso <= cop_data[0];
+        cop_miso <= cop_data[`BYTE_WIDTH - 1];
       endcase
     `DEV_SELECT_SDCARD:
       cop_miso <= dev_miso;
