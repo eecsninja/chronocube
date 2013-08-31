@@ -174,7 +174,6 @@ module CoreLogicTest;
 
     #10    // Try coprocessor RAM access with another command value.
     mcu_nss = 0;
-    cop_select = `DEV_SELECT_LOGIC;
     mcu_spi_transmit(`COP_OP_WRITE_STATUS);
     mcu_spi_transmit(~`RPC_CMD_NONE);
     mcu_nss = `DEV_SELECT_NONE;

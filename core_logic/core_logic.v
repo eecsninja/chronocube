@@ -194,6 +194,8 @@ module CoreLogic(mcu_nss, mcu_sck, mcu_mosi, mcu_miso,
         mcu_miso <= cop_status[`BYTE_WIDTH - 1 - mcu_counter];
       `MCU_STATE_ACCESS_RAM:
         mcu_miso <= ram_miso;
+      `MCU_STATE_WRITE_COMMAND:
+        mcu_miso <= mcu_command[`BYTE_WIDTH - 1 - mcu_counter];
       default:
         mcu_miso <= 'bx;
       endcase
