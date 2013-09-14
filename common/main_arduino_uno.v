@@ -31,6 +31,7 @@
 module MainArduinoUno(
     clk, _reset,
     _select, sck, mosi, miso,
+    _alt_select, alt_sck, alt_mosi, alt_miso,
     _vram_en, _vram_rd, _vram_wr, _vram_be, vram_addr, vram_data,
     vsync, hsync, rgb);
 
@@ -40,6 +41,10 @@ module MainArduinoUno(
   // SPI memory interface.
   input _select, sck, mosi;
   output miso;
+
+  // Alternate SPI memory interface.
+  input _alt_select, alt_sck, alt_mosi;
+  output alt_miso;
 
   // To VRAM.
   output _vram_en;          // Enable access (active low)
@@ -54,6 +59,12 @@ module MainArduinoUno(
   output hsync;
   output [`RGB_COLOR_DEPTH-1:0] rgb;
 
+  // Multiplex two SPI buses with the SPI memory interface.
+  wire mem_nss, memsck, mem_mosi, mem_miso;
+  SPIBus spi_bus(_select, sck, mosi, miso,
+                 _alt_select, alt_sck, alt_mosi, alt_miso,
+                 mem_nss, mem_sck, mem_mosi, mem_miso);
+
   //////////////////////////////////////////////////////////////////////
   // Internal memory bus conversion.
   // Convert 8-bit data bus to a full 16-bit data bus.
@@ -67,7 +78,7 @@ module MainArduinoUno(
   wire spi_rd, spi_wr;
 
   SPIMemory spi_memory(
-      ._select(_select), .sck(sck), .mosi(mosi), .miso(miso),
+      ._select(mem_nss), .sck(mem_sck), .mosi(mem_mosi), .miso(mem_miso),
       .addr(spi_addr), .data_in(spi_data_in), .data_out(spi_data_out),
       .rd(spi_rd), .wr(spi_wr));
 
