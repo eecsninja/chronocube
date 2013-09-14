@@ -27,13 +27,13 @@
 `define BYTE_WIDTH                8  // Number of bits per byte.
 `define BYTE_COUNTER_WIDTH        3  // Number of bits to count bits per byte.
 
-`define SPI_STATE_WIDTH           2
+// SPI memory access states
+`define SPI_MEM_STATE_ADDR_H      0  // Clocking in high byte of address.
+`define SPI_MEM_STATE_ADDR_L      1  // Clocking in low byte of address.
+`define SPI_MEM_STATE_DATA_WRITE  2  // Clocking in byte to be written.
+`define SPI_MEM_STATE_DATA_READ   3  // Clocking out byte that was read.
 
-// SPI access states.
-`define SPI_STATE_ADDR_H          0  // Clocking in high byte of address.
-`define SPI_STATE_ADDR_L          1  // Clocking in low byte of address.
-`define SPI_STATE_DATA_WRITE      2  // Clocking in byte to be written.
-`define SPI_STATE_DATA_READ       3  // Clocking out byte that was read.
+`define SPI_MEM_STATE_WIDTH       2
 
 // Memory address and data bus sizes.
 `define SPI_MEM_ADDR_WIDTH        (2 * `BYTE_WIDTH)

@@ -53,10 +53,10 @@ module SPIMemory(_select, sck, mosi, miso,
       spi_data <= {spi_data[`BYTE_WIDTH-2:0], mosi};
 
   // Read at the start of a byte, before the rising edge of SCK.
-  assign rd = (spi_counter == 0) & (spi_state == `SPI_STATE_DATA_READ);
+  assign rd = (spi_counter == 0) & (spi_state == `SPI_MEM_STATE_DATA_READ);
   // Write at the end of a byte.
   assign wr = (spi_counter == `BYTE_WIDTH-1) &
-              (spi_state == `SPI_STATE_DATA_WRITE);
+              (spi_state == `SPI_MEM_STATE_DATA_WRITE);
 
   // Connect memory address and data buses.
   assign addr = {spi_addr_1, spi_addr_0};
@@ -73,9 +73,9 @@ module SPIMemory(_select, sck, mosi, miso,
                                    : read_data[`BYTE_WIDTH - 1 - spi_counter];
 
   // SPI memory interface state machine.
-  reg [`SPI_STATE_WIDTH-1:0] spi_state;
+  reg [`SPI_MEM_STATE_WIDTH-1:0] spi_state;
   // Previous state is used to detect transition from address to data bytes.
-  reg [`SPI_STATE_WIDTH-1:0] spi_prev_state;
+  reg [`SPI_MEM_STATE_WIDTH-1:0] spi_prev_state;
 
   // This bit indicates that the current operation is a write operation.
   reg write_op;
@@ -84,28 +84,28 @@ module SPIMemory(_select, sck, mosi, miso,
     // Reset logic.
     if (_select) begin
       // Reset the state when nSS goes low.
-      spi_state <= `SPI_STATE_ADDR_H;
-      spi_prev_state <= `SPI_STATE_ADDR_H;
+      spi_state <= `SPI_MEM_STATE_ADDR_H;
+      spi_prev_state <= `SPI_MEM_STATE_ADDR_H;
       spi_counter <= 1'b0;
       write_op <= 0;
     end else begin
       // Falling edge of SCK means increment to next bit.
       if (spi_counter == `BYTE_WIDTH - 1) begin
         case (spi_state)
-        `SPI_STATE_ADDR_H:
+        `SPI_MEM_STATE_ADDR_H:
           begin
-            spi_state <= `SPI_STATE_ADDR_L;
+            spi_state <= `SPI_MEM_STATE_ADDR_L;
             // Mask out the highest bit, which indicates read or write.
             spi_addr_1 <= {1'b0, spi_data[`BYTE_WIDTH-2:0]};
             write_op <= spi_data[`BYTE_WIDTH-1];
           end
-        `SPI_STATE_ADDR_L:
+        `SPI_MEM_STATE_ADDR_L:
           begin
-            spi_state <= write_op ? `SPI_STATE_DATA_WRITE
-                                  : `SPI_STATE_DATA_READ;
+            spi_state <= write_op ? `SPI_MEM_STATE_DATA_WRITE
+                                  : `SPI_MEM_STATE_DATA_READ;
             spi_addr_0 <= spi_data;
           end
-        `SPI_STATE_DATA_READ:
+        `SPI_MEM_STATE_DATA_READ:
           begin
             // Increment the address after writing a byte.  Be sure to mask out
             // the highest bit.
@@ -117,7 +117,7 @@ module SPIMemory(_select, sck, mosi, miso,
 
         // Save the previous state.
         spi_prev_state <= spi_state;
-      end else if (spi_counter == 0 & spi_state == `SPI_STATE_DATA_WRITE &
+      end else if (spi_counter == 0 & spi_state == `SPI_MEM_STATE_DATA_WRITE &
                    spi_prev_state == spi_state) begin
         // Increment the address after writing a byte.  Be sure to mask out
         // the highest bit.
