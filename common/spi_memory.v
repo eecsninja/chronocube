@@ -50,7 +50,7 @@ module SPIMemory(_select, sck, mosi, miso,
   // Read in data from MOSI.
   always @ (posedge sck)
     if (~_select)
-      spi_data <= {mosi, spi_data[`BYTE_WIDTH-1:1]};
+      spi_data <= {spi_data[`BYTE_WIDTH-2:0], mosi};
 
   // Read at the start of a byte, before the rising edge of SCK.
   assign rd = (spi_counter == 0) & (spi_state == `SPI_STATE_DATA_READ);
@@ -69,35 +69,41 @@ module SPIMemory(_select, sck, mosi, miso,
       read_data <= data_in;
 
   // Clock out data to MISO.
-  assign miso = (spi_counter == 0) ? data_in[0] : read_data[spi_counter];
+  assign miso = (spi_counter == 0) ? data_in[`BYTE_WIDTH - 1]
+                                   : read_data[`BYTE_WIDTH - 1 - spi_counter];
 
   // SPI memory interface state machine.
   reg [`SPI_STATE_WIDTH-1:0] spi_state;
   // Previous state is used to detect transition from address to data bytes.
   reg [`SPI_STATE_WIDTH-1:0] spi_prev_state;
 
+  // This bit indicates that the current operation is a write operation.
+  reg write_op;
+
   always @ (posedge _select or negedge sck) begin
     // Reset logic.
     if (_select) begin
       // Reset the state when nSS goes low.
-      spi_state <= `SPI_STATE_ADDR_0;
-      spi_prev_state <= `SPI_STATE_ADDR_0;
+      spi_state <= `SPI_STATE_ADDR_H;
+      spi_prev_state <= `SPI_STATE_ADDR_H;
       spi_counter <= 1'b0;
+      write_op <= 0;
     end else begin
       // Falling edge of SCK means increment to next bit.
       if (spi_counter == `BYTE_WIDTH - 1) begin
         case (spi_state)
-        `SPI_STATE_ADDR_0:
+        `SPI_STATE_ADDR_H:
           begin
-            spi_state <= `SPI_STATE_ADDR_1;
-            spi_addr_0 <= spi_data;
-          end
-        `SPI_STATE_ADDR_1:
-          begin
-            spi_state <= spi_data[`BYTE_WIDTH-1] ? `SPI_STATE_DATA_WRITE
-                                                 : `SPI_STATE_DATA_READ;
-            // Mask out the highest bit, which indicates a read or write access.
+            spi_state <= `SPI_STATE_ADDR_L;
+            // Mask out the highest bit, which indicates read or write.
             spi_addr_1 <= {1'b0, spi_data[`BYTE_WIDTH-2:0]};
+            write_op <= spi_data[`BYTE_WIDTH-1];
+          end
+        `SPI_STATE_ADDR_L:
+          begin
+            spi_state <= write_op ? `SPI_STATE_DATA_WRITE
+                                  : `SPI_STATE_DATA_READ;
+            spi_addr_0 <= spi_data;
           end
         `SPI_STATE_DATA_READ:
           begin

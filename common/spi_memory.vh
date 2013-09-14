@@ -30,8 +30,8 @@
 `define SPI_STATE_WIDTH           2
 
 // SPI access states.
-`define SPI_STATE_ADDR_0          0  // Clocking in lower byte of address.
-`define SPI_STATE_ADDR_1          1  // Clocking in upper byte of address.
+`define SPI_STATE_ADDR_H          0  // Clocking in high byte of address.
+`define SPI_STATE_ADDR_L          1  // Clocking in low byte of address.
 `define SPI_STATE_DATA_WRITE      2  // Clocking in byte to be written.
 `define SPI_STATE_DATA_READ       3  // Clocking out byte that was read.
 
