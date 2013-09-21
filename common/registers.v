@@ -78,7 +78,7 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
   input [1:0] be;   // Byte enable
   input [ADDR_WIDTH-1:0] addr;      // Address bus
   input [DATA_WIDTH-1:0] data_in;   // Data in bus
-  output [DATA_WIDTH-1:0] data_out; // Data out bus
+  output reg [DATA_WIDTH-1:0] data_out; // Data out bus
 
   // Port for obtaining read-only register values.
   input [DATA_WIDTH * NUM_REGS - 1 : 0] values_in;
@@ -149,6 +149,8 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
   endgenerate
 
   // Memory bus data read.
-  assign data_out = q_array[addr];
+  wire data_out_latch = en & rd;
+  always @ (posedge data_out_latch)
+    data_out <= q_array[addr];
 
 endmodule
