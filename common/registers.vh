@@ -32,6 +32,8 @@
 `define OUTPUT_CTRL          'h06
 `define MODE_CTRL            'h07
 
+`define SPRITE_Z             'h08
+
 `define SCROLL_X             'h0e
 `define SCROLL_Y             'h0f
 

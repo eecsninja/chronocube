@@ -100,6 +100,8 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
         `OUTPUT_CTRL:   register_type = `REG_RW;
         `MODE_CTRL:     register_type = `REG_RW;
 
+        `SPRITE_Z:      register_type = `REG_RW;
+
         `SCROLL_X:      register_type = `REG_RW;
         `SCROLL_Y:      register_type = `REG_RW;
 
