@@ -1,7 +1,19 @@
 Release history
 ===============
 
-0.1.0
+0.2.0  --   2 Oct 2013
+    First DuinoCube release.
+    - Added Arduino Uno module.
+        = Uses SPI bus.
+        = Has dual-port multiplexed SPI buses.
+        = Internally still the same as the pre-Arduino ChronoCube core.
+    - Updated registers to match latest design doc.
+    - Sprite Z-level support.  Not well-tested.
+    - Unmapped memory reads as "0xdead".
+    - Reduced bus sizes of various local buses in renderer, to reduce logic
+      requirements.
+
+0.1.0  --  12 May 2013
     Initial release version.  Has the following features:
 
     - 320x240 video mode, 8 bits per pixel.
