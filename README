@@ -1,10 +1,10 @@
-ChronoCube
-==========
+DuinoCube
+=========
 
 An FPGA-based design for generating 2D video game graphics.
 
 The current HDL code is ready to be built for Altera Cyclone IV E FPGA's.  For
 other Altera FPGA's and FPGA's of other brands, some extra work may be necessary
-to build ChronoCube.
+to build DuinoCube.
 
-ChronoCube was developed on a Cyclone IV EP4CE6 FPGA.
+DuinoCube was developed on a Cyclone IV EP4CE6 FPGA.
