@@ -37,7 +37,7 @@
 
 module ChronoCube(
     clk, reset, _int,
-    _mpu_rd, _mpu_wr, _mpu_en, _mpu_be, mpu_addr_in, mpu_data_in, mpu_data_out,
+    mpu_rd, mpu_wr, mpu_en, mpu_be, mpu_addr_in, mpu_data_in, mpu_data_out,
     vram_en, vram_rd, vram_wr, vram_be, vram_addr, vram_data_in, vram_data_out,
     vga_vsync, vga_hsync, vga_rgb);
 
@@ -47,10 +47,10 @@ module ChronoCube(
   input _int;               // Interrupt (active low)
 
   // MPU-side interface
-  input _mpu_en;            // Enable access (active low)
-  input _mpu_rd;            // Read enable (active low)
-  input _mpu_wr;            // Write enable (active low)
-  input [1:0] _mpu_be;      // Byte enable (active low)
+  input mpu_en;             // Enable access
+  input mpu_rd;             // Read enable
+  input mpu_wr;             // Write enable
+  input [1:0] mpu_be;       // Byte enable
   input [`MPU_ADDR_WIDTH-1:0] mpu_addr_in;        // Address bus
   input [`MPU_DATA_WIDTH-1:0] mpu_data_in;        // Data-in bus
   output [`MPU_DATA_WIDTH-1:0] mpu_data_out;      // Data-out bus
@@ -96,7 +96,7 @@ module ChronoCube(
 
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
-  assign mpu_data_out = (_mpu_rd | _mpu_en) ? {`MPU_DATA_WIDTH {1'b0}} :
+  assign mpu_data_out = (~mpu_rd | ~mpu_en)  ? {`MPU_DATA_WIDTH {1'b0}} :
                         (palette_select      ? pal_data_out :
                         (map_select          ? map_data_out :
                         (main_reg_select     ? reg_data_out :
@@ -112,9 +112,9 @@ module ChronoCube(
   wire pal_rd = palette_select & ~_mpu_rd;
 
   wire [`NUM_PAL_CHANNELS-1:0] pal_byte_en;
-  assign pal_byte_en[0] = (mpu_addr[0] == 0) & ~_mpu_be[0];
-  assign pal_byte_en[1] = (mpu_addr[0] == 0) & ~_mpu_be[1];
-  assign pal_byte_en[2] = (mpu_addr[0] == 1) & ~_mpu_be[0];
+  assign pal_byte_en[0] = (mpu_addr[0] == 0) & mpu_be[0];
+  assign pal_byte_en[1] = (mpu_addr[0] == 0) & mpu_be[1];
+  assign pal_byte_en[2] = (mpu_addr[0] == 1) & mpu_be[0];
 
   wire [`NUM_PAL_CHANNELS*8-1:0] pal_data_out_temp;
   assign pal_data_out = (mpu_addr[0] == 0) ? pal_data_out_temp[15:0]

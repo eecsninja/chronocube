@@ -100,7 +100,7 @@ module MainAVR(clk, _reset,
   wire [1:0] _mpu_be = mpu_al[0] ? 2'b01 : 2'b10;
 
   // Bus enable is just if either read or write is enabled.
-  wire cc_enable = (~_mpu_rd ^ ~_mpu_wr);
+  wire _mpu_en = ~(~_mpu_rd ^ ~_mpu_wr);
   /////////////////////////////////////////////////
   // VRAM interface
   /////////////////////////////////////////////////
@@ -124,10 +124,10 @@ module MainAVR(clk, _reset,
 
   ChronoCube chronocube(.clk(clk),
                         .reset(~_reset),
-                        ._mpu_rd(_mpu_rd),
-                        ._mpu_wr(_mpu_wr),
-                        ._mpu_en(~cc_enable),
-                        ._mpu_be(_mpu_be),
+                        .mpu_rd(~_mpu_rd),
+                        .mpu_wr(~_mpu_wr),
+                        .mpu_en(~_mpu_en),
+                        .mpu_be(~_mpu_be),
                         .mpu_addr_in(cc_addr),
                         .mpu_data_in(cc_data_in),
                         .mpu_data_out(cc_data_out),
