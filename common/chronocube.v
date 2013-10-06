@@ -56,10 +56,10 @@ module ChronoCube(
   output [`MPU_DATA_WIDTH-1:0] mpu_data_out;      // Data-out bus
 
   // VRAM interface
-  output vram_en;           // Enable access (active low)
-  output vram_rd;           // Read enable (active low)
-  output vram_wr;           // Write enable (active low)
-  output [1:0] vram_be;     // Byte enable (active low)
+  output vram_en;           // Enable access
+  output vram_rd;           // Read enable
+  output vram_wr;           // Write enable
+  output [1:0] vram_be;     // Byte enable
   output reg  [`VRAM_ADDR_WIDTH-1:0] vram_addr;   // Address bus
   input [`VRAM_DATA_WIDTH-1:0] vram_data_in;      // Data input bus
   output [`VRAM_DATA_WIDTH-1:0] vram_data_out;    // Data output bus
@@ -93,9 +93,6 @@ module ChronoCube(
               .reset(reset),
               .v_pos(v_pos),
               .h_pos(h_pos));
-
-  // Graphics processor
-  // TODO: add switching between 16-bit full color and 8-bit palettes.
 
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
@@ -221,6 +218,7 @@ module ChronoCube(
     ren_vram_data <= vram_uses_mpu ? 0 : vram_data_in;
 
   // Renderer
+  // TODO: add switching between 16-bit full color and 8-bit palettes.
   Renderer renderer(.clk(clk),
                     .reset(reset),
                     .reg_values(reg_values_out),
