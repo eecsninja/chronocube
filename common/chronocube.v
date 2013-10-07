@@ -108,8 +108,8 @@ module ChronoCube(
   // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
                         (mpu_addr < `PAL_ADDR_BASE + `PAL_ADDR_LENGTH);
-  wire pal_wr = palette_select & ~_mpu_wr;
-  wire pal_rd = palette_select & ~_mpu_rd;
+  wire pal_wr = palette_select & mpu_wr;
+  wire pal_rd = palette_select & mpu_rd;
 
   wire [`NUM_PAL_CHANNELS-1:0] pal_byte_en;
   assign pal_byte_en[0] = (mpu_addr[0] == 0) & mpu_be[0];
@@ -153,8 +153,8 @@ module ChronoCube(
   sprite_ram_4Kx16 sprite_ram(
       .clock_a(clk),
       .address_a(mpu_addr),
-      .byteena_a(~_mpu_be),
-      .wren_a(sprite_select & ~_mpu_wr & _mpu_rd),
+      .byteena_a(mpu_be),
+      .wren_a(sprite_select & mpu_wr & ~mpu_rd),
       .data_a(mpu_data_in),
       .q_a(sprite_data_out),
 
@@ -167,9 +167,9 @@ module ChronoCube(
   // Tile map
   wire map_select = (mpu_addr >= `TILEMAP_ADDR_BASE) &
                     (mpu_addr < `TILEMAP_ADDR_BASE + `TILEMAP_ADDR_LENGTH);
-  wire map_wr = map_select & ~_mpu_wr;
-  wire map_rd = map_select & ~_mpu_rd;
-  wire [1:0] map_be = ~_mpu_be;
+  wire map_wr = map_select & mpu_wr;
+  wire map_rd = map_select & mpu_rd;
+  wire [1:0] map_be = mpu_be;
   wire [`MPU_DATA_WIDTH-1:0] map_data_out;
 
   // Port B: to renderer
@@ -200,9 +200,9 @@ module ChronoCube(
   // Allow MPU access to VRAM only when the SYS_CTRL_VRAM_ACCESS bit is set.
   wire vram_uses_mpu = reg_array_out[`SYS_CTRL][`SYS_CTRL_VRAM_ACCESS];
   wire vram_en = vram_uses_mpu ? vram_uses_mpu : ren_vram_en;
-  wire vram_wr = vram_uses_mpu ? ~_mpu_wr : ren_vram_wr;
-  wire vram_rd = vram_uses_mpu ? ~_mpu_rd : ren_vram_rd;
-  wire [1:0] vram_be = vram_uses_mpu ? ~_mpu_be : ren_vram_be;
+  wire vram_wr = vram_uses_mpu ? mpu_wr : ren_vram_wr;
+  wire vram_rd = vram_uses_mpu ? mpu_rd : ren_vram_rd;
+  wire [1:0] vram_be = vram_uses_mpu ? mpu_be : ren_vram_be;
   always @ (posedge clk)
     vram_addr <= vram_uses_mpu ? (mpu_addr - `VRAM_ADDR_BASE) : ren_vram_addr;
   wire [`VRAM_DATA_WIDTH-1:0] vram_data_out =
@@ -292,9 +292,9 @@ module ChronoCube(
               .IS_GENERIC(1))
       registers(.reset(reset),
                 .en(main_reg_select),
-                .rd(~_mpu_rd),
-                .wr(~_mpu_wr),
-                .be(~_mpu_be),
+                .rd(mpu_rd),
+                .wr(mpu_wr),
+                .be(mpu_be),
                 .addr(mpu_addr[`MAIN_REG_ADDR_WIDTH-1:0]),
                 .data_in(mpu_data_in),
                 .data_out(reg_data_out),
@@ -350,9 +350,9 @@ module ChronoCube(
                   .IS_GENERIC(0))
           tile_registers(.reset(reset),
                          .en(tile_layer_reg_select[i]),
-                         .rd(~_mpu_rd),
-                         .wr(~_mpu_wr),
-                         .be(~_mpu_be),
+                         .rd(mpu_rd),
+                         .wr(mpu_wr),
+                         .be(mpu_be),
                          .addr(mpu_addr[`TILE_REG_ADDR_WIDTH-1:0]),
                          .data_in(mpu_data_in[`REG_DATA_WIDTH-1:0]),
                          .data_out(tile_data_out_array[i]),
