@@ -20,12 +20,8 @@
 `ifndef _SPRITE_REGISTERS_VH_
 `define _SPRITE_REGISTERS_VH_
 
+`include "memory_map.vh"
 `include "registers.vh"
-
-`define NUM_SPRITES                256
-
-// Number of registers for each sprite.
-`define NUM_SPRITE_REGS             16
 
 // Number of register bits per sprite.
 `define NUM_REG_BITS_PER_SPRITE (`NUM_SPRITE_REGS * `REG_DATA_WIDTH)
@@ -84,13 +80,6 @@
 `define SPRITE_REF_XY_Y_END       13
 `define SPRITE_REF_XY_Y_WIDTH  \
     (`SPRITE_REF_XY_Y_END - `SPRITE_REF_XY_Y_START + 1)
-
-// Sprite register address definitions.
-`define SPRITE_ADDR_BASE       'h1000  // Start at 8 KB.
-`define SPRITE_ADDR_LENGTH     'h1000  // Extend over 8 KB.
-// Note: for some reason, using "(`NUM_SPRITES * `NUM_SPRITE_REGS) doesn't work
-// here when NUM_SPRITES=256.  The system still behaves as if NUM_SPRITES=128.
-// So the address length is hardcoded instead.
 
 // Sprite access bus size.
 `define SPRITE_ADDR_WIDTH           9

@@ -49,6 +49,16 @@
 `define NUM_PAL_CHANNELS            3
 `define PAL_DATA_WIDTH     `NUM_PAL_CHANNELS * 8
 
+// Sprite register address definitions.
+`define NUM_SPRITES               256
+`define NUM_SPRITE_REGS            16   // Number of registers for each sprite.
+
+`define SPRITE_ADDR_BASE       'h1000   // Start at 8 KB.
+`define SPRITE_ADDR_LENGTH     'h1000   // Extend over 8 KB.
+// Note: for some reason, using "(`NUM_SPRITES * `NUM_SPRITE_REGS) doesn't work
+// here when NUM_SPRITES=256.  The system still behaves as if NUM_SPRITES=128.
+// So the address length is hardcoded instead.
+
 // Tile map memory
 `define TILEMAP_ADDR_BASE      'h2000
 `define TILEMAP_ADDR_LENGTH    'h1000
