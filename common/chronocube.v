@@ -145,16 +145,37 @@ module ChronoCube(
   // Sprite RAM
   wire sprite_select = (mpu_addr >= `SPRITE_ADDR_BASE) &
                        (mpu_addr < `SPRITE_ADDR_BASE + `SPRITE_ADDR_LENGTH);
+  // This is an alias of all the sprite OFFSET_X and OFFSET_Y registers, mapped
+  // to be contiguous.  It speeds up sprite location updates using sequential
+  // memory access, since there is no need to send a new address before each
+  // sprite.
+  wire sprite_xy_select =
+      (mpu_addr >= `SPRITE_XY_ADDR_BASE) &
+      (mpu_addr < `SPRITE_XY_ADDR_BASE + `SPRITE_XY_ADDR_LENGTH);
+  wire [`MPU_ADDR_WIDTH-1:0] sprite_xy_addr = mpu_addr - `SPRITE_XY_ADDR_BASE;
+  // The sprite registers are grouped in pairs.
+  wire [`MPU_ADDR_WIDTH-1:0] sprite_xy_index = sprite_xy_addr / 2;
+  wire [`MPU_ADDR_WIDTH-1:0] sprite_xy_offset =
+      (sprite_xy_addr % 2) ? `SPRITE_OFFSET_Y : `SPRITE_OFFSET_X;
+  wire [`MPU_ADDR_WIDTH-1:0] sprite_xy_mapped_addr =
+      sprite_xy_index * `NUM_SPRITE_REGS + sprite_xy_offset;
+
+  // Select between the normal sprite registers or the aliased X/Y registers.
+  wire [`MPU_ADDR_WIDTH-1:0] sprite_addr =
+      sprite_select ? (mpu_addr - `SPRITE_ADDR_BASE)
+                    : (sprite_xy_select ? sprite_xy_mapped_addr : 0);
+
   wire ren_spr_clk;
   wire [`SPRITE_ADDR_WIDTH-1:0] ren_spr_addr;
   wire [`SPRITE_DATA_WIDTH-1:0] ren_spr_data;
   wire [`SPRITE_DATA_WIDTH-1:0] ren_spr_data_out;
   wire [`MPU_DATA_WIDTH-1:0] sprite_data_out;
+
   sprite_ram_4Kx16 sprite_ram(
       .clock_a(clk),
-      .address_a(mpu_addr),
+      .address_a(sprite_addr),
       .byteena_a(mpu_be),
-      .wren_a(sprite_select & mpu_wr & ~mpu_rd),
+      .wren_a((sprite_select | sprite_xy_select) & mpu_wr & ~mpu_rd),
       .data_a(mpu_data_in),
       .q_a(sprite_data_out),
 

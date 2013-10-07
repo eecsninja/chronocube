@@ -59,6 +59,11 @@
 // here when NUM_SPRITES=256.  The system still behaves as if NUM_SPRITES=128.
 // So the address length is hardcoded instead.
 
+// All sprite X/Y registers are aliased at a different location so they can be
+// accessed contiguously.
+`define SPRITE_XY_ADDR_BASE    'h0200
+`define SPRITE_XY_ADDR_LENGTH  'h0200
+
 // Tile map memory
 `define TILEMAP_ADDR_BASE      'h2000
 `define TILEMAP_ADDR_LENGTH    'h1000
