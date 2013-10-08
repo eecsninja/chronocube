@@ -22,7 +22,8 @@
 `include "sprite_registers.vh"
 `include "tile_registers.vh"
 
-`define LINE_BUF_ADDR_WIDTH 10
+`define LINE_BUF_ADDR_WIDTH         10
+`define BYTE_WIDTH                   8
 
 `define SCREEN_WIDTH               640
 `define SCREEN_HEIGHT              480
@@ -31,6 +32,8 @@
 
 `define WORLD_WIDTH                512
 `define WORLD_HEIGHT               512
+
+//`define TEST_COLLISION_BUFFER
 
 //`define SPRITE_LAYER_LEVEL           3  // TODO: use registers to specify level.
 //`define SPRITE_LAYER_LEVEL           reg_array[`SPRITE_Z]
@@ -243,7 +246,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   reg [15:0] num_texels_drawn;
   reg [8:0] num_sprite_words_read;
   wire [4:0] current_tile_layer = num_layers_drawn;
-  wire [8:0] current_sprite = num_sprites_drawn;
+  wire [`BYTE_WIDTH-1:0] current_sprite = num_sprites_drawn[`BYTE_WIDTH-1:0];
   assign spr_addr = {current_sprite, num_sprite_words_read[0]};
 
   reg [`NUM_SPRITE_REGS * `REG_DATA_WIDTH - 1 : 0] sprite_reg_values;
@@ -562,6 +565,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // Delayed sprite values.
   wire [`REG_DATA_WIDTH-1:0] sprite_ctrl0_delayed;
   wire [`REG_DATA_WIDTH-1:0] sprite_color_key_delayed;
+  wire [`BYTE_WIDTH-1:0] current_sprite_delayed;
   CC_Delay #(.WIDTH(`REG_DATA_WIDTH), .DELAY(`RENDER_DELAY))
       sprite_ctrl0_delay(.clk(clk),
                          .reset(reset),
@@ -572,6 +576,11 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                              .reset(reset),
                              .d(sprite_color_key),
                              .q(sprite_color_key_delayed));
+  CC_Delay #(.WIDTH(`BYTE_WIDTH), .DELAY(`RENDER_DELAY))
+      current_sprite_delay(.clk(clk),
+                           .reset(reset),
+                           .d(current_sprite),
+                           .q(current_sprite_delayed));
 
   // Delayed tile values.
   wire [`TILEMAP_DATA_WIDTH-1:0] tile_value_delayed;
@@ -634,6 +643,30 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       .data_out_b(buf_scanout_data)
       );
 
+  // Collision buffer.
+  // Writing sprite data to it parallels drawing sprites to the line buffer.
+  wire [8:0] coll_read_data;
+  CollisionBuffer collision_buffer(
+      .clk(clk),
+
+      // Interface A.
+      .wr_a(sprite_buf_wr),
+      .addr_a(buf_addr),
+      // The uppermost bit indicates a valid sprite pixel.
+      .wr_data_a({1'b1, current_sprite_delayed}),
+
+      // Interface B.
+      .wr_b(h_visible[0] & v_visible[0]),  // Clear old data for a new line.
+      .addr_b(buf_scanout_addr),
+      .wr_data_b(0),
+      .rd_data_b(coll_read_data),
+      );
+
+`ifdef TEST_COLLISION_BUFFER
+  // For testing, show the collision buffer contents in grey.
+  wire [`BYTE_WIDTH-1:0] coll_buffer_color = coll_read_data[8] ? 'h7f : 0;
+`endif
+
   // Line buffer -> VGA output
 
   // Interface B: reading from the line buffer
@@ -652,9 +685,17 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // future, this may need to be revisited to get a better understanding of how
   // it works.
   always @ (negedge clk) begin
+`ifndef TEST_COLLISION_BUFFER
     buf_scanout_red = buf_scanout_data[7:0];
     buf_scanout_green = buf_scanout_data[15:8];
     buf_scanout_blue = buf_scanout_data[23:16];
+`else
+    // For testing the collision buffer, show the buffer contents as part of the
+    // scanout.
+    buf_scanout_red = coll_read_data[8] ? 'hff : buf_scanout_data[7:0];
+    buf_scanout_green = coll_read_data[8] ? 'hff : buf_scanout_data[15:8];
+    buf_scanout_blue = coll_read_data[8] ? 'hff : buf_scanout_data[23:16];
+`endif  // defined(TEST_COLLISION_BUFFER)
   end
 
   always @ (negedge clk) begin
