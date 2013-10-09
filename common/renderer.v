@@ -643,10 +643,10 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       .data_out_b(buf_scanout_data)
       );
 
-  // Collision buffer.
+  // Sprite index buffer, for detecting collisions between sprites.
   // Writing sprite data to it parallels drawing sprites to the line buffer.
-  wire [8:0] coll_read_data;
-  CollisionBuffer collision_buffer(
+  wire [8:0] sprite_buffer_out;
+  CollisionBuffer sprite_buffer(
       .clk(clk),
 
       // Interface A.
@@ -659,13 +659,9 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       .wr_b(h_visible[0] & v_visible[0]),  // Clear old data for a new line.
       .addr_b(buf_scanout_addr),
       .wr_data_b(0),
-      .rd_data_b(coll_read_data),
+      .rd_data_b(sprite_buffer_out),
       );
 
-`ifdef TEST_COLLISION_BUFFER
-  // For testing, show the collision buffer contents in grey.
-  wire [`BYTE_WIDTH-1:0] coll_buffer_color = coll_read_data[8] ? 'h7f : 0;
-`endif
 
   // Line buffer -> VGA output
 
@@ -691,10 +687,11 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
     buf_scanout_blue = buf_scanout_data[23:16];
 `else
     // For testing the collision buffer, show the buffer contents as part of the
-    // scanout.
-    buf_scanout_red = coll_read_data[8] ? 'hff : buf_scanout_data[7:0];
-    buf_scanout_green = coll_read_data[8] ? 'hff : buf_scanout_data[15:8];
-    buf_scanout_blue = coll_read_data[8] ? 'hff : buf_scanout_data[23:16];
+    // scanout.  Regions with sprite pixels are shown as grey.
+    {buf_scanout_red, buf_scanout_green, buf_scanout_blue} =
+        sprite_buffer_out[8] ? 'h7f7f7f : {buf_scanout_data[7:0],
+                                           buf_scanout_data[15:8],
+                                           buf_scanout_data[23:16]};
 `endif  // defined(TEST_COLLISION_BUFFER)
   end
 
