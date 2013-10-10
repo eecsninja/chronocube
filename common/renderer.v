@@ -34,6 +34,7 @@
 `define WORLD_HEIGHT               512
 
 //`define TEST_COLLISION_BUFFER
+//`define TEST_COLLISION_REGIONS_ONLY
 
 //`define SPRITE_LAYER_LEVEL           3  // TODO: use registers to specify level.
 //`define SPRITE_LAYER_LEVEL           reg_array[`SPRITE_Z]
@@ -646,6 +647,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // Sprite index buffer, for detecting collisions between sprites.
   // Writing sprite data to it parallels drawing sprites to the line buffer.
   wire [8:0] sprite_buffer_out;
+  wire [8:0] sprite_buffer_write_location_out;
   CollisionBuffer sprite_buffer(
       .clk(clk),
 
@@ -654,12 +656,56 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       .addr_a(buf_addr),
       // The uppermost bit indicates a valid sprite pixel.
       .wr_data_a({1'b1, current_sprite_delayed}),
+      .rd_data_a(sprite_buffer_write_location_out),
 
       // Interface B.
       .wr_b(h_visible[0] & v_visible[0]),  // Clear old data for a new line.
       .addr_b(buf_scanout_addr),
       .wr_data_b(0),
       .rd_data_b(sprite_buffer_out),
+      );
+
+  // The read value is valid one clock after the write value.  Use a delayed
+  // write value to compare the two.
+  reg sprite_buf_wr_delayed;
+  reg [`BYTE_WIDTH-1:0] new_sprite_index;
+  reg [`LINE_BUF_ADDR_WIDTH-1:0] buf_addr_delayed;
+  always @ (posedge clk) begin
+    sprite_buf_wr_delayed <= sprite_buf_wr;
+    new_sprite_index <= current_sprite_delayed;
+    buf_addr_delayed <= buf_addr;
+  end
+
+  wire existing_sprite_pixel_valid;
+  wire [`BYTE_WIDTH-1:0] existing_sprite_index;
+  assign {existing_sprite_pixel_valid, existing_sprite_index} =
+      sprite_buffer_write_location_out;
+
+  // A collision is detected if there's an existing sprite pixel and it doesn't
+  // come from the same sprite as the new one.
+  // TODO: The screen goes black if the logic for comparing old vs new sprite
+  // is used.  Figure out why.
+  // TODO: Implement actual collision table.
+  wire sprite_collision = sprite_buf_wr_delayed & existing_sprite_pixel_valid;
+
+  // Collision buffer, for recording data about collisions.
+  wire [8:0] collision_buffer_out;
+  CollisionBuffer collision_buffer(
+      .clk(clk),
+
+      // Interface A.
+      .wr_a(sprite_collision),
+      .addr_a(buf_addr_delayed),
+      // The uppermost bit indicates a valid sprite pixel.
+      // TODO: Write actual collision information here, as opposed to just pixel
+      // information.
+      .wr_data_a('h1ff),
+
+      // Interface B.
+      .wr_b(h_visible[0] & v_visible[0]),  // Clear old data for a new line.
+      .addr_b(buf_scanout_addr),
+      .wr_data_b(0),
+      .rd_data_b(collision_buffer_out),
       );
 
 
@@ -686,12 +732,19 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
     buf_scanout_green = buf_scanout_data[15:8];
     buf_scanout_blue = buf_scanout_data[23:16];
 `else
-    // For testing the collision buffer, show the buffer contents as part of the
-    // scanout.  Regions with sprite pixels are shown as grey.
-    {buf_scanout_red, buf_scanout_green, buf_scanout_blue} =
-        sprite_buffer_out[8] ? 'h7f7f7f : {buf_scanout_data[7:0],
-                                           buf_scanout_data[15:8],
-                                           buf_scanout_data[23:16]};
+  `ifndef TEST_COLLISION_REGIONS_ONLY
+    // Test the sprite buffer.
+    `define BUFFER_TEST_BIT sprite_buffer_out[8]
+  `else
+    // Test the collision buffer.
+    `define BUFFER_TEST_BIT collision_buffer_out[8]
+  `endif  // defined(TEST_COLLISION_REGIONS_ONLY)
+  // For testing the collision buffer, show the buffer contents as part of the
+  // scanout.  Regions with sprite pixels are shown as grey.
+  {buf_scanout_red, buf_scanout_green, buf_scanout_blue} =
+      `BUFFER_TEST_BIT ? 'h7f7f7f : {buf_scanout_data[7:0],
+                                     buf_scanout_data[15:8],
+                                     buf_scanout_data[23:16]};
 `endif  // defined(TEST_COLLISION_BUFFER)
   end
 
