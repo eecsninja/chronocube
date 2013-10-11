@@ -17,6 +17,7 @@
 
 // Chronocube graphics engine
 
+`include "collision_buffer.vh"
 `include "memory_map.vh"
 `include "registers.vh"
 `include "sprite_registers.vh"
@@ -646,8 +647,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 
   // Sprite index buffer, for detecting collisions between sprites.
   // Writing sprite data to it parallels drawing sprites to the line buffer.
-  wire [8:0] sprite_buffer_out;
-  wire [8:0] sprite_buffer_write_location_out;
+  wire [`COLL_DATA_WIDTH-1:0] sprite_buffer_out;
+  wire [`COLL_DATA_WIDTH-1:0] sprite_buffer_write_location_out;
   CollisionBuffer sprite_buffer(
       .clk(clk),
 
@@ -689,7 +690,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire sprite_collision = sprite_buf_wr_delayed & existing_sprite_pixel_valid;
 
   // Collision buffer, for recording data about collisions.
-  wire [8:0] collision_buffer_out;
+  wire [`COLL_DATA_WIDTH-1:0] collision_buffer_out;
   CollisionBuffer collision_buffer(
       .clk(clk),
 
@@ -699,7 +700,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       // The uppermost bit indicates a valid sprite pixel.
       // TODO: Write actual collision information here, as opposed to just pixel
       // information.
-      .wr_data_a('h1ff),
+      .wr_data_a({`COLL_DATA_WIDTH{1'b1}}),
 
       // Interface B.
       .wr_b(h_visible[0] & v_visible[0]),  // Clear old data for a new line.
@@ -734,10 +735,10 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 `else
   `ifndef TEST_COLLISION_REGIONS_ONLY
     // Test the sprite buffer.
-    `define BUFFER_TEST_BIT sprite_buffer_out[8]
+    `define BUFFER_TEST_BIT sprite_buffer_out[`COLL_DATA_WIDTH-1]
   `else
     // Test the collision buffer.
-    `define BUFFER_TEST_BIT collision_buffer_out[8]
+    `define BUFFER_TEST_BIT collision_buffer_out[`COLL_DATA_WIDTH-1]
   `endif  // defined(TEST_COLLISION_REGIONS_ONLY)
   // For testing the collision buffer, show the buffer contents as part of the
   // scanout.  Regions with sprite pixels are shown as grey.

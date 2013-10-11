@@ -17,9 +17,7 @@
 
 // Buffer for collision detection.
 
-`define COLL_ADDR_WIDTH              10
-`define COLL_BUFFER_SIZE              (1 << `COLL_ADDR_WIDTH)
-`define DATA_WIDTH                    9
+`include "collision_buffer.vh"
 
 module CollisionBuffer(clk,
                        wr_a, addr_a, wr_data_a, rd_data_a,
@@ -28,18 +26,18 @@ module CollisionBuffer(clk,
   input clk;                // System clock.
 
   // Interface A
-  input wr_a;                              // Enable writing to buffer.
-  input [`COLL_ADDR_WIDTH-1:0] addr_a;     // Address bus.
-  input [`DATA_WIDTH-1:0] wr_data_a;       // Data to write.
-  output [`DATA_WIDTH-1:0] rd_data_a;      // Data that was read.
+  input wr_a;                                   // Enable writing to buffer.
+  input [`COLL_ADDR_WIDTH-1:0] addr_a;          // Address bus.
+  input [`COLL_DATA_WIDTH-1:0] wr_data_a;       // Data to write.
+  output [`COLL_DATA_WIDTH-1:0] rd_data_a;      // Data that was read.
 
   // Interface B (buffer 1)
 
   // Data write port.
-  input wr_b;                              // Enable writing to buffer.
-  input [`COLL_ADDR_WIDTH-1:0] addr_b;     // Address bus.
-  input [`DATA_WIDTH-1:0] wr_data_b;       // Data to write.
-  output [`DATA_WIDTH-1:0] rd_data_b;      // Data that was read.
+  input wr_b;                                   // Enable writing to buffer.
+  input [`COLL_ADDR_WIDTH-1:0] addr_b;          // Address bus.
+  input [`COLL_DATA_WIDTH-1:0] wr_data_b;       // Data to write.
+  output [`COLL_DATA_WIDTH-1:0] rd_data_b;      // Data that was read.
 
   collision_buffer_1Kx9 buffer(.clock(clk),
                                .address_a(addr_a),
