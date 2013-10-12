@@ -41,6 +41,10 @@
 `define INT_ADDR_WIDTH             32  // Arbitrary, but 32 is convenient.
 `define PAGE_OFFSET_WIDTH          13  // 8 KB x 16-bits = 16 KB
 
+// Collision table.
+`define COLL_ADDR_BASE         'h0100  // Collision data begins at 512 bytes,
+`define COLL_ADDR_LENGTH       'h0100  // spanning 512 bytes.
+
 // Palette memory
 `define PAL_ADDR_BASE          'h0800  // Palette starts at 4 KB, spans 4 KB.
 `define PAL_ADDR_LENGTH        'h0800  // Four palettes, each spanning 1 KB.

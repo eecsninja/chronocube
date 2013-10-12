@@ -18,6 +18,7 @@
 
 // Top-level ChronoCube module.
 
+`include "collision_buffer.vh"
 `include "memory_map.vh"
 `include "registers.vh"
 `include "sprite_registers.vh"
@@ -103,7 +104,20 @@ module ChronoCube(
                         (vram_select         ? vram_data_in :
                         (tile_regs_select    ? tile_data_out :
                         (sprite_select       ? sprite_data_out :
-                        `UNMAPPED_MEMORY_VALUE))))));
+                        (collision_select    ? collision_data :
+                        `UNMAPPED_MEMORY_VALUE)))))));
+
+  // Collision table interface.
+  wire collision_select = (mpu_addr >= `COLL_ADDR_BASE) &
+                          (mpu_addr < `COLL_ADDR_BASE + `COLL_ADDR_LENGTH);
+  // Assuming the reads are in sequence, clear the 9-bit word on the second byte
+  // read.
+  wire collision_clear = collision_select & (mpu_be == 'b10);
+  // Convert a word bus to a byte bus.
+  // TODO: This should support word reads eventually.
+  wire [`COLL_ADDR_WIDTH-1:0] collision_addr =
+      {(mpu_addr - `COLL_ADDR_BASE), (mpu_be == 'b10) ? 1'b1 : 1'b0};
+  wire [`COLL_ADDR_WIDTH-1:0] collision_data;
 
   // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
@@ -263,6 +277,10 @@ module ChronoCube(
                     .spr_clk(ren_spr_clk),
                     .spr_addr(ren_spr_addr),
                     .spr_data(ren_spr_data),
+
+                    .coll_clr(collision_clear),
+                    .coll_addr(collision_addr),
+                    .coll_data(collision_data),
 
                     .h_pos(h_pos),
                     .v_pos(v_pos),
