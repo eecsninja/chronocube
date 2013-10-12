@@ -108,7 +108,9 @@ module ChronoCube(
                         `UNMAPPED_MEMORY_VALUE)))))));
 
   // Collision table interface.
-  wire collision_select = (mpu_addr >= `COLL_ADDR_BASE) &
+  // TODO: Enabling |collision_select| causes the screen to be blank.  It is
+  // disabled until that bug is resolved.
+  wire collision_select = 0 & (mpu_addr >= `COLL_ADDR_BASE) &
                           (mpu_addr < `COLL_ADDR_BASE + `COLL_ADDR_LENGTH);
   // Assuming the reads are in sequence, clear the 9-bit word on the second byte
   // read.
