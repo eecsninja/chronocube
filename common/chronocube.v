@@ -36,6 +36,10 @@
 
 `define UNMAPPED_MEMORY_VALUE   'hdead
 
+// The high/low memory space distinction is used to optimize the data readback
+// path from each part of memory.
+`define LOW_MEM_SIZE            'h1000
+
 module ChronoCube(
     clk, reset, _int,
     mpu_rd, mpu_wr, mpu_en, mpu_be, mpu_addr_in, mpu_data_in, mpu_data_out,
@@ -97,15 +101,30 @@ module ChronoCube(
 
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
-  assign mpu_data_out = (~mpu_rd | ~mpu_en)  ? {`MPU_DATA_WIDTH {1'b0}} :
-                        (palette_select      ? pal_data_out :
-                        (map_select          ? map_data_out :
-                        (main_reg_select     ? reg_data_out :
-                        (vram_select         ? vram_data_in :
-                        (tile_regs_select    ? tile_data_out :
-                        (sprite_select       ? sprite_data_out :
-                        (collision_select    ? collision_data :
-                        `UNMAPPED_MEMORY_VALUE)))))));
+
+  wire [`MPU_DATA_WIDTH-1:0] low_mem_data_out;
+  wire [`MPU_DATA_WIDTH-1:0] high_mem_data_out;
+
+  // The data output of the memory interface has to select from the various
+  // sources.  Using a nested conditional block seems to result in long paths
+  // when compiling.  The solution is to break it into low/high memory, each
+  // with its own nested conditionals.  Then, select the resulting data output
+  // from one or the other.
+  // TODO: Come up with a neater way to do this.
+  wire low_mem_select = mpu_addr < `LOW_MEM_SIZE;
+  assign mpu_data_out =
+      (~mpu_rd | ~mpu_en) ? {`MPU_DATA_WIDTH {1'b0}}
+                          : (low_mem_select ? low_mem_data_out
+                                            : high_mem_data_out);
+  assign low_mem_data_out = (main_regs_select   ? reg_data_out :
+                            (tile_regs_select   ? tile_data_out :
+                            (collision_select   ? collision_data :
+                            (palette_select     ? pal_data_out :
+                             `UNMAPPED_MEMORY_VALUE))));
+  assign high_mem_data_out = (sprite_select     ? sprite_data_out :
+                             (map_select        ? map_data_out :
+                             (vram_select       ? vram_data_in :
+                              `UNMAPPED_MEMORY_VALUE)));
 
   // Collision table interface.
   // TODO: Enabling |collision_select| causes the screen to be blank.  It is
@@ -325,14 +344,14 @@ module ChronoCube(
                        .v_visible_pos(reg_array_in[`SCAN_Y]));
 
   // Main registers.
-  wire main_reg_select = (mpu_addr >= `MAIN_REG_ADDR_BASE) &
-                         (mpu_addr < `MAIN_REG_ADDR_BASE + `NUM_MAIN_REGS);
+  wire main_regs_select = (mpu_addr >= `MAIN_REG_ADDR_BASE) &
+                          (mpu_addr < `MAIN_REG_ADDR_BASE + `NUM_MAIN_REGS);
   Registers #(.DATA_WIDTH(`REG_DATA_WIDTH),
               .ADDR_WIDTH(`MAIN_REG_ADDR_WIDTH),
               .NUM_REGS(`NUM_MAIN_REGS),
               .IS_GENERIC(1))
       registers(.reset(reset),
-                .en(main_reg_select),
+                .en(main_regs_select),
                 .rd(mpu_rd),
                 .wr(mpu_wr),
                 .be(mpu_be),
