@@ -132,11 +132,8 @@ module ChronoCube(
   // Assuming the reads are in sequence, clear the 9-bit word on the second byte
   // read.
   wire collision_clear = collision_select & (mpu_be == 'b10);
-  // Convert a word bus to a byte bus.
-  // TODO: This should support word reads eventually.
-  wire [`COLL_ADDR_WIDTH-1:0] collision_addr =
-      {(mpu_addr - `COLL_ADDR_BASE), (mpu_be == 'b10) ? 1'b1 : 1'b0};
-  wire [`COLL_ADDR_WIDTH-1:0] collision_data;
+  wire [`COLL_ADDR_WIDTH-1:0] collision_addr = (mpu_addr - `COLL_ADDR_BASE);
+  wire [`COLL_DATA_WIDTH-1:0] collision_data;
 
   // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
