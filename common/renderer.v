@@ -111,7 +111,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // Collision table interface.
   input coll_clr;
   input [`COLL_ADDR_WIDTH-1:0] coll_addr;
-  input [`COLL_DATA_WIDTH-1:0] coll_data;
+  output [`COLL_DATA_WIDTH-1:0] coll_data;
 
   // VRAM interface
   output wire vram_en;         // Chip enable (active low)
@@ -700,9 +700,11 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   CollisionBuffer collision_buffer(
       .clk(clk),
 
+      // Write to the collision buffer only when there's a collision.
+      .wr_a(sprite_collision),
+
 `ifdef TEST_COLLISION_BUFFER
       // Interface A.
-      .wr_a(sprite_collision),
       // Write to the buffer position that corresponds to the current pixel
       // being drawn.  Thus the collision buffer contains an image of where the
       // collisions are.
