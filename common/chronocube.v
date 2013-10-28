@@ -131,7 +131,7 @@ module ChronoCube(
                           (mpu_addr < `COLL_ADDR_BASE + `COLL_ADDR_LENGTH);
   // Assuming the reads are in sequence, clear the 9-bit word on the second byte
   // read.
-  wire collision_clear = collision_select & (mpu_be == 'b10);
+  wire collision_clear = collision_select & mpu_be[1];
   wire [`COLL_ADDR_WIDTH-1:0] collision_addr = (mpu_addr - `COLL_ADDR_BASE);
   wire [`COLL_DATA_WIDTH-1:0] collision_data;
 
