@@ -151,8 +151,9 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
   endgenerate
 
   // Memory bus data read.
-  wire data_out_latch = en & rd;
-  always @ (posedge data_out_latch)
+  // TODO: Find a way to latch this for read-only registers that does not result
+  // in a race condition.
+  always @ (*)
     data_out <= q_array[addr];
 
 endmodule
