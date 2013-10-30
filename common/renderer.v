@@ -17,7 +17,7 @@
 
 // Chronocube graphics engine
 
-`include "collision_buffer.vh"
+`include "collision.vh"
 `include "memory_map.vh"
 `include "registers.vh"
 `include "sprite_registers.vh"
@@ -34,6 +34,11 @@
 `define WORLD_WIDTH                512
 `define WORLD_HEIGHT               512
 
+// These are data bus widths for the the internal sprite and collision region
+// buffers.  They are not based on the external collision table definitions.
+`define SPRITE_BUF_DATA_WIDTH      (`BYTE_WIDTH + 1)
+`define COLLISION_BUF_DATA_WIDTH   (`BYTE_WIDTH + 1)
+
 //`define TEST_COLLISION_BUFFER
 //`define TEST_COLLISION_REGIONS_ONLY
 
@@ -47,7 +52,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                 spr_clk, spr_addr, spr_data,
                 vram_en, vram_rd, vram_wr, vram_be,
                 vram_clk, vram_addr, vram_data,
-                coll_clr, coll_addr, coll_data,
+                coll_wr, coll_addr, coll_data,
                 rgb_out);
   parameter VRAM_ADDR_BUS_WIDTH=16;
   parameter VRAM_DATA_BUS_WIDTH=16;
@@ -109,8 +114,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   input [`SPRITE_DATA_WIDTH-1:0] spr_data;
 
   // Collision table interface.
-  input coll_clr;
-  input [`COLL_ADDR_WIDTH-1:0] coll_addr;
+  output coll_wr;
+  output [`COLL_ADDR_WIDTH-1:0] coll_addr;
   output [`COLL_DATA_WIDTH-1:0] coll_data;
 
   // VRAM interface
@@ -653,23 +658,23 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 
   // Sprite index buffer, for detecting collisions between sprites.
   // Writing sprite data to it parallels drawing sprites to the line buffer.
-  wire [`COLL_DATA_WIDTH-1:0] sprite_buffer_out;
-  wire [`COLL_DATA_WIDTH-1:0] sprite_buffer_write_location_out;
-  CollisionBuffer sprite_buffer(
-      .clk(clk),
+  wire [`SPRITE_BUF_DATA_WIDTH-1:0] sprite_buffer_out;
+  wire [`SPRITE_BUF_DATA_WIDTH-1:0] sprite_buffer_write_location_out;
+  collision_buffer_1Kx9 sprite_buffer(
+      .clock(clk),
 
       // Interface A.
-      .wr_a(sprite_buf_wr),
-      .addr_a(buf_addr),
+      .wren_a(sprite_buf_wr),
+      .address_a(buf_addr),
       // The uppermost bit indicates a valid sprite pixel.
-      .wr_data_a({1'b1, current_sprite_delayed}),
-      .rd_data_a(sprite_buffer_write_location_out),
+      .data_a({1'b1, current_sprite_delayed}),
+      .q_a(sprite_buffer_write_location_out),
 
       // Interface B.
-      .wr_b(h_visible[0] & v_visible[0]),  // Clear old data for a new line.
-      .addr_b(buf_scanout_addr),
-      .wr_data_b(0),
-      .rd_data_b(sprite_buffer_out),
+      .wren_b(h_visible[0] & v_visible[0]),  // Clear old data for a new line.
+      .address_b(buf_scanout_addr),
+      .data_b(0),
+      .q_b(sprite_buffer_out),
       );
 
   // The read value is valid one clock after the write value.  Use a delayed
@@ -694,43 +699,34 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // is used.  Figure out why.
   // TODO: Implement actual collision table.
   wire sprite_collision = sprite_buf_wr_delayed & existing_sprite_pixel_valid;
+  assign coll_wr = sprite_collision;
+  assign coll_addr = new_sprite_index;
+  assign coll_data = existing_sprite_index;
 
-  // Collision buffer, for recording data about collisions.
-  wire [`COLL_DATA_WIDTH-1:0] collision_buffer_out;
-  CollisionBuffer collision_buffer(
-      .clk(clk),
+  // This buffer stores the pixels where collision happened.  It is used only
+  // for testing.  The output is only used when TEST_COLLISION_REGIONS_ONLY is
+  // defined.
+  wire [`COLLISION_BUF_DATA_WIDTH-1:0] collision_buffer_out;
+  collision_buffer_1Kx9 collision_test_buffer(
+      .clock(clk),
 
       // Write to the collision buffer only when there's a collision.
-      .wr_a(sprite_collision),
+      .wren_a(sprite_collision),
 
-`ifdef TEST_COLLISION_BUFFER
       // Interface A.
       // Write to the buffer position that corresponds to the current pixel
       // being drawn.  Thus the collision buffer contains an image of where the
       // collisions are.
-      .addr_a(buf_addr_delayed),
+      .address_a(buf_addr_delayed),
       // The uppermost bit indicates a valid sprite pixel.
-      .wr_data_a({`COLL_DATA_WIDTH{1'b1}}),
+      .data_a({`COLLISION_BUF_DATA_WIDTH{1'b1}}),
 
       // Interface B.
-      .wr_b(h_visible[0] & v_visible[0]),  // Clear old data for a new line.
-      .addr_b(buf_scanout_addr),
-      .wr_data_b(0),
-      .rd_data_b(collision_buffer_out),
-`else
-      // Write to the offset corresponding to the new sprite's index...
-      .addr_a(new_sprite_index),
-      // ... and the data written is the old sprite that was covered by the new
-      // sprite.  The uppermost bit indicates that there is a valid entry.
-      .wr_data_a({1'b1, existing_sprite_index}),
-
-      .wr_b(coll_clr),    // Clear the old data.
-      .addr_b(coll_addr),
-      .wr_data_b(0),
-      .rd_data_b(coll_data),
-`endif  // defined(TEST_COLLISION_BUFFER)
+      .wren_b(h_visible[0] & v_visible[0]),  // Clear old data for a new line.
+      .address_b(buf_scanout_addr),
+      .data_b(0),
+      .q_b(collision_buffer_out),
       );
-
 
   // Line buffer -> VGA output
 
@@ -757,7 +753,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 `else
   `ifndef TEST_COLLISION_REGIONS_ONLY
     // Test the sprite buffer.
-    `define BUFFER_TEST_BIT sprite_buffer_out[`COLL_DATA_WIDTH-1]
+    `define BUFFER_TEST_BIT sprite_buffer_out[`SPRITE_BUF_DATA_WIDTH-1]
   `else
     // Test the collision buffer.
     `define BUFFER_TEST_BIT collision_buffer_out[`COLL_DATA_WIDTH-1]

@@ -18,7 +18,7 @@
 
 // Top-level ChronoCube module.
 
-`include "collision_buffer.vh"
+`include "collision.vh"
 `include "memory_map.vh"
 `include "registers.vh"
 `include "sprite_registers.vh"
@@ -118,7 +118,7 @@ module ChronoCube(
                                             : high_mem_data_out);
   assign low_mem_data_out = (main_regs_select   ? reg_data_out :
                             (tile_regs_select   ? tile_data_out :
-                            (collision_select   ? collision_data :
+                            (collision_select   ? coll_data_out :
                             (palette_select     ? pal_data_out :
                              `UNMAPPED_MEMORY_VALUE))));
   assign high_mem_data_out = (sprite_select     ? sprite_data_out :
@@ -129,11 +129,32 @@ module ChronoCube(
   // Collision table interface.
   wire collision_select = (mpu_addr >= `COLL_ADDR_BASE) &
                           (mpu_addr < `COLL_ADDR_BASE + `COLL_ADDR_LENGTH);
-  // Assuming the reads are in sequence, clear the 9-bit word on the second byte
-  // read.
-  wire collision_clear = collision_select & mpu_be[1];
-  wire [`COLL_ADDR_WIDTH-1:0] collision_addr = (mpu_addr - `COLL_ADDR_BASE);
-  wire [`COLL_DATA_WIDTH-1:0] collision_data;
+  wire [`COLL_ADDR_WIDTH-1:0] coll_addr = (mpu_addr - `COLL_ADDR_BASE);
+  wire [`MPU_DATA_WIDTH-1:0] coll_data_out;
+
+  // Collision table.
+  wire ren_coll_wr;
+  wire [`COLL_ADDR_WIDTH-1:0] ren_coll_addr;
+  wire [`COLL_DATA_WIDTH-1:0] ren_coll_data;
+  CollisionTable collision_table(
+      .clk(clk),
+      .reset(reset),
+
+      // Write to the collision buffer only when there's a collision.
+      .write_collision(ren_coll_wr),
+      // Write to the offset corresponding to the new sprite's index...
+      .table_index(ren_coll_addr),
+      // ... and the data written is the old sprite that was covered by the new
+      // sprite.  The uppermost bit indicates that there is a valid entry.
+      .table_value(ren_coll_data),
+
+      // The MPU-side access port.
+      .wr(mpu_wr & collision_select),
+      .be(mpu_be),
+      .addr(coll_addr),
+      .data_in(mpu_data_in),
+      .data_out(coll_data_out),
+      );
 
   // Palette interface
   wire palette_select = (mpu_addr >= `PAL_ADDR_BASE) &
@@ -294,9 +315,9 @@ module ChronoCube(
                     .spr_addr(ren_spr_addr),
                     .spr_data(ren_spr_data),
 
-                    .coll_clr(collision_clear),
-                    .coll_addr(collision_addr),
-                    .coll_data(collision_data),
+                    .coll_wr(ren_coll_wr),
+                    .coll_addr(ren_coll_addr),
+                    .coll_data(ren_coll_data),
 
                     .h_pos(h_pos),
                     .v_pos(v_pos),
