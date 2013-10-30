@@ -101,10 +101,11 @@
 
 
 // Tile register address definitions.
-`define TILE_REG_ADDR_BASE     'h0400
-`define TILE_REG_ADDR_STEP       'h40
+`define TILE_REG_ADDR_BASE     'h0080
+`define TILE_REG_ADDR_STEP     'h0020
 `define TILE_REG_ADDR_WIDTH         4
-`define TILE_BLOCK_ADDR_WIDTH       6
+`define TILE_BLOCK_ADDR_WIDTH       5  // Must be large enough to hold values
+                                       // from 0 to TILE_BLOCK_ADDR_WIDTH-1.
 
 // Tile flip bits in a tilemap value.
 `define TILE_FLIP_X_BIT             13
