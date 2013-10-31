@@ -659,7 +659,6 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // Sprite index buffer, for detecting collisions between sprites.
   // Writing sprite data to it parallels drawing sprites to the line buffer.
   wire [`SPRITE_BUF_DATA_WIDTH-1:0] sprite_buffer_out;
-  wire [`SPRITE_BUF_DATA_WIDTH-1:0] sprite_buffer_write_location_out;
   collision_buffer_1Kx9 sprite_buffer(
       .clock(clk),
 
@@ -668,7 +667,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       .address_a(buf_addr),
       // The uppermost bit indicates a valid sprite pixel.
       .data_a({1'b1, current_sprite_delayed}),
-      .q_a(sprite_buffer_write_location_out),
+      // Break down the output into separate fields.
+      .q_a({existing_sprite_pixel_valid, existing_sprite_index}),
 
       // Interface B.
       .wren_b(h_visible[0] & v_visible[0]),  // Clear old data for a new line.
@@ -690,8 +690,6 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 
   wire existing_sprite_pixel_valid;
   wire [`BYTE_WIDTH-1:0] existing_sprite_index;
-  assign {existing_sprite_pixel_valid, existing_sprite_index} =
-      sprite_buffer_write_location_out;
 
   // A collision is detected if there's an existing sprite pixel and it doesn't
   // come from the same sprite as the new one.
