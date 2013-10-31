@@ -53,7 +53,7 @@ module CC_Delay(clk, reset, d, q);
     for (i = 0; i < DELAY; i = i + 1)
     begin: DFF_CHAIN
       CC_DFlipFlop #(WIDTH) chain_reg(.clk(clk),
-                                      .en(1),
+                                      .en(1'b1),
                                       .reset(reset),
                                       .d(reg_inputs[(i+1)*WIDTH-1:i*WIDTH]),
                                       .q(reg_outputs[(i+1)*WIDTH-1:i*WIDTH]));
