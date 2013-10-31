@@ -99,8 +99,8 @@ module TileRegDecoder(current_layer,
   assign enable_wrap_y    = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_Y];
   assign enable_flip      = regs[`TILE_CTRL0][`TILE_ENABLE_FLIP];
 
-  assign tile_width_enum    = regs[`TILE_CTRL1][`TILE_HSIZE_1:`TILE_HSIZE_0];
-  assign tile_height_enum   = regs[`TILE_CTRL1][`TILE_VSIZE_1:`TILE_VSIZE_0];
+  assign tile_hsize_enum  = regs[`TILE_CTRL1][`TILE_HSIZE_1:`TILE_HSIZE_0];
+  assign tile_vsize_enum  = regs[`TILE_CTRL1][`TILE_VSIZE_1:`TILE_VSIZE_0];
 
   assign ctrl0 = regs[`TILE_CTRL0];
   assign ctrl1 = regs[`TILE_CTRL1];
