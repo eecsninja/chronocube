@@ -337,6 +337,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
           if (num_sprites_drawn >= `NUM_SPRITES) begin
             render_state <= `STATE_DECIDE;
           end else if (num_sprite_words_read < 2) begin
+            // Sequentially read in all the sprite regs over two clock cycles.
             if (num_sprite_words_read == 0)
               sprite_reg_values[`SPRITE_DATA_WIDTH-1:0] <= spr_data;
             else if (num_sprite_words_read == 1)
