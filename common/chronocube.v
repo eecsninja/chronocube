@@ -380,7 +380,7 @@ module ChronoCube(
       mpu_addr[`TILE_BLOCK_ADDR_WIDTH+1:`TILE_BLOCK_ADDR_WIDTH];
   wire [`TILE_BLOCK_ADDR_WIDTH-1:0] tile_reg_addr =
       mpu_addr[`TILE_BLOCK_ADDR_WIDTH-1:0];
-  always @ (tile_data_out_array or tile_regs_select or mpu_addr) begin
+  always @ (*) begin
     if (~tile_regs_select) begin
       tile_data_out <= 'bx;
     end else begin
