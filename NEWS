@@ -1,6 +1,15 @@
 Release history
 ===============
 
+0.3.0  --   4 Nov 2013
+    - Added collision detection buffers, registers, and table.
+    - Added an alias of the sprite location registers so they are contiguously
+      mapped.  This allows fast access using the SPI interface.  They are mapped
+      in the order: X0, Y0, X1, Y1, ... , X255, Y255.
+    - Optimization of memory read output selection to make the path shorter.
+    - Moved tile registers from 0x800 to 0x100 for easier output selection.
+    - Removed latching of data out to avoid race condition.
+
 0.2.0  --   2 Oct 2013
     First DuinoCube release.
     - Added Arduino Uno module.
