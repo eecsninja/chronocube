@@ -366,7 +366,8 @@ module ChronoCube(
               .ADDR_WIDTH(`MAIN_REG_ADDR_WIDTH),
               .NUM_REGS(`NUM_MAIN_REGS),
               .IS_GENERIC(1))
-      registers(.reset(reset),
+      registers(.clk(clk),
+                .reset(reset),
                 .en(main_regs_select),
                 .rd(mpu_rd),
                 .wr(mpu_wr),
@@ -424,7 +425,8 @@ module ChronoCube(
                   .ADDR_WIDTH(`TILE_REG_ADDR_WIDTH),
                   .NUM_REGS(`NUM_TILE_REGISTERS),
                   .IS_GENERIC(0))
-          tile_registers(.reset(reset),
+          tile_registers(.clk(clk),
+                         .reset(reset),
                          .en(tile_layer_reg_select[i]),
                          .rd(mpu_rd),
                          .wr(mpu_wr),

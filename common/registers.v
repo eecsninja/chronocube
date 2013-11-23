@@ -64,13 +64,14 @@ module Register(reset, clk, en, be, d, q, value_in);
 
 endmodule
 
-module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
+module Registers(clk, reset, en, rd, wr, be, addr, data_in, data_out,
                  values_in, values_out);
   parameter ADDR_WIDTH=16;
   parameter DATA_WIDTH=16;
   parameter NUM_REGS=(1 << ADDR_WIDTH);
   parameter IS_GENERIC=1;
 
+  input clk;        // System clock
   input reset;      // System reset
   input en;         // Access enable
   input rd;         // Read enable
@@ -151,9 +152,8 @@ module Registers(reset, en, rd, wr, be, addr, data_in, data_out,
   endgenerate
 
   // Memory bus data read.
-  // TODO: Find a way to latch this for read-only registers that does not result
-  // in a race condition.
-  always @ (*)
-    data_out <= q_array[addr];
+  always @ (posedge clk)
+    if (en & rd)
+      data_out <= q_array[addr];
 
 endmodule
