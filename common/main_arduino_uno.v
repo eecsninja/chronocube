@@ -61,9 +61,11 @@ module MainArduinoUno(
 
   // Multiplex two SPI buses with the SPI memory interface.
   wire mem_nss, memsck, mem_mosi, mem_miso;
+  wire spi_bus_alt_miso;
   SPIBus spi_bus(_select, sck, mosi, miso,
-                 _alt_select, alt_sck, alt_mosi, alt_miso,
+                 _alt_select, alt_sck, alt_mosi, spi_bus_alt_miso,
                  mem_nss, mem_sck, mem_mosi, mem_miso);
+  assign alt_miso = _alt_select ? 'bz : spi_bus_alt_miso;
 
   //////////////////////////////////////////////////////////////////////
   // Internal memory bus conversion.
