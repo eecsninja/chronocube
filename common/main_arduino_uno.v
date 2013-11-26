@@ -33,7 +33,8 @@ module MainArduinoUno(
     _select, sck, mosi, miso,
     _alt_select, alt_sck, alt_mosi, alt_miso,
     _vram_en, _vram_rd, _vram_wr, _vram_be, vram_addr, vram_data,
-    vsync, hsync, rgb);
+    vsync, hsync, rgb,
+    led);
 
   input clk;
   input _reset;
@@ -58,6 +59,9 @@ module MainArduinoUno(
   output vsync;
   output hsync;
   output [`RGB_COLOR_DEPTH-1:0] rgb;
+
+  // Debug LED.
+  output led = mem_nss;
 
   // Multiplex two SPI buses with the SPI memory interface.
   wire mem_nss, memsck, mem_mosi, mem_miso;
