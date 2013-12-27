@@ -441,7 +441,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   reg [3:0] tile_x;
   reg [3:0] tile_y;
 
-  always @ (render_x_world or tile_render_y or tile_enable_8x8) begin
+  always @ (*) begin
     if (tile_enable_8x8) begin
       if (tile_enable_8_bit) begin
         // If reading tile map as 8-bits, the tile map is twice as wide.
@@ -493,8 +493,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 
   reg [3:0] tile_x_flipped;
   reg [3:0] tile_y_flipped;
-  always @ (tile_flip_x or tile_flip_y or tile_flip_xy or
-            tile_x_reg or tile_y_reg)
+  always @ (*)
   begin
     if (tile_flip_xy) begin
       tile_x_flipped <= tile_flip_y ? ~tile_y_reg : tile_y_reg;
