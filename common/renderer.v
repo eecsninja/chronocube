@@ -472,7 +472,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // Handle tile flip bits, if flipping is enabled.
   // If not, all bits of the tile map data are used for the tile value.
   wire tile_enable_flip =
-      tile_ctrl0[`TILE_ENABLE_FLIP] & ~tile_enable_8x8 & ~tile_enable_8_bit;
+      tile_ctrl0[`TILE_ENABLE_FLIP] & ~tile_enable_8_bit;
   wire tile_flip_x = tile_enable_flip & map_data[`TILE_FLIP_X_BIT];
   wire tile_flip_y = tile_enable_flip & map_data[`TILE_FLIP_Y_BIT];
   wire tile_flip_xy = tile_enable_flip & map_data[`TILE_FLIP_XY_BIT];
