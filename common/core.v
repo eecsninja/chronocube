@@ -1,22 +1,22 @@
 // Copyright (C) 2013 Simon Que
 //
-// This file is part of ChronoCube.
+// This file is part of DuinoCube.
 //
-// ChronoCube is free software: you can redistribute it and/or modify
+// DuinoCube is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// ChronoCube is distributed in the hope that it will be useful,
+// DuinoCube is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with ChronoCube.  If not, see <http://www.gnu.org/licenses/>.
+// along with DuinoCube.  If not, see <http://www.gnu.org/licenses/>.
 
 
-// Top-level ChronoCube module.
+// Top-level DuinoCube module.
 
 `include "collision.vh"
 `include "memory_map.vh"
@@ -40,7 +40,7 @@
 // path from each part of memory.
 `define LOW_MEM_SIZE            'h1000
 
-module ChronoCube(
+module Core(
     clk, reset, _int,
     mpu_rd, mpu_wr, mpu_en, mpu_be, mpu_addr_in, mpu_data_in, mpu_data_out,
     vram_en, vram_rd, vram_wr, vram_be, vram_addr, vram_data_in, vram_data_out,

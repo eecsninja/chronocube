@@ -1,22 +1,22 @@
 // Copyright (C) 2013 Simon Que
 //
-// This file is part of ChronoCube.
+// This file is part of DuinoCube.
 //
-// ChronoCube is free software: you can redistribute it and/or modify
+// DuinoCube is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// ChronoCube is distributed in the hope that it will be useful,
+// DuinoCube is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with ChronoCube.  If not, see <http://www.gnu.org/licenses/>.
+// along with DuinoCube.  If not, see <http://www.gnu.org/licenses/>.
 
 
-// Chronocube video display signal generator
+// Video display signal generator
 // The current values are for 640x480 @ 60 MHz.
 // See: http://tinyvga.com/vga-timing/640x480@60Hz
 // TODO: support other display modes.

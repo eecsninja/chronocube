@@ -1,22 +1,22 @@
 // Copyright (C) 2013 Simon Que
 //
-// This file is part of ChronoCube.
+// This file is part of DuinoCube.
 //
-// ChronoCube is free software: you can redistribute it and/or modify
+// DuinoCube is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// ChronoCube is distributed in the hope that it will be useful,
+// DuinoCube is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with ChronoCube.  If not, see <http://www.gnu.org/licenses/>.
+// along with DuinoCube.  If not, see <http://www.gnu.org/licenses/>.
 
 
-// Top-level implementation module for ChronoCube with Arduino Uno interface.
+// Top-level implementation module for DuinoCube with Arduino Uno interface.
 
 `define RGB_COLOR_DEPTH 18
 
@@ -132,27 +132,27 @@ module MainArduinoUno(
                                          : {`VRAM_DATA_WIDTH {1'bz}};
   assign vram_data_in = vram_data;
 
-  ChronoCube chronocube(.clk(clk),
-                        .reset(~_reset),
-                        .mpu_rd(spi_rd),
-                        .mpu_wr(spi_wr),
-                        .mpu_en(cc_enable),
-                        .mpu_be(cc_byte_enable),
-                        .mpu_addr_in(cc_addr),
-                        .mpu_data_in(cc_data_in),
-                        .mpu_data_out(cc_data_out),
+  Core core(.clk(clk),
+            .reset(~_reset),
+            .mpu_rd(spi_rd),
+            .mpu_wr(spi_wr),
+            .mpu_en(cc_enable),
+            .mpu_be(cc_byte_enable),
+            .mpu_addr_in(cc_addr),
+            .mpu_data_in(cc_data_in),
+            .mpu_data_out(cc_data_out),
 
-                        .vram_en(vram_en),
-                        .vram_rd(vram_rd),
-                        .vram_wr(vram_wr),
-                        .vram_be(vram_be),
-                        .vram_addr(vram_addr),
-                        .vram_data_in(vram_data_in),
-                        .vram_data_out(vram_data_out),
+            .vram_en(vram_en),
+            .vram_rd(vram_rd),
+            .vram_wr(vram_wr),
+            .vram_be(vram_be),
+            .vram_addr(vram_addr),
+            .vram_data_in(vram_data_in),
+            .vram_data_out(vram_data_out),
 
-                        .vga_vsync(vsync),
-                        .vga_hsync(hsync),
-                        .vga_rgb(rgb)
-                        );
+            .vga_vsync(vsync),
+            .vga_hsync(hsync),
+            .vga_rgb(rgb)
+            );
 
 endmodule
