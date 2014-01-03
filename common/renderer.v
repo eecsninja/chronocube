@@ -153,11 +153,15 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`REG_DATA_WIDTH-1:0] tile_data_offset;
   wire [`REG_DATA_WIDTH-1:0] tile_offset_x;
   wire [`REG_DATA_WIDTH-1:0] tile_offset_y;
+  wire tile_enable_flip;
+  wire tile_enable_8_bit;
 
   TileRegDecoder tile_reg_decoder(
       .current_layer(current_tile_layer),
       .reg_values(tile_reg_values),
       .ctrl0(tile_ctrl0),
+      .enable_8bit(tile_enable_8_bit),
+      .enable_flip(tile_enable_flip),
       .ctrl1(tile_ctrl1),
       .data_offset(tile_data_offset),
       .nop_value(tile_nop_value),
@@ -434,7 +438,6 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
       tile_render_x + reg_array[`SCROLL_X] - tile_offset_x;
 
   wire tile_enable_8x8 = tile_ctrl0[`TILE_ENABLE_8x8];
-  wire tile_enable_8_bit = tile_ctrl0[`TILE_ENABLE_8_BIT];
 
   reg [4:0] map_x;
   reg [5:0] map_y;
@@ -471,8 +474,6 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
 
   // Handle tile flip bits, if flipping is enabled.
   // If not, all bits of the tile map data are used for the tile value.
-  wire tile_enable_flip =
-      tile_ctrl0[`TILE_ENABLE_FLIP] & ~tile_enable_8_bit;
   wire tile_flip_x = tile_enable_flip & map_data[`TILE_FLIP_X_BIT];
   wire tile_flip_y = tile_enable_flip & map_data[`TILE_FLIP_Y_BIT];
   wire tile_flip_xy = tile_enable_flip & map_data[`TILE_FLIP_XY_BIT];
