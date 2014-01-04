@@ -20,7 +20,7 @@
 
 `define RGB_COLOR_DEPTH 18
 
-`define VRAM_ADDR_WIDTH 16
+`define VRAM_ADDR_WIDTH 18
 `define VRAM_DATA_WIDTH 16
 
 `define MPU_ADDR_WIDTH 16

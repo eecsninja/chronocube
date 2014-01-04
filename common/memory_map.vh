@@ -77,9 +77,9 @@
 
 // VRAM
 `define VRAM_ADDR_BASE         'h4000  // VRAM starts at 32 KB.
-`define VRAM_ADDR_LENGTH      'h10000  // VRAM spans 128 KB.
+`define VRAM_ADDR_LENGTH      'h40000  // VRAM spans 512 KB.
 
-`define VRAM_ADDR_WIDTH            16
+`define VRAM_ADDR_WIDTH            18
 `define VRAM_DATA_WIDTH            16
 
 `endif  // _MEMORY_MAP_VH_
