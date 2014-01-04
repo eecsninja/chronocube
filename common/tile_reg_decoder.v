@@ -32,6 +32,7 @@ module TileRegDecoder(current_layer,
                       enable_wrap_x,
                       enable_wrap_y,
                       enable_flip,
+                      shift_data_offset,
 
                       tile_hsize_enum,
                       tile_vsize_enum,
@@ -76,35 +77,39 @@ module TileRegDecoder(current_layer,
   output enable_wrap_x ;
   output enable_wrap_y ;
   output enable_flip   ;
+  output shift_data_offset;
 
   output [`TILE_HSIZE_WIDTH-1:0] tile_hsize_enum;
   output [`TILE_VSIZE_WIDTH-1:0] tile_vsize_enum;
 
   output [`REG_DATA_WIDTH-1:0] ctrl0       ;
   output [`REG_DATA_WIDTH-1:0] ctrl1       ;
-  output [`REG_DATA_WIDTH-1:0] data_offset ;
+  output [`VRAM_ADDR_WIDTH:0] data_offset ;
   output [`REG_DATA_WIDTH-1:0] nop_value   ;
   output [`REG_DATA_WIDTH-1:0] color_key   ;
   output [`REG_DATA_WIDTH-1:0] offset_x    ;
   output [`REG_DATA_WIDTH-1:0] offset_y    ;
 
-  assign layer_enabled    = regs[`TILE_CTRL0][`TILE_LAYER_ENABLED];
-  assign enable_8bit      = regs[`TILE_CTRL0][`TILE_ENABLE_8_BIT];
-  assign enable_nop       = regs[`TILE_CTRL0][`TILE_ENABLE_NOP];
-  assign enable_scroll    = regs[`TILE_CTRL0][`TILE_ENABLE_SCROLL];
-  assign enable_transp    = regs[`TILE_CTRL0][`TILE_ENABLE_TRANSP];
-  assign enable_alpha     = regs[`TILE_CTRL0][`TILE_ENABLE_ALPHA];
-  assign enable_color     = regs[`TILE_CTRL0][`TILE_ENABLE_COLOR];
-  assign enable_wrap_x    = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_X];
-  assign enable_wrap_y    = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_Y];
-  assign enable_flip      = regs[`TILE_CTRL0][`TILE_ENABLE_FLIP];
+  assign layer_enabled       = regs[`TILE_CTRL0][`TILE_LAYER_ENABLED];
+  assign enable_8bit         = regs[`TILE_CTRL0][`TILE_ENABLE_8_BIT];
+  assign enable_nop          = regs[`TILE_CTRL0][`TILE_ENABLE_NOP];
+  assign enable_scroll       = regs[`TILE_CTRL0][`TILE_ENABLE_SCROLL];
+  assign enable_transp       = regs[`TILE_CTRL0][`TILE_ENABLE_TRANSP];
+  assign enable_alpha        = regs[`TILE_CTRL0][`TILE_ENABLE_ALPHA];
+  assign enable_color        = regs[`TILE_CTRL0][`TILE_ENABLE_COLOR];
+  assign enable_wrap_x       = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_X];
+  assign enable_wrap_y       = regs[`TILE_CTRL0][`TILE_ENABLE_WRAP_Y];
+  assign enable_flip         = regs[`TILE_CTRL0][`TILE_ENABLE_FLIP];
+  assign shift_data_offset   = regs[`TILE_CTRL0][`TILE_SHIFT_DATA_OFFSET];
 
-  assign tile_hsize_enum  = regs[`TILE_CTRL1][`TILE_HSIZE_1:`TILE_HSIZE_0];
-  assign tile_vsize_enum  = regs[`TILE_CTRL1][`TILE_VSIZE_1:`TILE_VSIZE_0];
+  assign tile_hsize_enum     = regs[`TILE_CTRL1][`TILE_HSIZE_1:`TILE_HSIZE_0];
+  assign tile_vsize_enum     = regs[`TILE_CTRL1][`TILE_VSIZE_1:`TILE_VSIZE_0];
 
   assign ctrl0 = regs[`TILE_CTRL0];
   assign ctrl1 = regs[`TILE_CTRL1];
-  assign data_offset = regs[`TILE_DATA_OFFSET];
+  assign data_offset =
+      shift_data_offset ? (regs[`TILE_DATA_OFFSET] << TILE_DATA_OFFSET_SHIFT)
+                        : regs[`TILE_DATA_OFFSET];
   assign nop_value = regs[`TILE_NOP_VALUE];
   assign color_key = regs[`TILE_COLOR_KEY];
   assign offset_x = regs[`TILE_OFFSET_X];

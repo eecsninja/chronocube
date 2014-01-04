@@ -54,8 +54,6 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
                 vram_clk, vram_addr, vram_data,
                 coll_wr, coll_addr, coll_data,
                 rgb_out);
-  parameter VRAM_ADDR_BUS_WIDTH=16;
-  parameter VRAM_DATA_BUS_WIDTH=16;
   parameter RGB_COLOR_DEPTH=18;
   localparam SCREEN_X_WIDTH=10;
   localparam SCREEN_Y_WIDTH=10;
@@ -125,8 +123,8 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   output wire [1:0] vram_be;   // Byte enable (active low)
 
   output vram_clk;
-  output [VRAM_ADDR_BUS_WIDTH-1:0] vram_addr;     // Address bus
-  input [VRAM_DATA_BUS_WIDTH-1:0] vram_data;      // Data bus
+  output [`VRAM_ADDR_WIDTH-1:0] vram_addr;        // Address bus
+  input [`VRAM_DATA_WIDTH-1:0] vram_data;         // Data bus
 
   output [RGB_COLOR_DEPTH-1:0] rgb_out;           // Color output.
 
@@ -150,7 +148,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [`REG_DATA_WIDTH-1:0] tile_ctrl1;
   wire [`REG_DATA_WIDTH-1:0] tile_nop_value;
   wire [`REG_DATA_WIDTH-1:0] tile_color_key;
-  wire [`REG_DATA_WIDTH-1:0] tile_data_offset;
+  wire [`VRAM_DATA_WIDTH:0] tile_data_offset;
   wire [`REG_DATA_WIDTH-1:0] tile_offset_x;
   wire [`REG_DATA_WIDTH-1:0] tile_offset_y;
   wire tile_enable_flip;
@@ -172,7 +170,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   // Sprite register decoding.
   wire [`REG_DATA_WIDTH-1:0] sprite_ctrl0;
   wire [`REG_DATA_WIDTH-1:0] sprite_ctrl1;
-  wire [`REG_DATA_WIDTH-1:0] sprite_data_offset;
+  wire [`VRAM_ADDR_WIDTH:0] sprite_data_offset;
   wire [`REG_DATA_WIDTH-1:0] sprite_color_key;
   wire [`REG_DATA_WIDTH-1:0] sprite_offset_x;
   wire [`REG_DATA_WIDTH-1:0] sprite_offset_y;
@@ -414,7 +412,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   wire [15:0] sprite_flipped_y = sprite_render_height - sprite_render_y - 1;
 
   // Start location of sprite data in VRAM.
-  reg [`REG_DATA_WIDTH-1:0] sprite_vram_offset;
+  reg [`VRAM_ADDR_WIDTH-1:0] sprite_vram_offset;
   // Delay by one clock to match the timing of the tile pipeline.  There is
   // no tilemap to read.
   always @ (posedge clk) begin
@@ -506,7 +504,7 @@ module Renderer(clk, reset, reg_values, tile_reg_values,
   end
 
   // Map data -> VRAM address
-  reg [VRAM_ADDR_BUS_WIDTH-1:0] tile_vram_offset;
+  reg [`VRAM_ADDR_WIDTH-1:0] tile_vram_offset;
   always @ (posedge clk)
     tile_vram_offset <= tile_data_offset / 2;
   wire [`VRAM_ADDR_WIDTH-1:0] tile_vram_addr =

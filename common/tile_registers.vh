@@ -67,6 +67,7 @@
 `define TILE_ENABLE_WRAP_X       8
 `define TILE_ENABLE_WRAP_Y       9
 `define TILE_ENABLE_FLIP        10
+`define TILE_SHIFT_DATA_OFFSET  11
 
 `define TILE_PALETTE_START      12
 `define TILE_PALETTE_END        15
@@ -114,5 +115,9 @@
 `define TILE_FLIP_BITS_MASK   ((1 << `TILE_FLIP_X_BIT) | \
                                (1 << `TILE_FLIP_Y_BIT) | \
                                (1 << `TILE_FLIP_XY_BIT))
+
+// Number of bits by which to shift TILE_DATA_OFFSET reg, if
+// TILE_SHIFT_DATA_OFFSET bit is set.
+`define TILE_DATA_OFFSET_SHIFT       6
 
 `endif  // _TILE_REGISTERS_VH_

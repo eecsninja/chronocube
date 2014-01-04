@@ -55,6 +55,7 @@
 `define SPRITE_FLIP_X              8
 `define SPRITE_FLIP_Y              9
 `define SPRITE_FLIP_XY            10
+`define SPRITE_SHIFT_DATA_OFFSET  11
 
 `define SPRITE_PALETTE_START      12
 `define SPRITE_PALETTE_END        15
@@ -84,5 +85,9 @@
 // Sprite access bus size.
 `define SPRITE_ADDR_WIDTH           9
 `define SPRITE_DATA_WIDTH         128
+
+// Number of bits by which to shift SPRITE_DATA_OFFSET reg, if
+// SPRITE_SHIFT_DATA_OFFSET bit is set.
+`define SPRITE_DATA_OFFSET_SHIFT    6
 
 `endif  // _SPRITE_REGISTERS_VH_
