@@ -20,31 +20,28 @@
 // Note: this testbench simulates a realistic 50 MHz clock.
 // Run it for 17 ms to get a full VGA refresh cycle.
 
-module DisplayController_Test;
+`include "video_modes.vh"
 
-  parameter HCOUNT_WIDTH=10;
-  parameter VCOUNT_WIDTH=10;
+module DisplayController_Test;
 
   reg clk;          // System clock
   reg reset;        // System reset
 
-  wire [HCOUNT_WIDTH-1:0] h_pos;    // Output scan position counters.
-  wire [VCOUNT_WIDTH-1:0] v_pos;
+  wire [`VIDEO_COUNT_WIDTH-1:0] h_pos;    // Output scan position counters.
+  wire [`VIDEO_COUNT_WIDTH-1:0] v_pos;
   wire hsync;       // Horizontal sync
   wire vsync;       // Vertical sync
   wire hblank;      // Horizontal blanking indicator
   wire vblank;      // Vertical blanking indicator
 
-  DisplayController #(HCOUNT_WIDTH, VCOUNT_WIDTH)
-      display_controller(.clk(clk),
-                         ._reset(~reset),
-                         .h_pos(h_pos),
-                         .v_pos(v_pos),
-                         .hsync(hsync),
-                         .vsync(vsync),
-                         .hblank(hblank),
-                         .vblank(vblank));
+  DisplayController display_controller(.clk(clk),
+                                       .reset(reset),
+                                       .h_pos(h_pos),
+                                       .v_pos(v_pos));
 
+  DisplayTiming display_timing(.h_pos(h_pos), .v_pos(v_pos),
+                               .h_sync(hsync), .v_sync(vsync),
+                               .h_blank(hblank), .v_blank(vblank));
 
   initial begin
     clk = 0;
