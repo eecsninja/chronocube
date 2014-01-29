@@ -17,6 +17,9 @@
 
 // Defines for hardware collision detector.
 
+`ifndef _COLLISION_VH_
+`define _COLLISION_VH_
+
 `define BYTE_WIDTH                    8
 
 // Size of address and data buses.
@@ -35,3 +38,5 @@
 
 `define COLL_TABLE_BASE            'h80   // Collision table is at 256 bytes.
 `define COLL_TABLE_SIZE            'h80   // Collision table spans 256 bytes.
+
+`endif  // _COLLISION_VH_
