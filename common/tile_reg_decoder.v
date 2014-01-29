@@ -17,6 +17,7 @@
 
 // DuinoCube tile layer register field decoder.
 
+`include "memory_map.vh"
 `include "tile_registers.vh"
 
 module TileRegDecoder(current_layer,
@@ -108,7 +109,7 @@ module TileRegDecoder(current_layer,
   assign ctrl0 = regs[`TILE_CTRL0];
   assign ctrl1 = regs[`TILE_CTRL1];
   assign data_offset =
-      shift_data_offset ? (regs[`TILE_DATA_OFFSET] << TILE_DATA_OFFSET_SHIFT)
+      shift_data_offset ? (regs[`TILE_DATA_OFFSET] << `TILE_DATA_OFFSET_SHIFT)
                         : regs[`TILE_DATA_OFFSET];
   assign nop_value = regs[`TILE_NOP_VALUE];
   assign color_key = regs[`TILE_COLOR_KEY];

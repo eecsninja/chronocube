@@ -105,7 +105,7 @@ module SpriteRegDecoder(reg_values,
   assign ctrl1         = regs[`SPRITE_CTRL1];
   assign data_offset   =
       shift_data_offset
-          ? (regs[`SPRITE_DATA_OFFSET] << SPRITE_DATA_OFFSET_SHIFT)
+          ? (regs[`SPRITE_DATA_OFFSET] << `SPRITE_DATA_OFFSET_SHIFT)
           : regs[`SPRITE_DATA_OFFSET];
   assign ref_xy        = regs[`SPRITE_REF_XY];
   assign color_key     = regs[`SPRITE_COLOR_KEY];
