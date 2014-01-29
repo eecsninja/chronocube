@@ -32,6 +32,13 @@ module DisplayController(clk, reset, h_pos, v_pos);
   output reg [HCOUNT_WIDTH-1:0] h_pos;    // Output scan position counters.
   output reg [VCOUNT_WIDTH-1:0] v_pos;
 
+  // Detect the end of a horizontal or vertical scan period.
+  wire h_end, v_end;
+  DisplayTiming timing(.h_pos(h_pos),
+                       .v_pos(v_pos),
+                       .h_end(h_end),
+                       .v_end(v_end));
+
   reg clk_25mhz;
   always @ (posedge clk or posedge reset)
     if (reset)
@@ -45,9 +52,9 @@ module DisplayController(clk, reset, h_pos, v_pos);
       h_pos <= 0;
       v_pos <= 0;
     end else begin
-      if (h_pos + 1 == 800)
+      if (h_end)
       begin
-        if (v_pos + 1 == 525)
+        if (v_end)
           v_pos <= 0;
         else
           v_pos <= v_pos + {{(VCOUNT_WIDTH-1){1'b0}}, 1'b1};
@@ -63,7 +70,7 @@ endmodule
 
 // Decodes horizontal and vertical scan position into blanking, sync, etc.
 module DisplayTiming(h_pos, v_pos, h_sync, v_sync, h_blank, v_blank,
-                     h_visible_pos, v_visible_pos);
+                     h_visible_pos, v_visible_pos, h_end, v_end);
   localparam FIELD_WIDTH = 10;
   input [FIELD_WIDTH-1:0] h_pos;
   input [FIELD_WIDTH-1:0] v_pos;
@@ -99,6 +106,8 @@ module DisplayTiming(h_pos, v_pos, h_sync, v_sync, h_blank, v_blank,
   // screen.
   output [FIELD_WIDTH-1:0] h_visible_pos;
   output [FIELD_WIDTH-1:0] v_visible_pos;
+  // Indicates that the last pixel or line of the h/v scan is being displayed.
+  output h_end, v_end;
 
   assign h_sync = ~(h_pos < `H_SYNC_LENGTH);
   assign v_sync = ~(v_pos < `V_SYNC_LENGTH);
@@ -106,5 +115,7 @@ module DisplayTiming(h_pos, v_pos, h_sync, v_sync, h_blank, v_blank,
   assign v_blank = (v_pos < `V_VISIBLE_START || v_pos >= `V_FRONT_START);
   assign h_visible_pos = h_pos - `H_VISIBLE_START;
   assign v_visible_pos = v_pos - `V_VISIBLE_START;
+  assign h_end = (h_pos == (`H_TOTAL_LENGTH - 1));
+  assign v_end = (v_pos == (`V_TOTAL_LENGTH - 1));
 
 endmodule
