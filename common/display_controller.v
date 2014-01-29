@@ -21,23 +21,23 @@
 // See: http://tinyvga.com/vga-timing/640x480@60Hz
 // TODO: support other display modes.
 
-module DisplayController(clk, reset, h_pos, v_pos);
+`include "video_modes.vh"
 
-  parameter HCOUNT_WIDTH=10;
-  parameter VCOUNT_WIDTH=10;
-
+module DisplayController(clk, reset, h_pos, v_pos, mode);
   input clk;          // System clock
   input reset;        // System reset
+  input [`VIDEO_MODE_WIDTH-1:0] mode;     // Video mode.
 
-  output reg [HCOUNT_WIDTH-1:0] h_pos;    // Output scan position counters.
-  output reg [VCOUNT_WIDTH-1:0] v_pos;
+  output reg [`VIDEO_COUNT_WIDTH-1:0] h_pos;    // Output scan position counters.
+  output reg [`VIDEO_COUNT_WIDTH-1:0] v_pos;
 
   // Detect the end of a horizontal or vertical scan period.
   wire h_end, v_end;
   DisplayTiming timing(.h_pos(h_pos),
                        .v_pos(v_pos),
                        .h_end(h_end),
-                       .v_end(v_end));
+                       .v_end(v_end),
+                       .mode(mode));
 
   reg clk_25mhz;
   always @ (posedge clk or posedge reset)
@@ -57,11 +57,11 @@ module DisplayController(clk, reset, h_pos, v_pos);
         if (v_end)
           v_pos <= 0;
         else
-          v_pos <= v_pos + {{(VCOUNT_WIDTH-1){1'b0}}, 1'b1};
+          v_pos <= v_pos + `VIDEO_COUNT_WIDTH'b1;
         h_pos <= 0;
       end else
       begin
-        h_pos <= h_pos + {{(HCOUNT_WIDTH-1){1'b0}}, 1'b1};
+        h_pos <= h_pos + `VIDEO_COUNT_WIDTH'b1;
       end
     end
   end
@@ -70,33 +70,11 @@ endmodule
 
 // Decodes horizontal and vertical scan position into blanking, sync, etc.
 module DisplayTiming(h_pos, v_pos, h_sync, v_sync, h_blank, v_blank,
-                     h_visible_pos, v_visible_pos, h_end, v_end);
-  localparam FIELD_WIDTH = 10;
-  input [FIELD_WIDTH-1:0] h_pos;
-  input [FIELD_WIDTH-1:0] v_pos;
-
-  // VGA timing values, measured in pixel clock cycles.
-  `define H_VISIBLE_LENGTH               640
-  `define H_FRONT_LENGTH                  16
-  `define H_SYNC_LENGTH                   96
-  `define H_BACK_LENGTH                   48
-  `define H_SYNC_START                     0
-  `define H_BACK_START         (`H_SYNC_START + `H_SYNC_LENGTH)
-  `define H_VISIBLE_START      (`H_BACK_START + `H_BACK_LENGTH)
-  `define H_FRONT_START        (`H_VISIBLE_START + `H_VISIBLE_LENGTH)
-  `define H_TOTAL_LENGTH       (`H_VISIBLE_LENGTH + `H_FRONT_LENGTH + \
-                                `H_SYNC_LENGTH + `H_BACK_LENGTH)
-
-  `define V_VISIBLE_LENGTH               480
-  `define V_FRONT_LENGTH                  10
-  `define V_SYNC_LENGTH                    2
-  `define V_BACK_LENGTH                   33
-  `define V_SYNC_START                     0
-  `define V_BACK_START         (`V_SYNC_START + `V_SYNC_LENGTH)
-  `define V_VISIBLE_START      (`V_BACK_START + `V_BACK_LENGTH)
-  `define V_FRONT_START        (`V_VISIBLE_START + `V_VISIBLE_LENGTH)
-  `define V_TOTAL_LENGTH       (`V_VISIBLE_LENGTH + `V_FRONT_LENGTH + \
-                                `V_SYNC_LENGTH + `V_BACK_LENGTH)
+                     h_visible_pos, v_visible_pos, h_end, v_end,
+                     mode);
+  input [`VIDEO_COUNT_WIDTH-1:0] h_pos;
+  input [`VIDEO_COUNT_WIDTH-1:0] v_pos;
+  input [`VIDEO_MODE_WIDTH-1:0] mode;
 
   // Sync signals.
   output h_sync, v_sync;
@@ -104,10 +82,52 @@ module DisplayTiming(h_pos, v_pos, h_sync, v_sync, h_blank, v_blank,
   output h_blank, v_blank;
   // Position of scanout relative to upper-left corner of visible portion of
   // screen.
-  output [FIELD_WIDTH-1:0] h_visible_pos;
-  output [FIELD_WIDTH-1:0] v_visible_pos;
+  output [`VIDEO_COUNT_WIDTH-1:0] h_visible_pos;
+  output [`VIDEO_COUNT_WIDTH-1:0] v_visible_pos;
   // Indicates that the last pixel or line of the h/v scan is being displayed.
   output h_end, v_end;
+
+  wire [`VIDEO_COUNT_WIDTH * `NUM_TIMING_VALUES - 1:0] h_timing_values_array;
+  wire [`VIDEO_COUNT_WIDTH * `NUM_TIMING_VALUES - 1:0] v_timing_values_array;
+  // Decode the timing values for the video mode.
+  VideoModeDecoder decoder(mode, h_timing_values_array, v_timing_values_array);
+
+  // Distribute them into separate values.
+  wire [`VIDEO_COUNT_WIDTH-1:0] h_timing_values [`NUM_TIMING_VALUES-1:0];
+  wire [`VIDEO_COUNT_WIDTH-1:0] v_timing_values [`NUM_TIMING_VALUES-1:0];
+  genvar i;
+  generate
+    for (i = 0; i < `NUM_TIMING_VALUES; i = i + 1) begin : timing_values
+      // Do this in reverse, as the order is reversed in the concatenation
+      // in VideoModeDecoder.
+      assign h_timing_values[`NUM_TIMING_VALUES - 1 - i] =
+          h_timing_values_array[`VIDEO_COUNT_WIDTH * (i + 1) - 1:
+                                `VIDEO_COUNT_WIDTH * i];
+      assign v_timing_values[`NUM_TIMING_VALUES - 1 - i] =
+          v_timing_values_array[`VIDEO_COUNT_WIDTH * (i + 1) - 1:
+                                `VIDEO_COUNT_WIDTH * i];
+    end
+  endgenerate
+
+  `define H_VISIBLE_LENGTH    h_timing_values[0]
+  `define H_FRONT_LENGTH      h_timing_values[1]
+  `define H_SYNC_LENGTH       h_timing_values[2]
+  `define H_BACK_LENGTH       h_timing_values[3]
+  `define H_SYNC_START        h_timing_values[4]
+  `define H_BACK_START        h_timing_values[5]
+  `define H_VISIBLE_START     h_timing_values[6]
+  `define H_FRONT_START       h_timing_values[7]
+  `define H_TOTAL_LENGTH      h_timing_values[8]
+
+  `define V_VISIBLE_LENGTH    v_timing_values[0]
+  `define V_FRONT_LENGTH      v_timing_values[1]
+  `define V_SYNC_LENGTH       v_timing_values[2]
+  `define V_BACK_LENGTH       v_timing_values[3]
+  `define V_SYNC_START        v_timing_values[4]
+  `define V_BACK_START        v_timing_values[5]
+  `define V_VISIBLE_START     v_timing_values[6]
+  `define V_FRONT_START       v_timing_values[7]
+  `define V_TOTAL_LENGTH      v_timing_values[8]
 
   assign h_sync = ~(h_pos < `H_SYNC_LENGTH);
   assign v_sync = ~(v_pos < `V_SYNC_LENGTH);
@@ -118,4 +138,32 @@ module DisplayTiming(h_pos, v_pos, h_sync, v_sync, h_blank, v_blank,
   assign h_end = (h_pos == (`H_TOTAL_LENGTH - 1));
   assign v_end = (v_pos == (`V_TOTAL_LENGTH - 1));
 
+endmodule
+
+module VideoModeDecoder(mode, h_values, v_values);
+  // TODO: Use different modes.
+  input [`VIDEO_MODE_WIDTH-1:0] mode;
+
+  // Nine values for each of H/V scan: see video_modes.vh.
+  output [`VIDEO_COUNT_WIDTH*9-1:0] h_values;
+  output [`VIDEO_COUNT_WIDTH*9-1:0] v_values;
+
+  assign h_values = { `VGA_640X480_60HZ_H_VISIBLE_LENGTH,
+                      `VGA_640X480_60HZ_H_FRONT_LENGTH,
+                      `VGA_640X480_60HZ_H_SYNC_LENGTH,
+                      `VGA_640X480_60HZ_H_BACK_LENGTH,
+                      `VGA_640X480_60HZ_H_SYNC_START,
+                      `VGA_640X480_60HZ_H_BACK_START,
+                      `VGA_640X480_60HZ_H_VISIBLE_START,
+                      `VGA_640X480_60HZ_H_FRONT_START,
+                      `VGA_640X480_60HZ_H_TOTAL_LENGTH };
+  assign v_values = { `VGA_640X480_60HZ_V_VISIBLE_LENGTH,
+                      `VGA_640X480_60HZ_V_FRONT_LENGTH,
+                      `VGA_640X480_60HZ_V_SYNC_LENGTH,
+                      `VGA_640X480_60HZ_V_BACK_LENGTH,
+                      `VGA_640X480_60HZ_V_SYNC_START,
+                      `VGA_640X480_60HZ_V_BACK_START,
+                      `VGA_640X480_60HZ_V_VISIBLE_START,
+                      `VGA_640X480_60HZ_V_FRONT_START,
+                      `VGA_640X480_60HZ_V_TOTAL_LENGTH };
 endmodule

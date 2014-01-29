@@ -92,12 +92,10 @@ module Core(
   // Counters for the position of the refresh.
   wire [`DISPLAY_HCOUNT_WIDTH-1:0] h_pos;
   wire [`DISPLAY_VCOUNT_WIDTH-1:0] v_pos;
-  DisplayController #(.HCOUNT_WIDTH(`DISPLAY_HCOUNT_WIDTH),
-                      .VCOUNT_WIDTH(`DISPLAY_VCOUNT_WIDTH))
-      display(.clk(clk),
-              .reset(reset),
-              .v_pos(v_pos),
-              .h_pos(h_pos));
+  DisplayController display(.clk(clk),
+                            .reset(reset),
+                            .h_pos(h_pos),
+                            .v_pos(v_pos));
 
   wire [`MPU_DATA_WIDTH-1:0] pal_data_out;
   wire [`MPU_DATA_WIDTH-1:0] reg_data_out;
