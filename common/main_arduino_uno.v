@@ -34,7 +34,7 @@ module MainArduinoUno(
     _alt_select, alt_sck, alt_mosi, alt_miso,
     _vram_en, _vram_rd, _vram_wr, _vram_be, vram_addr, vram_data,
     vsync, hsync, rgb,
-    led);
+    led, audio_l, audio_r);
 
   input clk;
   input _reset;
@@ -62,6 +62,10 @@ module MainArduinoUno(
 
   // Debug LED.
   output led = mem_nss;
+
+  // Audio outputs.
+  output audio_l;
+  output audio_r;
 
   // Multiplex two SPI buses with the SPI memory interface.
   wire mem_nss, memsck, mem_mosi, mem_miso;
@@ -154,5 +158,36 @@ module MainArduinoUno(
             .vga_hsync(hsync),
             .vga_rgb(rgb)
             );
+
+  reg [7:0] pwm_counter;
+  always @ (posedge clk)
+    pwm_counter <= pwm_counter + 1'b1;
+
+  `define SLOW_PERIOD 200
+  `define FAST_PERIOD 100
+  reg [7:0] wave_counter_slow;
+  reg [7:0] wave_counter_fast;
+
+  always @ (negedge _reset or posedge clk) begin
+    if (~_reset) begin
+      wave_counter_slow <= 0;
+      wave_counter_fast <= 0;
+    end else if (pwm_counter == 0) begin
+      if (wave_counter_slow >= `SLOW_PERIOD - 1)
+        wave_counter_slow <= 0;
+      else
+        wave_counter_slow = wave_counter_slow + 1'b1;
+
+      if (wave_counter_fast >= `FAST_PERIOD - 1)
+        wave_counter_fast <= 0;
+      else
+        wave_counter_fast = wave_counter_fast + 1'b1;
+    end
+  end
+
+  // For now, just output fixed audio tones.
+  // TODO: Add audio control.
+  assign audio_l = (wave_counter_slow > `SLOW_PERIOD / 2);
+  assign audio_r = (wave_counter_fast > `FAST_PERIOD / 2);
 
 endmodule
