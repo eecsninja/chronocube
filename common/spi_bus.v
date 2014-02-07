@@ -23,8 +23,6 @@
 
 // A dual-port multiplexed SPI bus interface.
 
-`include "spi_bus.vh"
-
 module SPIBus(
   // Primary SPI bus.
   input main_nss,
@@ -39,67 +37,38 @@ module SPIBus(
   output alt_miso,
 
   // Output SPI bus.
-  output nss,
-  output sck,
-  output mosi,
+  output reg nss,
+  output reg sck,
+  output reg mosi,
   input miso
 );
 
-  // For SPI bookkeeping.
-  reg [`BYTE_COUNTER_WIDTH-1:0] spi_counter;
-  reg [`BYTE_WIDTH-1:0] spi_data;
-  reg [`SPI_BUS_STATE_WIDTH-1:0] spi_state;
+  // Each bus is granted access when its select is asserted and the other bus'
+  // select is not asserted.
+  wire alt_bus_enabled = (alt_nss == 'b0) & (main_nss == 'b1);
+  wire main_bus_enabled = (alt_nss == 'b1) & (main_nss == 'b0);
 
-  // Read in data from MOSI.
-  always @ (posedge main_sck)
-    if (~main_nss)
-      spi_data <= {spi_data[`BYTE_WIDTH-2:0], main_mosi};
-
-  // If this bit is set, the secondary bus is granted access.
-  reg alt_bus;
-
-  // Main SPI logic block.
-  always @ (posedge main_nss or negedge main_sck) begin
-    // Reset logic.
-    if (main_nss) begin
-      // Reset the state when nSS goes low.
-      spi_state <= `SPI_BUS_STATE_NONE;
-      spi_counter <= 0;
+  // Multiplex the two SPI buses.
+  // nSS should be allowed to assert only if only one bus is asserting it.
+  // This avoids undefined behavior when the main bus interrupts the secondary
+  // bus.
+  always @ (*) begin
+    if (alt_bus_enabled) begin
+      nss <= 'b0;
+      sck <= alt_sck;
+      mosi <= alt_mosi;
+    end else if (main_bus_enabled) begin
+      nss <= 'b0;
+      sck <= main_sck;
+      mosi <= main_mosi;
     end else begin
-      // Update the counter.  It should wrap around on its own.
-      spi_counter <= spi_counter + 1'b1;
-
-      // Handle SPI clock edge transitions.
-      // Falling edge of SCK means increment to next bit.
-      if (spi_counter == `BYTE_WIDTH - 1 &&
-          spi_state == `SPI_BUS_STATE_NONE) begin
-        spi_state <= spi_data;
-      end
+      nss <= 'b1;
+      sck <= 0;
+      mosi <= 0;
     end
   end
 
-  // Handle bus select modes.
-  // This is done in a separate block from the main SPI logic because there may
-  // not be a second byte during which |alt_bus| can be updated on a SCK edge.
-  always @ (posedge main_nss) begin
-    case (spi_data)
-    `SPI_BUS_STATE_MAIN_BUS:
-      alt_bus <= 0;
-    `SPI_BUS_STATE_ALT_BUS:
-      alt_bus <= 1;
-    endcase
-  end
-
-
-  wire main_mem_enabled = (spi_state == `SPI_BUS_STATE_MEMORY);
-
-  // Multiplex the two SPI buses.
-  assign {nss, sck, mosi} =
-      alt_bus ? {alt_nss, alt_sck, alt_mosi}
-              : main_mem_enabled ? {main_nss, main_sck, main_mosi}
-                                 : {1'b1, 1'b0, 1'bx};
-
-  assign main_miso = ~main_nss ? (~alt_bus & main_mem_enabled & miso) : 'bz;
-  assign alt_miso = ~alt_nss ? (alt_bus & miso) : 'bz;
+  assign main_miso = (main_nss == 'b0) ? miso : 'bz;
+  assign alt_miso = (alt_nss == 'b0) ? miso : 'bz;
 
 endmodule

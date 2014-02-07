@@ -23,7 +23,7 @@
 
 `timescale 1ns/1ps
 
-`include "spi_bus.vh"
+`define BYTE_WIDTH                8  // Number of bits per byte.
 
 module SPIBusTest;
   // Main SPI interface.
@@ -65,22 +65,16 @@ module SPIBusTest;
     #10
     stage = 1;
 
-    // Set main SPI bus control.
-    main_nss = 0;
-    main_spi_transmit(`SPI_BUS_STATE_MAIN_BUS);
-    main_nss = 1;
-
     // Perform some memory bus accesses.
     #10
     main_nss = 0;
-    main_spi_transmit(`SPI_BUS_STATE_MEMORY);
     main_spi_transmit(8'h01);
     main_spi_transmit(8'h02);
     main_spi_transmit(8'h04);
     main_spi_transmit(8'h08);
     main_nss = 1;
 
-    // Attempt a secondary SPI access, should not go through.
+    // Attempt a secondary SPI access, should go through.
     #10
     alt_nss = 0;
     alt_spi_transmit(8'h11);
@@ -89,59 +83,27 @@ module SPIBusTest;
     alt_spi_transmit(8'h88);
     alt_nss = 1;
 
-    // Hand over control to the secondary bus.
     #10
     stage = 2;
-    main_nss = 0;
-    main_spi_transmit(`SPI_BUS_STATE_ALT_BUS);
-    main_nss = 1;
 
-    // The main bus should no longer have access.
+    // Assert the main bus and the secondary bus at the same time. Neither
+    // should have nSS access, but the main bus should have SCK and MISO access.
     #10
     main_nss = 0;
-    main_spi_transmit(`SPI_BUS_STATE_MEMORY);
+    alt_nss = 0;
     main_spi_transmit(8'h01);
     main_spi_transmit(8'h02);
     main_spi_transmit(8'h04);
     main_spi_transmit(8'h08);
-    main_nss = 1;
-
-    // Attempt a secondary SPI access, should go through to the memory bus.
-    #10
-    alt_nss = 0;
     alt_spi_transmit(8'h11);
     alt_spi_transmit(8'h22);
     alt_spi_transmit(8'h44);
     alt_spi_transmit(8'h88);
+    main_nss = 1;
     alt_nss = 1;
 
-    // Retake control for the main bus.
     #10
     stage = 3;
-    main_nss = 0;
-    main_spi_transmit(`SPI_BUS_STATE_MAIN_BUS);
-    main_nss = 1;
-
-    // Things should be back to normal.  Main bus goes through, secondary bus
-    // does not.
-    #10
-    main_nss = 0;
-    main_spi_transmit(`SPI_BUS_STATE_MEMORY);
-    main_spi_transmit(8'h01);
-    main_spi_transmit(8'h02);
-    main_spi_transmit(8'h04);
-    main_spi_transmit(8'h08);
-    main_nss = 1;
-    #10
-    alt_nss = 0;
-    alt_spi_transmit(8'h11);
-    alt_spi_transmit(8'h22);
-    alt_spi_transmit(8'h44);
-    alt_spi_transmit(8'h88);
-    alt_nss = 1;
-
-    #10
-    stage = 4;
   end
 
   // Task to send a byte over primary SPI bus.
