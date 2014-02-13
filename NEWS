@@ -1,6 +1,19 @@
 Release history
 ===============
 
+0.4.0  --  12 Feb 2014
+    - Properly renamed project name in comment headers.
+    - Renamed core module to core.v.
+    - Added collision.vh include guards.
+    - Updated display controller to accept variable timing parameters.
+    - Added token audio output.
+    - Fixed typo in mem_sck name.
+    - Increased VRAM size to 512 kB.
+    - Register writes use system clock.
+    - Added enable flags for 8-bit mode and flipping to tile registers.
+    - Allow tile/sprite register decoders to address more than 64 kB of VRAM.
+    - Removed CPLD code, as DuinoCube no longer uses a CPLD.
+
 0.3.0  --   4 Nov 2013
     - Added collision detection buffers, registers, and table.
     - Added an alias of the sprite location registers so they are contiguously
