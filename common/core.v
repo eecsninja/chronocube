@@ -93,6 +93,7 @@ module Core(
   wire [`DISPLAY_HCOUNT_WIDTH-1:0] h_pos;
   wire [`DISPLAY_VCOUNT_WIDTH-1:0] v_pos;
   DisplayController display(.clk(clk),
+                            // TODO: Should the reset bit be used to reset this?
                             .reset(reset),
                             .h_pos(h_pos),
                             .v_pos(v_pos));
@@ -136,7 +137,7 @@ module Core(
   wire [`COLL_DATA_WIDTH-1:0] ren_coll_data;
   CollisionTable collision_table(
       .clk(clk),
-      .reset(reset),
+      .reset(master_reset),
 
       // Write to the collision buffer only when there's a collision.
       .write_collision(ren_coll_wr),
@@ -290,7 +291,7 @@ module Core(
   // Renderer
   // TODO: add switching between 16-bit full color and 8-bit palettes.
   Renderer renderer(.clk(clk),
-                    .reset(reset),
+                    .reset(master_reset),
                     .reg_values(reg_values_out),
                     .tile_reg_values(tile_reg_values),
 
@@ -334,6 +335,17 @@ module Core(
     end
   endgenerate
 
+  // Use a register bit to reset the chip.
+  reg reset_bit;
+  // Delay it by one clock to avoid race condition.
+  always @ (posedge clk or posedge reset) begin
+    if (reset)
+      reset_bit <= 0;
+    else
+      reset_bit <= reg_array_out[`SYS_CTRL][`SYS_CTRL_RESET];
+  end
+  wire master_reset = reset | reset_bit;
+
   // Values to the read-only registers.
   wire [`REG_DATA_WIDTH * `NUM_MAIN_REGS - 1 : 0] reg_values_in;
   wire [`REG_DATA_WIDTH-1:0] reg_array_in [`NUM_MAIN_REGS-1:0];
@@ -365,7 +377,7 @@ module Core(
               .NUM_REGS(`NUM_MAIN_REGS),
               .IS_GENERIC(1))
       registers(.clk(clk),
-                .reset(reset),
+                .reset(master_reset),
                 .en(main_regs_select),
                 .rd(mpu_rd),
                 .wr(mpu_wr),
@@ -424,7 +436,7 @@ module Core(
                   .NUM_REGS(`NUM_TILE_REGISTERS),
                   .IS_GENERIC(0))
           tile_registers(.clk(clk),
-                         .reset(reset),
+                         .reset(master_reset),
                          .en(tile_layer_reg_select[i]),
                          .rd(mpu_rd),
                          .wr(mpu_wr),

@@ -48,5 +48,7 @@
 
 // SYS_CTRL register bits.
 `define SYS_CTRL_VRAM_ACCESS    0   // Enable MPU access to VRAM.
+`define SYS_CTRL_RESET         15   // Write a 1 to reset the system, including
+                                    // this bit.
 
 `endif  // _REGISTERS_VH_
